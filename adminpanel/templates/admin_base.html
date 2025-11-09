@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin Panel{% endblock %}</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fontawesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        #cropperImage {
+            max-height: 70vh;
+            width: auto;
+            object-fit: contain;
+        }
+    </style>
+    
+
+</head>
+
+<body class="bg-gray-100">
+
+<div class="flex h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white shadow-md fixed h-full">
+        <div class="p-6 border-b">
+            <h1 class="text-xl font-bold text-gray-800">Admin Panel</h1>
+        </div>
+
+        <nav class="mt-4 space-y-1">
+
+            <!-- Dashboard -->
+            <div class="px-3">
+                <a href="{% url 'admin_dashboard' %}" class="flex items-center px-3 py-2 text-gray-600 bg-blue-100 rounded-lg">
+                    <i class="fas fa-tachometer-alt mr-3 text-blue-600"></i>
+                    Dashboard
+                </a>
+                <a href="#" class="flex items-center px-3 py-2 mt-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                    <i class="fas fa-shopping-cart mr-3"></i>
+                    Orders
+                </a>
+                <a href="{% url 'user_list' %}" class="flex items-center px-3 py-2 mt-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                    <i class="fas fa-users mr-3 "></i>
+                    Users
+                </a>
+                <a href="{% url 'category_list' %}" class="flex items-center px-3 py-2 mt-2 text-gray-700 hover:bg-gray-50 rounded-lg">
+                    <i class="fas fa-tags mr-3 "></i>
+                    Categories
+                </a>
+                <a href="{% url 'product_list' %}" class="flex items-center px-3 py-2 mt-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                    <i class="fas fa-box mr-3"></i>
+                    Products
+                </a>
+
+
+                <a href="{% url 'offer_list' %}" class="flex items-center px-3 py-2 mt-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                    <i class="fas fa-percent mr-3"></i>
+                    Offers
+                </a>
+
+                <a href="#" class="flex items-center px-3 py-2 mt-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                    <i class="fas fa-cog mr-3"></i>
+                    Settings
+                </a>
+                <a href="#" class="flex items-center px-3 py-2 mt-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                    <i class="fas fa-image mr-3"></i>
+                    Banner
+                </a>
+                <a href="#" class="flex items-center px-3 py-2 mt-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                    <i class="fas fa-chart-bar mr-3"></i>
+                    Sales Report
+                </a>
+                <a href="#" class="flex items-center px-3 py-2 mt-2 text-gray-600 hover:bg-gray-100 rounded-lg">
+                    <i class="fas fa-ticket-alt mr-3"></i>
+                    Coupons
+                </a>
+                <form action="{% url 'admin_logout' %}" method="post">
+                    {% csrf_token %}
+
+                    <button type="submit" class="flex items-center px-3 py-2 mt-2 text-red-600 hover:bg-red-50 rounded-lg">
+                    <i class="fas fa-sign-out-alt mr-3"></i>
+                    Logout
+                    </button>
+                    
+            </form>
+            </div>
+
+        </nav>
+    </aside>
+
+    <!-- Main Section -->
+    <main class="ml-64 flex-1 flex flex-col">
+
+        <!-- Top Bar -->
+        <header class="bg-white shadow px-6 py-4 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-800">
+                {% block page_title %}Dashboard{% endblock %}
+            </h2>
+
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-full bg-blue-500 text-white flex justify-center items-center font-semibold uppercase">
+                    {{ request.user.first_name|default:request.user.email|first }}
+                </div>
+                <p class="font-medium text-gray-700">{{ request.user.first_name|default:request.user.email }}</p>
+            </div>
+        </header>
+
+        <!-- Messages -->
+        <div class="px-6 mt-4">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="p-4 mb-3 rounded-lg 
+                        {% if message.tags == 'success' %}bg-green-100 text-green-700
+                        {% elif message.tags == 'error' %}bg-red-100 text-red-700
+                        {% else %}bg-blue-100 text-blue-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <!-- Page Content -->
+        <div class="px-6 py-6">
+            {% block content %}{% endblock %}
+        </div>
+
+    </main>
+
+</div>
+
+</body>
+</html>

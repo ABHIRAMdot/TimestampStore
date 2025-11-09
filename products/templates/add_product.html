@@ -1,0 +1,210 @@
+{% extends 'admin_base.html' %}
+{% block title %}Add Product{% endblock %}
+{% block page_title %}Add New Product{% endblock %}
+
+{% block content %}
+
+<div class="flex justify-between items-center mb-8">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-800">Add New Product</h1>
+        <p class="text-gray-600 mt-1">Create a new product with variants and images</p>
+    </div>
+    <a href="{% url 'product_list' %}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+        <i class="fas fa-arrow-left mr-2"></i>Back to List
+    </a>
+</div>
+
+<form id="productForm" method="POST" enctype="multipart/form-data" class="space-y-6">
+    {% csrf_token %}
+
+    <!-- Product Basic Info -->
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <h2 class="text-lg font-semibold mb-4">Basic Information</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
+                <input type="text" name="product_name" required class="w-full px-4 py-2 border rounded-lg" placeholder="Enter product name">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                <select name="category" required class="w-full px-4 py-2 border rounded-lg">
+                    <option value="">Select Category</option>
+                    {% for cat in categories %}
+                        <option value="{{ cat.id }}">{{ cat.category_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Offer (Optional)</label>
+                <select name="offer" class="w-full px-4 py-2 border rounded-lg">
+                    <option value="">No Offer</option>
+                    {% for offer in offers %}
+                        <option value="{{ offer.id }}">{{ offer.name }} ({{ offer.discount }}% off)</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Base Price *</label>
+                <input type="number" name="base_price" step="0.01" min="0" required class="w-full px-4 py-2 border rounded-lg" placeholder="0.00">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Slug (Optional)</label>
+                <input type="text" name="slug" class="w-full px-4 py-2 border rounded-lg" placeholder="auto-generated-from-name">
+            </div>
+
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                <textarea name="description" rows="4" required class="w-full px-4 py-2 border rounded-lg" placeholder="Enter product description"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- IMAGES -->
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <h2 class="text-lg font-semibold mb-4">Product Images</h2>
+
+        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+            <input type="file" id="imageInput" name="images[]" accept="image/*" multiple class="hidden">
+            <button type="button" onclick="document.getElementById('imageInput').click()" class="px-6 py-3 bg-blue-600 text-white rounded-lg">Select Images</button>
+        </div>
+
+        <div id="imagePreviewContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6"></div>
+        <p id="imageCount" class="text-sm text-red-600 mt-2">0 images selected</p>
+    </div>
+
+    <!-- VARIANTS -->
+    <div class="bg-white rounded-xl shadow-sm p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold">Product Variants</h2>
+            <button type="button" onclick="addVariant()" class="px-4 py-2 bg-green-600 text-white rounded-lg">Add Variant</button>
+        </div>
+        <div id="variantsContainer" class="space-y-4"></div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div class="flex justify-end gap-4">
+        <a href="{% url 'product_list' %}" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg">Cancel</a>
+        <button type="submit" id="submitBtn" disabled class="px-6 py-3 bg-blue-600 text-white rounded-lg opacity-50 cursor-not-allowed">Save Product</button>
+    </div>
+</form>
+
+<!-- 🟢 CROPPER MODAL -->
+<div id="cropModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+    <div class="bg-white p-4 rounded-lg max-w-3xl w-full">
+        <div class="text-right"><button onclick="cancelCrop()" class="text-gray-500 text-xl">&times;</button></div>
+        <img id="cropImage" style="max-height:75vh; display:block; margin:auto;">
+        <div class="flex justify-end gap-2 mt-4">
+            <button onclick="cancelCrop()" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
+            <button onclick="saveCrop()" class="px-4 py-2 bg-blue-600 text-white rounded">Crop & Save</button>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+<script>
+// ==================== CHANGED CROP SCRIPT ==================== //
+let imageFiles = [];
+let primaryIndex = 0;
+let cropper = null;
+let currentEditIndex = null;
+
+const previewContainer = document.getElementById("imagePreviewContainer");
+const countDisplay = document.getElementById("imageCount");
+const submitBtn = document.getElementById("submitBtn");
+
+function updateUI() {
+    previewContainer.innerHTML = "";
+    imageFiles.forEach((img, i) => {
+        previewContainer.innerHTML += `
+        <div class="relative group border rounded overflow-hidden">
+            <img src="${img.preview}" class="w-full h-40 object-cover">
+            <div class="absolute inset-0 flex justify-center items-center gap-2 opacity-0 group-hover:opacity-100 bg-black/40 transition">
+                <button onclick="editImage(${i})" class="px-2 py-1 bg-white text-sm rounded">Crop</button>
+                <button onclick="deleteImage(${i})" class="px-2 py-1 bg-red-600 text-white text-sm rounded">Delete</button>
+                <button onclick="setPrimary(${i})" class="px-2 py-1 bg-blue-600 text-white text-sm rounded">Primary</button>
+            </div>
+            ${primaryIndex == i ? `<span class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-1 rounded">Primary</span>` : ``}
+        </div>`;
+    });
+
+    countDisplay.textContent = `${imageFiles.length} image(s) selected`;
+    if (imageFiles.length >= 3) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
+    } else {
+        submitBtn.disabled = true;
+        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
+    }
+}
+
+document.getElementById("imageInput").addEventListener("change", e => {
+    imageFiles= [];
+    [...e.target.files].forEach(file => imageFiles.push({ file, preview: URL.createObjectURL(file) }));
+    updateUI();
+});
+
+function editImage(index) {
+    currentEditIndex = index;
+    document.getElementById("cropImage").src = imageFiles[index].preview;
+    document.getElementById("cropModal").classList.remove("hidden");
+
+    setTimeout(() => {
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(document.getElementById("cropImage"), {
+            aspectRatio: NaN,
+            viewMode: 1,
+            autoCropArea: 0.7,
+            dragMode: 'crop'
+        });
+    }, 100);
+}
+
+function saveCrop() {
+    cropper.getCroppedCanvas().toBlob(blob => {
+        const newFile = new File([blob], imageFiles[currentEditIndex].file.name, { type: "image/jpeg" });
+        URL.revokeObjectURL(imageFiles[currentEditIndex].preview);
+        imageFiles[currentEditIndex] = { file: newFile, preview: URL.createObjectURL(newFile) };
+        cancelCrop();
+        updateUI();
+    });
+}
+
+function cancelCrop() {
+    if (cropper) cropper.destroy();
+    cropper = null;
+    document.getElementById("cropModal").classList.add("hidden");
+}
+
+function deleteImage(i) { imageFiles.splice(i, 1); updateUI(); }
+function setPrimary(i) { primaryIndex = i; updateUI(); }
+
+// ================= VARIANTS (UNCHANGED) ================= //
+let variantCount = 0;
+function addVariant() {
+    variantCount++;
+    document.getElementById("variantsContainer").insertAdjacentHTML("beforeend", `
+        <div class="border border-gray-200 rounded-lg p-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-medium text-gray-700">Variant #${variantCount}</h3>
+                <button type="button" onclick="this.parentElement.parentElement.parentElement.remove()" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div><label>Color *</label><select name="colour[]" required class="w-full px-4 py-2 border rounded-lg"><option value="">Select</option><option>Black</option><option>Blue</option><option>Brown</option><option>White</option><option>Red</option><option>Green</option><option>Yellow</option><option>Gray</option></select></div>
+                <div><label>Price *</label><input type="number" name="price[]" required class="w-full px-4 py-2 border rounded-lg"></div>
+                <div><label>Old Price</label><input type="number" name="old_price[]" class="w-full px-4 py-2 border rounded-lg"></div>
+                <div><label>Stock *</label><input type="number" name="stock[]" required class="w-full px-4 py-2 border rounded-lg"></div>
+            </div>
+        </div>
+    `);
+}
+document.addEventListener("DOMContentLoaded", () => addVariant());
+</script>
+
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends 'admin_base.html' %}
+
+{% block content %}
+
+        <!-- Main Content -->
+        <div class="flex-1 overflow-auto">
+            <div class="p-8">
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-8">
+                    <h1 class="text-2xl font-bold text-gray-800">{% block page_title %}Dashboard{% endblock %}</h1>
+                </div>
+
+                <!-- Display Messages -->
+                <!-- {% if messages %}
+                    {% for message in messages %}
+                        <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %} -->
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Total Users Card -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm">Total Users</p>
+                                <h3 class="text-2xl font-bold text-gray-800 mt-1">{{ total_users }}</h3>
+                            </div>
+                            <div class="bg-blue-100 p-3 rounded-lg">
+                                <i class="fas fa-users text-blue-600 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <a href="{% url 'user_list' %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                View All Users →
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Active Users Card -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm">Active Users</p>
+                                <h3 class="text-2xl font-bold text-gray-800 mt-1">{{ active_users }}</h3>
+                            </div>
+                            <div class="bg-green-100 p-3 rounded-lg">
+                                <i class="fas fa-user-check text-green-600 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <p class="text-gray-500 text-sm">Currently Active</p>
+                        </div>
+                    </div>
+
+                    <!-- Blocked Users Card -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm">Blocked Users</p>
+                                <h3 class="text-2xl font-bold text-gray-800 mt-1">{{ blocked_users }}</h3>
+                            </div>
+                            <div class="bg-red-100 p-3 rounded-lg">
+                                <i class="fas fa-user-lock text-red-600 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <p class="text-gray-500 text-sm">Inactive Accounts</p>
+                        </div>
+                    </div>
+
+                    <!-- Total Orders Card (Placeholder) -->
+                    <div class="bg-white rounded-xl shadow-sm p-6">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-gray-500 text-sm">Total Orders</p>
+                                <h3 class="text-2xl font-bold text-gray-800 mt-1">0</h3>
+                            </div>
+                            <div class="bg-purple-100 p-3 rounded-lg">
+                                <i class="fas fa-shopping-cart text-purple-600 text-xl"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4">
+                            <p class="text-gray-500 text-sm">Coming Soon</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <a href="{% url 'user_list' %}" class="flex items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
+                            <i class="fas fa-users text-blue-600 text-2xl mr-4"></i>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">Manage Users</h3>
+                                <p class="text-sm text-gray-600">View and manage all users</p>
+                            </div>
+                        </a>
+                        <a href="#" class="flex items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition">
+                            <i class="fas fa-shopping-cart text-green-600 text-2xl mr-4"></i>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">View Orders</h3>
+                                <p class="text-sm text-gray-600">Check recent orders</p>
+                            </div>
+                        </a>
+                        <a href="#" class="flex items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition">
+                            <i class="fas fa-chart-bar text-purple-600 text-2xl mr-4"></i>
+                            <div>
+                                <h3 class="font-semibold text-gray-800">Sales Report</h3>
+                                <p class="text-sm text-gray-600">View sales analytics</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+
+    {% endblock %}

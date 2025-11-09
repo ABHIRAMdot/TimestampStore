@@ -1,0 +1,169 @@
+{% extends 'admin_base.html' %}
+{% block title %}Edit Category {% endblock %}
+{% block page_title %} Edit_Category{% endblock %}
+{% block content %}
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-8">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">Edit Category</h1>
+                        <p class="text-gray-600 mt-1">Update category information</p>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <a href="{% url 'category_list' %}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center">
+                            <i class="fas fa-arrow-left mr-2"></i>
+                            Back to List
+                        </a>
+                        <div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                            {{ request.user.first_name.0|upper|default:'A' }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Display Messages -->
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                            <div class="flex items-center justify-between">
+                                <span>{{ message }}</span>
+                                <button onclick="this.parentElement.parentElement.remove()" class="text-gray-600 hover:text-gray-800">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <!-- Category Info Card -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-blue-800">Editing Category ID: <span class="font-semibold">#{{ category.id }}</span></p>
+                            <p class="text-xs text-blue-600 mt-1">Created: {{ category.created_at|date:"M d, Y H:i" }}</p>
+                        </div>
+                        <div>
+                            {% if category.is_listed %}
+                                <span class="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full font-medium">
+                                    <i class="fas fa-check-circle"></i> Active
+                                </span>
+                            {% else %}
+                                <span class="px-3 py-1 bg-red-100 text-red-800 text-xs rounded-full font-medium">
+                                    <i class="fas fa-times-circle"></i> Unlisted
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Edit Category Form -->
+                <div class="bg-white rounded-xl shadow-sm p-8">
+                    <form method="POST" action="{% url 'edit_category' category.id %}" id="categoryForm">
+                        {% csrf_token %}
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Category Name -->
+                            <div>
+                                <label for="category_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Category Name <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" 
+                                       id="category_name" 
+                                       name="category_name" 
+                                       value="{{ category.category_name }}"
+                                       required
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="Enter category name">
+                                <p class="mt-1 text-sm text-gray-500">Enter a unique category name</p>
+                            </div>
+
+                            <!-- Slug -->
+                            <div>
+                                <label for="slug" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Slug <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text" 
+                                       id="slug" 
+                                       name="slug" 
+                                       value="{{ category.slug }}"
+                                       required
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                       placeholder="category-slug">
+                                <p class="mt-1 text-sm text-gray-500">URL-friendly version of the name</p>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mt-6">
+                            <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
+                                Description <span class="text-gray-400">(optional)</span>
+                            </label>
+                            <textarea id="description" 
+                                      name="description" 
+                                      rows="4"
+                                      class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                      placeholder="Enter category description">{{ category.description }}</textarea>
+                            <p class="mt-1 text-sm text-gray-500">Brief description about this category (max 255 characters)</p>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="mt-8 flex justify-between">
+                            <div>
+
+                            <div class="flex gap-4">
+                                <a href="{% url 'category_list' %}" 
+                                   class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                                    Cancel
+                                </a>
+                                <button type="submit" 
+                                        class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center">
+                                    <i class="fas fa-save mr-2"></i>
+                                    Update Category
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Help Section -->
+                <div class="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                    <div class="flex items-start">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-900">Important Notes</h3>
+                            <div class="mt-2 text-sm text-yellow-800">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>Changing the slug will affect all URLs using this category</li>
+                                    <li>Make sure the new slug is unique to avoid conflicts</li>
+                                    <li>Products linked to this category will remain associated</li>
+                                    <li>Deleting this category may affect related products and offers</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Auto-generate slug from category name (optional - only if user wants to regenerate)
+        let manualSlugEdit = false;
+        
+        document.getElementById('slug').addEventListener('input', function() {
+            manualSlugEdit = true;
+        });
+
+        document.getElementById('category_name').addEventListener('input', function(e) {
+            if (!manualSlugEdit) {
+                const slugInput = document.getElementById('slug');
+                const slug = e.target.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+                slugInput.value = slug;
+            }
+        });
+    </script>
+
+{% endblock %}

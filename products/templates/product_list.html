@@ -1,0 +1,271 @@
+{% extends 'admin_base.html' %}
+{% block title %}Product Management{% endblock %}
+{% block page_title %}Product Management{% endblock %}
+{% block content %}
+
+<!-- Header -->
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-xl font-bold text-gray-800">Product Management</h1>
+    <a href="{% url 'add_product' %}" 
+       class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+        <i class="fas fa-plus mr-2"></i> Add New Product
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="bg-white p-6 rounded-xl shadow-sm mb-6">
+    <form method="GET" action="{% url 'product_list' %}" class="space-y-4">
+
+        <!-- Search Row -->
+        <div class="flex flex-col md:flex-row md:items-center gap-3">
+            <label class="text-sm text-gray-700 md:w-32">Search</label>
+
+            <input type="text" name="search" value="{{ request.GET.search|default:'' }}"
+                placeholder="Search products..."
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 w-full md:w-72">
+
+            <button type="submit"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                Search
+            </button>
+
+            {% if request.GET.search %}
+            <a href="{% url 'product_list' %}"
+               class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                Clear
+            </a>
+            {% endif %}
+        </div>
+
+        <!-- Sort Row -->
+        <div class="flex flex-col md:flex-row md:items-center gap-3">
+            <label class="text-sm text-gray-700 md:w-32">Sort By</label>
+
+            <select name="sort" onchange="this.form.submit()"
+                class="w-full md:w-72 border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+                <option value="">Default</option>
+                <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+                <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest</option>
+                <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price: Low → High</option>
+                <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High → Low</option>
+            </select>
+        </div>
+
+        <!-- Category Filters -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="text-sm text-gray-700">Main Category</label>
+                <select name="main_category" onchange="this.form.submit()"
+                    class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">All</option>
+                    {% for main_cat in main_categories %}
+                    <option value="{{ main_cat.id }}" {% if main_category_filter == main_cat.id|stringformat:"s" %}selected{% endif %}>
+                        {{ main_cat.category_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="text-sm text-gray-700">Subcategory</label>
+                <select name="category" onchange="this.form.submit()"
+                    class="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="">All</option>
+                    {% for category in subcategories %}
+                    <option value="{{ category.id }}" {% if category_filter == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.parent.category_name }} → {{ category.category_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Product Table -->
+<div class="bg-white p-6 rounded-xl shadow-sm">
+    {% if products %}
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50 border-b text-gray-700 text-sm">
+                    <th class="py-3 px-4">Image</th>
+                    <th class="py-3 px-4">Product</th>
+                    <th class="py-3 px-4">Main Category</th>
+                    <th class="py-3 px-4">Subcategory</th>
+                    <th class="py-3 px-4">Base Price</th>
+                    <th class="py-3 px-4">Variants</th>
+                    <th class="py-3 px-4">Offer</th>
+                    <th class="py-3 px-4">Status</th>
+                    <th class="py-3 px-4 text-center">Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for product in products %}
+                <tr class="border-b hover:bg-gray-50 transition">
+                    
+                    <!-- Image -->
+                    <td class="py-3 px-4">
+                        {% with primary=product.images.all|dictsort:"-is_primary"|first %}
+                        {% if primary %}
+                        <img src="{{ primary.image_url.url }}" class="w-14 h-14 object-cover rounded-lg border">
+                        {% else %}
+                        <div class="w-14 h-14 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-image text-gray-400"></i>
+                        </div>
+                        {% endif %}
+                        {% endwith %}
+                    </td>
+
+                    <!-- Product Name -->
+                    <td class="py-3 px-4">
+                        <div class="font-medium text-gray-800">{{ product.product_name }}</div>
+                        <div class="text-xs text-gray-500">{{ product.slug }}</div>
+                    </td>
+
+                    <!-- Categories -->
+                    <td class="py-3 px-4 text-sm">
+                        {% if product.category.parent %}
+                        {{ product.category.parent.category_name }}
+                        {% else %}-{% endif %}
+                    </td>
+
+                    <td class="py-3 px-4 text-sm">{{ product.category.category_name }}</td>
+
+                    <!-- Price -->
+                    <td class="py-3 px-4 text-sm font-medium">₹{{ product.base_price }}</td>
+
+                    <!-- Variants -->
+                    <td class="py-3 px-4">
+                        <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                            {{ product.varients.count }} Variants
+                        </span>
+                        <a href="{% url 'manage_variants' product.id %}"
+                           class="ml-2 text-blue-600 text-sm hover:underline">Manage</a>
+                    </td>
+
+                    <!-- Offer -->
+                    <td class="py-3 px-4">
+                        {% if product.offer %}
+                        <span class="px-3 py-1 bg-green-100 text-green-700 text-xs rounded-full">
+                            {{ product.offer.discount }}% OFF
+                        </span>
+                        {% else %}
+                        <span class="text-gray-400 text-sm">No Offer</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Status -->
+                    <td class="py-3 px-4">
+                        {% if product.is_listed %}
+                        <span class="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">Listed</span>
+                        {% else %}
+                        <span class="px-3 py-1 bg-red-100 text-red-800 text-xs rounded-full">Unlisted</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="py-3 px-4 text-center">
+                        <div class="flex gap-2 justify-center">
+
+                            <a href="{% url 'view_product' product.id %}"
+                               class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm">
+                                View
+                            </a>
+
+                            <a href="{% url 'edit_product' product.id %}"
+                               class="px-3 py-1 bg-yellow-400 hover:bg-yellow-500 text-white rounded text-sm">
+                                Edit
+                            </a>
+
+                            <button type="button" 
+                                    onclick="openToggleModal({{ product.id }}, '{{ product.product_name }}', {{ product.is_listed|lower }})"
+                                    class="px-3 py-1 text-white rounded text-sm"
+                                    style="background: {% if product.is_listed %}#dc2626{% else %}#16a34a{% endif %}">
+                                {% if product.is_listed %}Unlist{% else %}List{% endif %}
+                            </button>
+                        </div>
+                    </td>
+
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="mt-6 flex justify-center">
+        <div class="flex gap-2">
+            {% if products.has_previous %}
+                <a href="?page={{ products.previous_page_number }}&search={{ search_query }}&category={{ category_filter }}&main_category={{ main_category_filter }}&sort={{ sort }}" 
+                   class="px-3 py-1 border rounded hover:bg-gray-100">Prev</a>
+            {% endif %}
+
+            <span class="px-3 py-1 bg-blue-600 text-white rounded">
+                Page {{ products.number }} of {{ products.paginator.num_pages }}
+            </span>
+
+            {% if products.has_next %}
+                <a href="?page={{ products.next_page_number }}&search={{ search_query }}&category={{ category_filter }}&main_category={{ main_category_filter }}&sort={{ sort }}" 
+                   class="px-3 py-1 border rounded hover:bg-gray-100">Next</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% else %}
+    <div class="text-center py-10 text-gray-500">
+        <i class="fas fa-box-open text-4xl mb-3"></i>
+        <p>No products found.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Toggle Status Modal -->
+<div id="toggleModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 mb-4">
+                <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Confirm Action</h3>
+            <p class="text-gray-600 mb-6" id="toggleModalMessage"></p>
+            <div class="flex gap-3">
+                <button onclick="closeToggleModal()" 
+                        class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                    Cancel
+                </button>
+                <form id="toggleForm" method="post" class="flex-1">
+                    {% csrf_token %}
+                    <button type="submit" 
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        Confirm
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openToggleModal(productId, productName, isListed) {
+    const modal = document.getElementById('toggleModal');
+    const message = document.getElementById('toggleModalMessage');
+    const form = document.getElementById('toggleForm');
+    
+    if (isListed) {
+        message.textContent = `Are you sure you want to unlist "${productName}"? It will be hidden from customers.`;
+    } else {
+        message.textContent = `Are you sure you want to list "${productName}"? It will be visible to customers.`;
+    }
+    
+    form.action = `/admin/products/toggle-product-status/${productId}/`;
+    modal.classList.remove('hidden');
+}
+
+function closeToggleModal() {
+    document.getElementById('toggleModal').classList.add('hidden');
+}
+</script>
+
+{% endblock %}

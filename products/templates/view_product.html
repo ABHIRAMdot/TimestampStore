@@ -1,0 +1,244 @@
+{% extends 'admin_base.html' %}
+{% block title %}View Product{% endblock %}
+{% block page_title %}Product Details{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h1 class="text-2xl font-semibold text-gray-800">{{ product.product_name }}</h1>
+        <p class="text-gray-500 text-sm mt-1">Product ID: #{{ product.id }}</p>
+    </div>
+    <div class="flex gap-3">
+        <a href="{% url 'edit_product' product.id %}" 
+           class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            <i class="fas fa-edit mr-2"></i>Edit Product
+        </a>
+        <a href="{% url 'product_list' %}" 
+           class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+            <i class="fas fa-arrow-left mr-2"></i>Back to List
+        </a>
+    </div>
+</div>
+
+<!-- Status Badge -->
+<div class="mb-6">
+    {% if product.is_listed %}
+        <span class="inline-flex items-center px-4 py-2 bg-green-100 text-green-800 rounded-lg font-medium">
+            <i class="fas fa-check-circle mr-2"></i>Active & Listed
+        </span>
+    {% else %}
+        <span class="inline-flex items-center px-4 py-2 bg-red-100 text-red-800 rounded-lg font-medium">
+            <i class="fas fa-times-circle mr-2"></i>Inactive / Unlisted
+        </span>
+    {% endif %}
+</div>
+
+<!-- Product Images -->
+<div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Product Images</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {% for img in product.images.all %}
+        <div class="relative border rounded-lg overflow-hidden">
+            <img src="{{ img.image_url.url }}" class="w-full h-48 object-cover" alt="{{ product.product_name }}">
+            {% if img.is_primary %}
+            <span class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                <i class="fas fa-star mr-1"></i>Primary
+            </span>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="col-span-4 text-center py-10 text-gray-500">
+            <i class="fas fa-image text-4xl mb-3"></i>
+            <p>No images uploaded.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Basic Information -->
+<div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+    <h2 class="text-lg font-semibold mb-4">Basic Information</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+            <p class="text-sm text-gray-600 mb-1">Product Name</p>
+            <p class="font-medium text-gray-800">{{ product.product_name }}</p>
+        </div>
+
+        <div>
+            <p class="text-sm text-gray-600 mb-1">Slug</p>
+            <p class="font-medium text-gray-800">{{ product.slug }}</p>
+        </div>
+
+        <div>
+            <p class="text-sm text-gray-600 mb-1">Main Category</p>
+            <p class="font-medium text-gray-800">
+                {% if product.category.parent %}
+                    {{ product.category.parent.category_name }}
+                {% else %}
+                    -
+                {% endif %}
+            </p>
+        </div>
+
+        <div>
+            <p class="text-sm text-gray-600 mb-1">Subcategory</p>
+            <p class="font-medium text-gray-800">{{ product.category.category_name }}</p>
+        </div>
+
+        <div>
+            <p class="text-sm text-gray-600 mb-1">Base Price</p>
+            <p class="font-medium text-gray-800 text-lg">₹{{ product.base_price }}</p>
+        </div>
+
+        <div>
+            <p class="text-sm text-gray-600 mb-1">Offer</p>
+            {% if product.offer %}
+            <div class="flex items-center gap-2">
+                <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                    {{ product.offer.discount }}% OFF
+                </span>
+                <span class="text-sm text-gray-600">{{ product.offer.name }}</span>
+            </div>
+            {% else %}
+            <p class="text-gray-400">No Offer</p>
+            {% endif %}
+        </div>
+
+        <div>
+            <p class="text-sm text-gray-600 mb-1">Created At</p>
+            <p class="font-medium text-gray-800">{{ product.created_at|date:"M d, Y H:i" }}</p>
+        </div>
+
+        <div>
+            <p class="text-sm text-gray-600 mb-1">Last Updated</p>
+            <p class="font-medium text-gray-800">{{ product.updated_at|date:"M d, Y H:i" }}</p>
+        </div>
+
+        <div class="md:col-span-2">
+            <p class="text-sm text-gray-600 mb-1">Description</p>
+            <p class="text-gray-800">{{ product.description }}</p>
+        </div>
+    </div>
+</div>
+
+<!-- Product Variants -->
+<div class="bg-white rounded-xl shadow-sm p-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">Product Variants ({{ product.varients.count }})</h2>
+        <a href="{% url 'manage_variants' product.id %}" 
+           class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+           <i class="fas fa-cog mr-2"></i>Manage Variants
+        </a>
+    </div>
+
+    {% if product.varients.all %}
+    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for variant in product.varients.all %}
+        <div class="border rounded-lg p-4 {% if not variant.is_listed %}bg-gray-50 opacity-75{% else %}bg-white{% endif %}">
+            <div class="flex justify-between items-start mb-3">
+                <div>
+                    <h3 class="font-semibold text-gray-800">{{ variant.colour }}</h3>
+                    <p class="text-xs text-gray-500">ID: #{{ variant.id }}</p>
+                </div>
+                {% if variant.is_listed %}
+                    <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
+                {% else %}
+                    <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">Inactive</span>
+                {% endif %}
+            </div>
+
+            <div class="space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Price:</span>
+                    <span class="font-medium text-gray-800">₹{{ variant.price }}</span>
+                </div>
+
+                <div class="flex justify-between">
+                    <span class="text-sm text-gray-600">Stock:</span>
+                    <span class="font-medium {% if variant.stock < 10 %}text-red-600{% else %}text-gray-800{% endif %}">
+                        {{ variant.stock }} units
+                    </span>
+                </div>
+
+                <div class="flex justify-between text-xs text-gray-500">
+                    <span>Updated:</span>
+                    <span>{{ variant.updated_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-3 border-t flex gap-2">
+                <a href="{% url 'manage_variants' product.id %}" 
+                   class="flex-1 text-center px-3 py-1 bg-blue-50 text-blue-600 text-sm rounded hover:bg-blue-100 transition">
+                    Edit
+                </a>
+                <button type="button"
+                        onclick="confirmToggleVariant({{ variant.id }}, '{{ variant.colour }}', {{ variant.is_listed|lower }})"
+                        class="flex-1 px-3 py-1 text-sm rounded transition"
+                        style="background: {% if variant.is_listed %}#fee2e2{% else %}#dcfce7{% endif %}; color: {% if variant.is_listed %}#dc2626{% else %}#16a34a{% endif %};">
+                    {% if variant.is_listed %}Disable{% else %}Enable{% endif %}
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-10 text-gray-500">
+        <i class="fas fa-box text-4xl mb-3"></i>
+        <p>No variants available.</p>
+        <a href="{% url 'manage_variants' product.id %}" 
+           class="inline-block mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            Add Variant
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Toggle Variant Modal -->
+<div id="toggleVariantModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 mb-4">
+                <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Confirm Action</h3>
+            <p class="text-gray-600 mb-6" id="toggleVariantMessage"></p>
+            <div class="flex gap-3">
+                <button onclick="closeToggleVariantModal()" 
+                        class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+                    Cancel
+                </button>
+                <form id="toggleVariantForm" method="get" class="flex-1">
+                    <button type="submit" 
+                            class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        Confirm
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confirmToggleVariant(variantId, colour, isListed) {
+    const modal = document.getElementById('toggleVariantModal');
+    const message = document.getElementById('toggleVariantMessage');
+    const form = document.getElementById('toggleVariantForm');
+    
+    if (isListed) {
+        message.textContent = `Are you sure you want to disable the "${colour}" variant? It will be hidden from customers.`;
+    } else {
+        message.textContent = `Are you sure you want to enable the "${colour}" variant? It will be visible to customers.`;
+    }
+    
+    form.action = `/admin/products/variants/toggle/${variantId}/`;
+    modal.classList.remove('hidden');
+}
+
+function closeToggleVariantModal() {
+    document.getElementById('toggleVariantModal').classList.add('hidden');
+}
+</script>
+
+{% endblock %}

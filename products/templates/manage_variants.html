@@ -1,0 +1,114 @@
+{% extends 'admin_base.html' %}
+{% block title %}Manage Variants - {{ product.product_name }}{% endblock %}
+{% block page_title %}Manage Variants{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="flex justify-between items-center mb-6">
+    <div>
+        <h1 class="text-xl font-bold text-gray-800">Manage Variants</h1>
+        <p class="text-gray-600 text-sm">Product: {{ product.product_name }}</p>
+    </div>
+
+    <a href="{% url 'edit_product' product.id %}"
+       class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">
+        <i class="fas fa-arrow-left mr-2"></i>Back to Product
+    </a>
+</div>
+
+<!-- Add New Variant -->
+<div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+    <h2 class="text-lg font-semibold mb-4">Add New Variant</h2>
+
+    <form method="POST" action="{% url 'manage_variants' product.id %}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+
+        <select name="colour" required
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <option value="">Select Color</option>
+            <option>Black</option><option>Blue</option><option>Brown</option>
+            <option>White</option><option>Red</option><option>Green</option>
+            <option>Yellow</option><option>Gray</option>
+        </select>
+
+        <input type="number" step="0.01" min="0" name="price" required
+               class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+               placeholder="Price">
+
+        <input type="number" min="0" name="stock"
+               class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+               placeholder="Stock">
+
+        <button type="submit"
+                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+            <i class="fas fa-plus mr-2"></i>Add
+        </button>
+    </form>
+</div>
+
+<!-- Existing Variants -->
+<div class="bg-white rounded-xl shadow-sm p-6">
+    <h2 class="text-lg font-semibold mb-4">Existing Variants ({{ variants.count }})</h2>
+
+    <table class="w-full text-left border-collapse">
+        <thead class="bg-gray-50 border-b">
+            <tr>
+                <th class="py-3 px-4">Color</th>
+                <th class="py-3 px-4">Price</th>
+                <th class="py-3 px-4">Stock</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for v in variants %}
+            <tr class="border-b hover:bg-gray-50">
+
+                <td class="py-3 px-4">{{ v.colour }}</td>
+
+                <td class="py-3 px-4">
+                    <form method="POST" action="{% url 'manage_variants' product.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="update">
+                        <input type="hidden" name="variant_id" value="{{ v.id }}">
+
+                        <input type="number" step="0.01" name="price" value="{{ v.price }}"
+                               class="w-24 px-3 py-1 border border-gray-300 rounded">
+                </td>
+
+                <td class="py-3 px-4">
+                        <input type="number" name="stock" value="{{ v.stock }}"
+                               class="w-20 px-3 py-1 border border-gray-300 rounded">
+                </td>
+
+                <td class="py-3 px-4">
+                    {% if v.is_listed %}
+                        <span class="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">Active</span>
+                    {% else %}
+                        <span class="px-3 py-1 bg-red-100 text-red-800 text-xs rounded-full">Inactive</span>
+                    {% endif %}
+                </td>
+
+                <td class="py-3 px-4 flex gap-2">
+
+                    <button type="submit"
+                            class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+                        Save
+                    </button>
+                    </form>
+
+                    <a href="{% url 'toggle_variant_status' v.id %}"
+                       class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 text-sm">
+                        {% if v.is_listed %}Disable{% else %}Enable{% endif %}
+                    </a>
+
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

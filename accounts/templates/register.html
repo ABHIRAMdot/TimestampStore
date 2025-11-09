@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Timestamp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-2">
+            
+            <!-- Signup Form -->
+            <div class="p-8 md:p-12">
+                <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Sign Up</h2>
+
+                <!-- Django Messages -->
+                {% if messages %}
+                <div class="mb-6">
+                    {% for message in messages %}
+                    <div class="p-3 rounded-lg {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ message }}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Registration Form -->
+                <form class="space-y-6" method="post" action="{% url 'register' %}">
+                    {% csrf_token %}
+                    
+                    <!-- First Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">First Name:</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.first_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Last Name -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Last Name:</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.last_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Email -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email:</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Phone Number -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Phone No:</label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.phone_number.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Password -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Password:</label>
+                        <div class="relative">
+                            {{ form.password }}
+                            <i class="fa-solid fa-eye absolute right-4 top-3 text-gray-400 cursor-pointer" id="togglePassword"></i>
+                        </div>
+                        {% if form.password.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Confirm Password -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password:</label>
+                        {{ form.confirm_password }}
+                        {% if form.confirm_password.errors %}
+                        <div class="text-red-500 text-sm mt-1">{{ form.confirm_password.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Non-field errors -->
+                    {% if form.non_field_errors %}
+                    <div class="text-red-500 text-sm mt-1">
+                        {% for error in form.non_field_errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Sign Up Button -->
+                    <button id="signupButton" type="submit" class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition font-medium flex items-center justify-center">
+                        <span id="signupText">Sign Up</span>
+                        <svg id="spinner" class="animate-spin h-5 w-5 ml-2 hidden" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l3 3-3 3v-4a8 8 0 01-8-8z"></path>
+                        </svg>
+                    </button>
+
+                    <!-- OTP Info Note -->
+                    <p class="text-sm text-center text-gray-500 mt-2">
+                        After signing up, an OTP will be sent to your email for verification.
+                    </p>
+
+                    <!-- Brand Tagline -->
+                    <div class="text-center mt-6">
+                        <p class="text-lg font-semibold text-gray-800">Your Perfect Watch Shop</p>
+                    </div>
+
+                    <!-- Login Link -->
+                    <div class="text-center">
+                        <p class="text-gray-600">
+                            Already have an account? 
+                            <a href="{% url 'login' %}" class="text-blue-600 hover:text-blue-700 font-medium">Login</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Right Image Section -->
+            <div class="hidden lg:block relative">
+                <img 
+                    src="https://images.unsplash.com/photo-1547996160-81dfd9c4b1b3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80" 
+                    alt="Watch Collection"
+                    class="w-full h-full object-cover"
+                >
+                <div class="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                    <div class="text-white text-center p-8">
+                        <h3 class="text-2xl font-bold mb-4">Join Timestamp</h3>
+                        <p class="text-lg">Start your journey with premium timepieces</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Toggle password visibility
+        const toggle = document.getElementById('togglePassword');
+        const password = document.querySelector('input[name="password"]');
+        toggle.addEventListener('click', () => {
+            const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+            password.setAttribute('type', type);
+            toggle.classList.toggle('fa-eye-slash');
+        });
+
+        // Show loading spinner when signing up
+        const btn = document.getElementById('signupButton');
+        const spinner = document.getElementById('spinner');
+        const text = document.getElementById('signupText');
+        btn.addEventListener('click', () => {
+            spinner.classList.remove('hidden');
+            text.textContent = 'Creating Account...';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+{% extends 'admin_base.html' %}
+{% block title %}Add Offer{% endblock %}
+{% block page_title %}Add Offer{% endblock %}
+
+{% block content %}
+<div class="p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-semibold text-gray-800">Add New Offer</h2>
+        <a href="{% url 'offer_list' %}"
+           class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+
+    <div class="bg-white p-6 rounded-xl shadow-sm">
+        <form method="POST">
+            {% csrf_token %}
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                <div>
+                    <label class="text-sm font-medium text-gray-700">Offer Name *</label>
+                    <input type="text" name="name" class="input-field" required>
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-700">Category *</label>
+                    <select name="category" class="input-field" required>
+                        <option value="">Select Category</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">
+                            {% if category.parent %}{{ category.parent.category_name }} → {% endif %}
+                            {{ category.category_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-700">Discount (%) *</label>
+                    <input type="number" name="discount" step="0.01" min="0" max="100" class="input-field" required>
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-700">Start Date *</label>
+                    <input type="date" name="start_date" class="input-field" required>
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-700">End Date *</label>
+                    <input type="date" name="end_date" class="input-field" required>
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-700">Status</label>
+                    <select name="status" class="input-field">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="expired">Expired</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <label class="text-sm font-medium text-gray-700">Description</label>
+                <textarea name="description" rows="3" class="input-field"></textarea>
+            </div>
+
+            <div class="flex justify-end mt-6 gap-3">
+                <a href="{% url 'offer_list' %}" class="btn-gray">Cancel</a>
+                <button type="submit" class="btn-blue"><i class="fas fa-save mr-1"></i>Save Offer</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
