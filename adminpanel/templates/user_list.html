@@ -8,23 +8,13 @@
                 <!-- Header -->
                 <div class="flex justify-between items-center mb-8">
                     <h1 class="text-2xl font-bold text-gray-800">{% block page_title %}User Management{% endblock %}</h1>
-                    <div class="flex items-center">
-                        <div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                    <!-- <div class="flex items-center"> -->
+                        <!-- <div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
                             {{ request.user.first_name.0|upper|default:'A' }}
-                        </div>
-                    </div>
+                        </div> -->
+                    <!-- </div> -->
                 </div>
-
-                <!-- Display Messages -->
-                <!-- {% if messages %}
-                    {% for message in messages %}
-                        <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %} -->
-
-                <!-- Search Bar -->
+                
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
                     <form method="GET" action="{% url 'user_list' %}" class="flex gap-4">
                         <div class="flex-1">
@@ -89,16 +79,16 @@
                                     <td class="py-4">
                                         <div class="flex gap-2">
                                             <!-- Block/Unblock Button -->
-                                            <a href="{% url 'toggle_user_status' user.id %}" 
-                                               onclick="return confirm('Are you sure you want to {% if user.is_active %}block{% else %}unblock{% endif %} this user?')"
-                                               class="px-3 py-1 {% if user.is_active %}bg-yellow-100 text-yellow-800 hover:bg-yellow-200{% else %}bg-green-100 text-green-800 hover:bg-green-200{% endif %} rounded text-sm font-medium transition">
-                                                {% if user.is_active %}
-                                                    <i class="fas fa-ban mr-1"></i> Block
-                                                {% else %}
-                                                    <i class="fas fa-check mr-1"></i> Unblock
-                                                {% endif %}
-                                            </a>
-                                            
+                                            <button type="button"
+                                            onclick="openUserStatusModal({{ user.id }}, '{{ user.first_name }}', {{ user.is_active|yesno:'true,false' }})"
+                                            class="px-3 py-1 {% if user.is_active %}bg-yellow-100 text-yellow-800 hover:bg-yellow-200{% else %}bg-green-100 text-green-800 hover:bg-green-200{% endif %} rounded text-sm font-medium transition">
+                                        {% if user.is_active %}
+                                            <i class="fas fa-ban mr-1"></i> Block
+                                        {% else %}
+                                            <i class="fas fa-check mr-1"></i> Unblock
+                                        {% endif %}
+                                    </button>
+                                    
                                             <!-- Delete Button -->
  -->
                                 {% empty %}
@@ -136,7 +126,56 @@
                         </div>
                     </div>
                     {% endif %}
+
+                    <!-- Block / Unblock User Modal -->
+                    <div id="userStatusModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+                            
+                            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 mb-4 mx-auto">
+                                <i class="fas fa-user-shield text-yellow-600 text-xl"></i>
+                            </div>
+
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2 text-center" id="userStatusTitle"></h3>
+                            <p class="text-gray-600 mb-6 text-center" id="userStatusMessage"></p>
+
+                            <div class="flex gap-3">
+                                <button onclick="closeUserStatusModal()" 
+                                    class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                                    Cancel
+                                </button>
+
+                                <a id="confirmUserStatusBtn"
+                                class="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-center">
+                                    Confirm
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
+
+<script>
+    function openUserStatusModal(userId, userName, isActive) {
+        const modal = document.getElementById("userStatusModal");
+        const title = document.getElementById("userStatusTitle");
+        const message = document.getElementById("userStatusMessage");
+        const confirmBtn = document.getElementById("confirmUserStatusBtn");
+    
+        const action = isActive ? "Block" : "Unblock";
+    
+        title.textContent = `${action} User`;
+        message.textContent = `Are you sure you want to ${action.toLowerCase()} ${userName}?`;
+    
+        confirmBtn.href = `/admin/users-list/toggle-user-status/${userId}/`;
+    
+        modal.classList.remove("hidden");
+    }
+    
+    function closeUserStatusModal() {
+        document.getElementById("userStatusModal").classList.add("hidden");
+    }
+    </script>
+            
 {% endblock %}

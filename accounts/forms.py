@@ -64,7 +64,7 @@ class RegistrationForm(forms.ModelForm):
         }
 
     def clean_first_name(self):
-        first_name = self.cleaned_data.get('first_name')
+        first_name = self.cleaned_data.get('first_name').strip()
         if first_name:
             if len(first_name) < 2:
                 raise forms.ValidationError("First name must be at least 2 characters long")
@@ -73,7 +73,7 @@ class RegistrationForm(forms.ModelForm):
         return first_name
 
     def clean_last_name(self):
-        last_name = self.cleaned_data.get('last_name')
+        last_name = self.cleaned_data.get('last_name').strip()
         if last_name:
             if len(last_name) < 2:
                 raise forms.ValidationError("Last name must be at least 2 characters long")
@@ -82,7 +82,7 @@ class RegistrationForm(forms.ModelForm):
         return last_name
 
     def clean_email(self):
-        email = self.cleaned_data.get('email')
+        email = self.cleaned_data.get('email').strip()
         if email:
             try:
                 validate_email(email)
@@ -136,8 +136,8 @@ class RegistrationForm(forms.ModelForm):
             if len(password) < 8:
                 raise forms.ValidationError("Password must be at least 8 characters long")
             # Add more password strength checks if needed
-            # if not re.search(r'[A-Z]', password):
-            #     raise forms.ValidationError("Password must contain at least one uppercase letter")
+            if not re.search(r'[A-Z]', password):
+                raise forms.ValidationError("Password must contain at least one uppercase letter")
             # if not re.search(r'[a-z]', password):
             #     raise forms.ValidationError("Password must contain at least one lowercase letter")
             # if not re.search(r'[0-9]', password):

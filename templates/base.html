@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timestamp - Premium Watches</title>
+    <title>{% block title %}TimeStamp - Premium Watches{% endblock %}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -36,18 +36,120 @@
         .watch-card:hover {
             transform: translateY(-5px);
         }
+        
+        /* Toast notification styles */
+        .toast {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+
+/* 🔥 Toast Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-10px); }
+}
+.animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+.animate-fade-out { animation: fadeOut 0.4s ease-out forwards; }
+
+
+
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 
-
 <body class="font-sans bg-white text-primary">
-<!-- upto this make base -->
     {% include 'includes/navbar.html' %}
-    {% block content %}
+    
+    <!-- Django Messages as Toast Notifications -->
+    {% if messages %}
+        <div class="fixed top-20 right-4 z-50 space-y-3" id="messageContainer">
+            {% for message in messages %}
+                <div class="toast max-w-md bg-white shadow-lg rounded-lg pointer-events-auto flex items-start p-4 border-l-4 
+                    {% if message.tags == 'error' %}border-red-500
+                    {% elif message.tags == 'success' %}border-green-500
+                    {% elif message.tags == 'warning' %}border-yellow-500
+                    {% else %}border-blue-500{% endif %}"
+                    role="alert">
+                    <div class="flex-shrink-0">
+                        {% if message.tags == 'error' %}
+                            <i class="fas fa-exclamation-circle text-red-500 text-xl"></i>
+                        {% elif message.tags == 'success' %}
+                            <i class="fas fa-check-circle text-green-500 text-xl"></i>
+                        {% elif message.tags == 'warning' %}
+                            <i class="fas fa-exclamation-triangle text-yellow-500 text-xl"></i>
+                        {% else %}
+                            <i class="fas fa-info-circle text-blue-500 text-xl"></i>
+                        {% endif %}
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <p class="text-sm font-medium text-gray-900">
+                            {{ message }}
+                        </p>
+                    </div>
+                    <button onclick="this.parentElement.remove()" class="ml-4 flex-shrink-0 text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            {% endfor %}
+        </div>
+        <script>
+            // Auto-dismiss messages after 5 seconds
+            setTimeout(() => {
+                const container = document.getElementById('messageContainer');
+                if (container) {
+                    container.style.transition = 'opacity 0.3s';
+                    container.style.opacity = '0';
+                    setTimeout(() => container.remove(), 300);
+                }
+            }, 5000);
+        </script>
+    {% endif %}
 
+    {% block content %}
     {% endblock %}
 
     {% include 'includes/footer.html' %}
     
+    {% block extra_js %}{% endblock %}
+    
+    <div id="toastContainer" class="fixed top-5 right-5 z-50 space-y-3"></div>
+
+<script>
+  //  Toast Function (Global)
+  function showToast(message, type = "success") {
+    const container = document.getElementById("toastContainer");
+
+    const toast = document.createElement("div");
+    toast.className = `
+      flex items-center gap-3 px-5 py-3 rounded-xl shadow-lg text-white animate-fade-in 
+      ${type === "success" ? "bg-green-600" : "bg-red-600"}
+    `;
+    
+    toast.innerHTML = `<span class="font-medium">${message}</span>`;
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+      toast.classList.add("animate-fade-out");
+      setTimeout(() => toast.remove(), 400);
+    }, 2500);
+  }
+</script>
+
+
 </body>
 </html>

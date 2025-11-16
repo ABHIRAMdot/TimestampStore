@@ -107,16 +107,44 @@
                     
                     <!-- Image -->
                     <td class="py-3 px-4">
-                        {% with primary=product.images.all|dictsort:"-is_primary"|first %}
-                        {% if primary %}
-                        <img src="{{ primary.image_url.url }}" class="w-14 h-14 object-cover rounded-lg border">
-                        {% else %}
-                        <div class="w-14 h-14 bg-gray-200 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-image text-gray-400"></i>
-                        </div>
-                        {% endif %}
+                        {% with first_variant=product.varients.first %}
+                            {% if first_variant %}
+                    
+                                {# 1. GET PRIMARY IMAGES (NO ARGUMENTS) #}
+                                {% with primary_images=first_variant.images.all %}
+                                    {% with primary=primary_images|dictsort:"-is_primary"|first %}
+                    
+                                        {% if primary.is_primary %}
+                                            <img src="{{ primary.image.url }}"
+                                                 class="w-14 h-14 object-cover rounded-lg border">
+                    
+                                        {% else %}
+                                            {# 2. FALLBACK TO FIRST IMAGE #}
+                                            {% with fallback=first_variant.images.first %}
+                                                {% if fallback %}
+                                                    <img src="{{ fallback.image.url }}"
+                                                         class="w-14 h-14 object-cover rounded-lg border">
+                                                {% else %}
+                                                    <div class="w-14 h-14 bg-gray-200 rounded-lg flex items-center justify-center">
+                                                        <i class="fas fa-image text-gray-400"></i>
+                                                    </div>
+                                                {% endif %}
+                                            {% endwith %}
+                                        {% endif %}
+                    
+                                    {% endwith %}
+                                {% endwith %}
+                    
+                            {% else %}
+                    
+                                <div class="w-14 h-14 bg-gray-200 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-image text-gray-400"></i>
+                                </div>
+                    
+                            {% endif %}
                         {% endwith %}
                     </td>
+                    
 
                     <!-- Product Name -->
                     <td class="py-3 px-4">
@@ -141,8 +169,8 @@
                         <span class="px-3 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
                             {{ product.varients.count }} Variants
                         </span>
-                        <a href="{% url 'manage_variants' product.id %}"
-                           class="ml-2 text-blue-600 text-sm hover:underline">Manage</a>
+                        <!-- <a href="{% url 'manage_variants' product.id %}"
+                           class="ml-2 text-blue-600 text-sm hover:underline">Manage</a> -->
                     </td>
 
                     <!-- Offer -->

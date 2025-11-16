@@ -10,6 +10,8 @@ from django.core.mail import send_mail
 from django.conf import settings
 from datetime import timedelta
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_POST
 
 
 # Create your views here.
@@ -20,9 +22,9 @@ def _otp_expiry_minutes():
     from settings or fallback to 10.
     """
     try:
-        return int(getattr(settings, 'OTP_EXPIRY_MINUTES', 1))
+        return int(getattr(settings, 'OTP_EXPIRY_MINUTES', 2))
     except Exception:
-        return 1
+        return 2
 
 def register(request):
     if request.method == 'POST':
@@ -48,8 +50,7 @@ def register(request):
                 'otp_created_at': otp_created_at # stored as a string in the session
             }
             request.session.set_expiry(600 ) #10 minutes
-            
-            
+                        
             # Send OTP email
             subject = "Your account verification code"
             expiry_minutes = _otp_expiry_minutes() # calling the OTP expiring fucntion here
@@ -79,7 +80,7 @@ def register(request):
     
 
 # OTP Verification View
-
+@never_cache
 def verify_otp(request):
     # Get pending registration data from session
     pending_data = request.session.get('pending_registration')
@@ -115,14 +116,6 @@ def verify_otp(request):
             minutes = int(remaining.total_seconds() // 60)
             seconds = int(remaining.total_seconds() % 60)
             time_remaining = f"{minutes} : {seconds:02d}"
-        # else:
-        #     time_remaining ="0.00"
-        #     otp_expired = True # marking as expired
-        #     messages.error(request,"OTP has expired. Please register again.")
-        #     #delete the user and clear the session immediatly
-        #     user.delete()
-        #     request.session.pop('pending_user_email',None)
-        #     return redirect('register')
 
     if request.method == 'POST':
         form = EmailOTPForm(request.POST)
@@ -179,9 +172,10 @@ def verify_otp(request):
 
     return render(request, 'email/otp_verify.html', {'form': form, 'email': email, 'time_remaining':time_remaining})
 
+@never_cache
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect('user_dashboard')
+        return redirect('home')
 
     if request.method== 'POST':
         email = request.POST.get('email')
@@ -193,47 +187,54 @@ def login_view(request):
             return render(request, 'login.html')
             
         user = authenticate(request, email=email, password=password)
+        # if authentication failed
+        if user is  None:
+            #check the user exists but inactive
+            try:
+                existing_user = Account.objects.get(email=email)
+                if not existing_user.is_active:
+                    messages.error(request, "Your account is blocked by admin.")
+                    return render(request, 'login.html')
+            except Account.DoesNotExist:
+                pass
+            messages.success(request,'Invalid email or password.')
+            return render(request, 'login.html')
+        #valid user but inactive(safty check)
+        if not user.is_active:
+            messages.error(request, "Your account is blocked by the admin.")
+            return render(request, 'login.html')
 
-        if user is not None:
-            login(request,user)
-            messages.success(request,'Login successful! Welcome back.')
+        # valid and active user login
+        login(request, user)
+        messages.success(request, 'Login successful! Welcome back.')
 
+
+        # Send login notification email
+        try:
             send_mail(
-                subject= 'Login Notification',
-                message= f'Hi {user.first_name} you have successfully logged in',
-                from_email= settings.DEFAULT_FROM_EMAIL,
-                recipient_list= [user.email],
+                subject='Login Notification',
+                message=f'Hi {user.first_name}, you have successfully logged in.',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
                 fail_silently=True,
             )
+        except Exception:
+            pass  # Don't fail login if email fails
 
-            return render(request,'user_dashboard.html')
-        else:
-            messages.error(request,'Invalid email or password.')
-            return render(request, 'login.html')
+        # Redirect to next or home
+        next_url = request.GET.get('next', 'home')
+        return redirect(next_url)
+        # else:
+        #     messages.error(request,'Invalid email or password.')
+        #     return render(request, 'login.html')
     
     return render(request,'login.html',{})
-
-
-
-@login_required(login_url='login')
-def user_dashboard(request):
-    return render(request, 'user_dashboard.html')
-
-
-
-
-
 
 def logout_view(request):
     logout(request)
     messages.success(request,'Logged out successfully.')
-    return redirect('login')
-
-
-
-
-
-# Forgot Password (Send OTP)
+    print("user logged out")
+    return redirect('home')
 
 def forgot_password(request):
     if request.method == 'POST':
@@ -308,11 +309,6 @@ def reset_password(request):
             minutes = int(remaining.total_seconds() // 60)
             seconds = int(remaining.total_seconds() % 60)
             time_remaining = f"{minutes}:{seconds:02d}"
-        # else:
-        #     time_remaining ="0.00"
-        #     messages.error(request, "OTP has expired. Please request a new one.")
-
-
 
     if request.method == 'POST':
         otp = request.POST.get('otp')
@@ -343,7 +339,7 @@ def reset_password(request):
             user.otp = None
             user.otp_created_at = None
             user.save()
-            request.session['reset_email',None]
+            request.session.pop('reset_email',None)
             messages.success(request, "Password reset successful! You can now log in.")
             return redirect('login')
         else:
@@ -353,6 +349,7 @@ def reset_password(request):
     return render(request, 'password/reset_password.html', {'email': email, 'time_remaining': time_remaining})
 
 # Resend OTP (During Registration)
+@never_cache
 def resend_otp(request):
     pending_data = request.session.get('pending_registration')
 
@@ -384,3 +381,37 @@ def resend_otp(request):
     send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email], fail_silently=True)
     messages.success(request, "A new OTP has been sent to your email.")
     return redirect('verify_otp')
+
+#resend OTP during reset password
+@never_cache
+def resend_reset_otp(request):
+    email = request.session.get('reset_email')
+    if not email:
+        messages.error(request, 'Session expired. Please request password rest again.')
+        return redirect('forgot_password')
+    
+    try:
+        user = Account.objects.get(email=email)
+    except Account.DoesNotExist:
+        messages.error(request, "User not found. Please try again.")
+        return redirect('forgot_password')
+    
+    #Generate new OTP
+    otp = f"{random.randint(0, 999999):06d}"
+    user.otp = otp
+    user.otp_created_at = timezone.now()
+    user.save()
+
+    #send mail
+    subject = "Password Reset OTP (Resent) - Timestamp"
+    message = (
+        f"Hello {user.first_name}, \n\n"
+        f"Your new OTP for password reset is: {otp} \n"
+        f"It expires in {_otp_expiry_minutes()} minutes.\n\n"
+        "If you did not request this, ignore this email.\n\n"
+        "Thanks,\nTimestamp Team"        
+    )
+
+    send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [email], fail_silently=True)
+    messages.success(request, "A new OTP has been sent to your email.")
+    return redirect('reset_password')

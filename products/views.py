@@ -7,7 +7,7 @@ from django.db.models import Q
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from category.models import Category, Offer
-from products.models import Product,Product_images, Product_varients
+from products.models import Product, Product_varients,VariantImage
 from django.utils.text import slugify
 
 # Create your views here.
@@ -26,7 +26,7 @@ def product_list(request):
     main_category_filter = request.GET.get('main_category', '')
 
 
-    products = Product.objects.select_related('category', 'offer').prefetch_related('varients', 'images').order_by('-created_at')
+    products = Product.objects.select_related('category', 'offer').prefetch_related('varients__images').order_by('-created_at')
 #search filter
     if search_query:
         products = products.filter(
@@ -56,7 +56,7 @@ def product_list(request):
     
 
 
-    paginator = Paginator(products,1)
+    paginator = Paginator(products,3)
     page_number = request.GET.get('page')
     products_page = paginator.get_page(page_number)
 
@@ -74,6 +74,7 @@ def product_list(request):
         'category_filter' : category_filter,
         'main_category_filter': main_category_filter,
         'subcategories' : subcategories,
+        'main_categories': main_categories,
         'sort':sort,
 
     }
@@ -93,15 +94,13 @@ def add_product(request):
     offers = Offer.objects.filter(status='active').order_by('name')
 
     if request.method == 'POST':
+        print("add product post")
         product_name = request.POST.get('product_name', '').strip()
         description = request.POST.get('description', '').strip()
         category_id = request.POST.get('category')
         offer_id = request.POST.get('offer', '').strip()
         slug = request.POST.get('slug', '').strip()
         base_price = request.POST.get('base_price', '').strip()
-
-        # Get uploaded images
-        images = request.FILES.getlist('images')
 
         #Get varient data
         colours = request.POST.getlist('colour[]')
@@ -145,15 +144,26 @@ def add_product(request):
             return render(request, 'add_product.html', {
                 'categories': categories,
                 'offers': offers,                
-            })                     
-        
-        if not images or len(images) < 3 :
-            messages.error(request, 'Please upload at least 3 product images.')
-            return render(request, 'add_product.html', {
-                'categories': categories,
-                'offers': offers,                
-            })
-        
+            })        
+
+        # auto-generate slug if not provided
+        if not slug:
+            slug = slugify(product_name)
+        else:
+            slug = slugify(slug)    
+
+
+
+        #  Collect all variant images ---
+        variant_images = {}
+        for key in request.FILES.keys():
+            if key.startswith('variant_images_'):
+                variant_images[key] = request.FILES.getlist(key)
+
+        if not variant_images:
+            messages.error(request, 'Please upload at least one variant with images.')
+            return render(request, 'add_product.html', {'categories': categories, 'offers': offers})
+
         if not colours or len(colours) == 0:
             messages.error(request, 'Please add at least one product variant.')
             return render(request, 'add_product.html', {
@@ -178,11 +188,7 @@ def add_product(request):
                     'offers': offers,                    
                 })                
         
-        # auto-generate slug if not provided
-        if not slug:
-            slug = slugify(product_name)
-        else:
-            slug = slugify(slug)
+
         
         #check if product name already exists
         if Product.objects.filter(product_name__iexact=product_name).exists():
@@ -204,34 +210,19 @@ def add_product(request):
             with transaction.atomic():
                 #now create product
                 product = Product.objects.create(
-                    product_name = product_name,
+                    product_name=product_name,
                     slug=slug,
                     description=description,
                     base_price=base_price,
                     category_id=category_id,
                     offer_id=offer_id if offer_id else None,
                     is_listed=True
-
                 )
-                #save image
-                for image in images:
-                    Product_images.objects.create(
-                        product=product,
-                        image_url=image,
-                        is_listed=True
-                    )
 
-                # Set the first uploaded image as primary
-                first_image = Product_images.objects.filter(product=product).first()
-                if first_image:
-                    first_image.is_primary = True
-                    first_image.save()
-
-
-                # save product varients
+                # Loop over all variants (colour, price, stock)
                 for i in range(len(colours)):
                     if colours[i] and prices[i]:
-                        Product_varients.objects.create(
+                        variant_obj = Product_varients.objects.create(
                             product=product,
                             colour=colours[i],
                             price=prices[i],
@@ -239,14 +230,26 @@ def add_product(request):
                             is_listed=True,
 
                         )
+                    # Save images for this variant
+                    images = request.FILES.getlist(f'variant_images_{i}[]') or []
+
+                    if not images or len(images) < 3:
+                        print("add atleast 3 images")
+                        raise ValueError(f'Variant {i+1} must have at least 3 images.')
+                    #save imge
+                    for index, img in enumerate(images):
+                        VariantImage.objects.create(
+                            variant=variant_obj,
+                            image=img,
+                            is_listed=True,
+                            is_primary=(index == 0)  # first image is primary
+                        )
+
                 messages.success(request, f'Product "{product_name}" added successfully.')
                 return redirect('product_list')
         except Exception as e:
             messages.error(request, f'Error adding product: {str(e)}')
-            return render(request, 'add_product.html', {
-                'categories':categories,
-                'offera':offers,
-            })
+            return render(request, 'add_product.html', {'categories':categories,'offera':offers,})
     context = {
         'categories':categories,
         'offers' : offers,
@@ -264,31 +267,27 @@ def edit_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     categories = Category.objects.filter(is_listed=True,parent__isnull=False).select_related('parent').order_by('parent__category_name','category_name')
     main_categories = Category.objects.filter(is_listed =True, parent=None).order_by('category_name')
-
     offers = Offer.objects.filter(status='active').order_by('name')
 
+
     if request.method == 'POST':
+        print("edit post")
         product_name = request.POST.get('product_name', '').strip()
         description = request.POST.get('description', '').strip()
         category_id = request.POST.get('category', '')
         offer_id = request.POST.get('offer', '').strip()
         slug = request.POST.get('slug', '').strip()
         base_price = request.POST.get('base_price', '').strip()
-        
-
-        #get images if uploaded
-        new_images = request.FILES.getlist('images')
-
-        # Get images to delete
-        delete_image_ids = request.POST.getlist('delete_images')
-
 
         # Get variant data
         colours = request.POST.getlist('colour[]')
         prices = request.POST.getlist('price[]')
         stocks = request.POST.getlist('stock[]')
-        variant_ids = request.POST.getlist('variant_id[]')
-        delete_variants = request.POST.getlist('delete_variants')
+        variant_ids = request.POST.getlist('variant_id[]') #existing variants
+        delete_variants = request.POST.getlist('delete_variants') #variants to delete
+
+        # Get images to delete
+        delete_image_ids = request.POST.getlist('delete_images')
 
         if not product_name:
             messages.error(request, 'Product name is required.')
@@ -323,7 +322,7 @@ def edit_product(request, product_id):
             if base_price <= 0:
                 raise ValueError
         except ValueError:
-            messages.error(request, 'Please enter a valid bse price.')
+            messages.error(request, 'Please enter a valid base price.')
             return render(request, 'edit_product.html', {
                 'product': product,
                 'categories': categories,
@@ -331,7 +330,7 @@ def edit_product(request, product_id):
             })
         
         if Product.objects.filter(product_name__iexact=product_name).exclude(id=product_id).exists():
-            messages.error(request, f'Producct "{product_name}" already exists')
+            messages.error(request, f'Product "{product_name}" already exists')
             return render(request, 'edit_product.html', {
                 'product' : product,
                 'categories' : categories,
@@ -358,53 +357,74 @@ def edit_product(request, product_id):
                 product.slug = slug
                 product.save()
 
-                # Delete select images
+                # Delete selected images
                 if delete_image_ids:
-                    Product_images.objects.filter(id__in=delete_image_ids, product=product).delete()
-                
-                #add new images
-                for image in new_images:
-                    Product_images.objects.create(
-                        product=product,
-                        image_url=image,
-                        is_listed=True
-                    )
-                # Handle Primary Image Selection
-                primary_image_id = request.POST.get('primary_image')
-                if primary_image_id:
-                    product.images.update(is_primary=False)  # Make all not primary
-                    Product_images.objects.filter(id=primary_image_id, product=product).update(is_primary=True)
+                    VariantImage.objects.filter(id__in=delete_image_ids).delete()
 
-                
-                #check the prodct has at least 3 images
-                if product.images.filter(is_listed=True).count() <3:
-                    messages.warning(request, 'Product should have atleast 3 images.')
-                
-                # Handle variants - Delete selected variants
+                #Handling deleting selected variants(and their images cascade automatically)
                 if delete_variants:
                     Product_varients.objects.filter(id__in=delete_variants, product=product).delete()
 
-                # Update existing variants
+                #update existing variants
                 for i in range(len(variant_ids)):
                     if variant_ids[i] and str(variant_ids[i]) not in delete_variants:
-                        variant = Product_varients.objects.get(id=variant_ids[i], product=product)
-                        variant.colour = colours[i]
-                        variant.price = prices[i]
-                        variant.stock = stocks[i] if stocks[i] else 0
-                        variant.save()
+                        variant_obj = Product_varients.objects.get(id=variant_ids[i], product=product)
+                        variant_obj.colour = colours[i]
+                        variant_obj.price = prices[i]
+                        variant_obj.stock = stocks[i] if stocks[i] else 0
+                        variant_obj.save()
+
+                        #Update or add new images for existing variant
+                        new_imgs = request.FILES.getlist(f'variant_images_{i}[]') or []
+                        for img in new_imgs:
+                            VariantImage.objects.create(
+                                variant=variant_obj,
+                                image=img,
+                                is_listed=True,
+                                is_primary=False
+                            )
+                        
+                        #handle primary image changes
+                        primary_image_key = f'set_primary_{variant_ids[i]}'
+                        if primary_image_key in request.POST:
+                            print("changing primary image")
+                            new_primary_id = request.POST.get(primary_image_key)
+                            if new_primary_id:
+                                #remove primary from all images in this vaiant
+                                VariantImage.objects.filter(variant=variant_obj).update(is_primary=False)
+                                #set new primary
+                                VariantImage.objects.filter(id=new_primary_id, variant=variant_obj).update(is_primary=True)
 
                 # Add new variants (those without variant_id)
                 new_variant_start = len(variant_ids)
                 if len(colours) > new_variant_start:
                     for i in range(new_variant_start, len(colours)):
                         if colours[i] and prices[i]:
-                            Product_varients.objects.create(
+                            new_variant = Product_varients.objects.create(
                                 product=product,
                                 colour=colours[i],
                                 price=prices[i],
                                 stock=stocks[i] if stocks[i] else 0,
                                 is_listed=True
                             )
+                            # add images for this new variant
+                            images = request.FILES.getlist(f'variant_images_{i}[]') or []
+                            if len(images) >= 3:
+                                for index, img in enumerate(images):
+                                    VariantImage.objects.create(
+                                        variant=new_variant,
+                                        image=img,
+                                        is_listed=True,
+                                        is_primary=(index ==0 )
+                                    )
+                            else:
+                                raise ValueError(f'Variant {i+1} must have at least 3 images')
+                            
+                all_variants = product.varients.all()
+                for idx, variant in enumerate(all_variants, 1):
+                    image_count = variant.images.count()
+                    if image_count < 3:
+                        raise ValueError(f'Variant {idx} ({variant.colour}) must have at least 3 images (currently has {image_count})')
 
                 messages.success(request, f'Product "{product_name}" updated successfully.')
                 return redirect('product_list')
@@ -509,7 +529,7 @@ def toggle_variant_status(request, variant_id):
      status = "listed" if variant.is_listed else "unlisted"
      messages.success(request, f'Variant has been {status}.')
 
-     return redirect('manage_variants', product_id=variant.product.id)
+     return redirect('view_product', product_id=variant.product.id)
 
 
 

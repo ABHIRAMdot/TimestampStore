@@ -6,7 +6,8 @@ urlpatterns = [
     path('verify-otp/', views.verify_otp, name='verify_otp'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-    path('user-dashboard/', views.user_dashboard, name='user_dashboard'),
+    path('resend-reset-otp/', views.resend_reset_otp, name='resend_reset_otp'),
+
 
     #  Consistent Password Reset URLs
     path('forgot-password/', views.forgot_password, name='forgot_password'),

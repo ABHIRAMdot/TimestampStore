@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'products',
     'cart',
     'offers',
+    'home',
 
     'django.contrib.sites',
 
@@ -65,6 +66,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 
     "allauth.account.middleware.AccountMiddleware",
+    'accounts.middleware.UserStatusCheckMiddleware', 
 
 ]
 
@@ -83,6 +85,8 @@ TEMPLATES = [
                 'category.context_processor.menu_links',
                 'django.template.context_processors.request',
 
+                'home.context_processors.navbar_context',
+                
             ],
         },
     },
@@ -223,7 +227,7 @@ SOCIALACCOUNT_QUERY_EMAIL = True
 SITE_ID = 1
 
 
-LOGIN_REDIRECT_URL = 'user_dashboard'
+LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
 
 

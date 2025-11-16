@@ -10,25 +10,12 @@
                             <i class="fas fa-plus mr-2"></i>
                             Add Category
                         </a>
-                        <div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
+                        <!-- <div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold">
                             {{ request.user.first_name.0|upper|default:'A' }}
-                        </div>
+                        </div> -->
                     </div>
                 </div>
 
-                <!-- Display Messages -->
-                <!-- {% if messages %}
-                    {% for message in messages %}
-                        <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
-                            <div class="flex items-center justify-between">
-                                <span>{{ message }}</span>
-                                <button onclick="this.parentElement.parentElement.remove()" class="text-gray-600 hover:text-gray-800">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                        </div>
-                    {% endfor %}
-                {% endif %} -->
 
                 <!-- Search Bar -->
                 <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
@@ -106,15 +93,18 @@
                                             </a>
                                             
                                             <!-- Toggle Status Button -->
-                                            <a href="{% url 'toggle_category_status' category.id %}" 
-                                               onclick="return confirm('Are you sure you want to {% if category.is_listed %}unlist{% else %}list{% endif %} this category?')"
-                                               class="px-3 py-1 {% if category.is_listed %}bg-yellow-100 text-yellow-800 hover:bg-yellow-200{% else %}bg-green-100 text-green-800 hover:bg-green-200{% endif %} rounded text-sm font-medium transition flex items-center">
-                                                {% if category.is_listed %}
-                                                    <i class="fas fa-eye-slash mr-1"></i> Unlist
-                                                {% else %}
-                                                    <i class="fas fa-eye mr-1"></i> List
-                                                {% endif %}
-                                            </a>
+                                            <button 
+                                            type="button"
+                                            onclick="openCategoryStatusModal({{ category.id }}, '{{ category.category_name }}', {{ category.is_listed|yesno:'true,false' }})"
+                                            class="px-3 py-1 {% if category.is_listed %}bg-yellow-100 text-yellow-800 hover:bg-yellow-200{% else %}bg-green-100 text-green-800 hover:bg-green-200{% endif %} rounded text-sm font-medium transition flex items-center">
+                                            
+                                            {% if category.is_listed %}
+                                                <i class="fas fa-eye-slash mr-1"></i> Unlist
+                                            {% else %}
+                                                <i class="fas fa-eye mr-1"></i> List
+                                            {% endif %}
+                                        </button>
+                                        
                                             
                                             <!-- Delete Button -->
 
@@ -170,4 +160,63 @@
                     </div>
                     {% endif %}
                 </div>
+
+<!-- CATEGORY STATUS MODAL -->
+<div id="categoryStatusModal" 
+     class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        
+        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 mb-4 mx-auto">
+            <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+        </div>
+
+        <h3 class="text-lg font-semibold text-gray-900 mb-2 text-center" id="categoryModalTitle"></h3>
+
+        <p class="text-gray-600 mb-6 text-center" id="categoryModalMessage"></p>
+
+        <div class="flex gap-3">
+            <button onclick="closeCategoryStatusModal()"
+                    class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                Cancel
+            </button>
+
+            <a id="categoryConfirmBtn"
+               href="#"
+               class="flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-center">
+                Confirm
+            </a>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function openCategoryStatusModal(id, name, isListed) {
+        const modal = document.getElementById("categoryStatusModal");
+        const title = document.getElementById("categoryModalTitle");
+        const msg = document.getElementById("categoryModalMessage");
+        const btn = document.getElementById("categoryConfirmBtn");
+    
+        if (isListed) {
+            title.textContent = "Unlist Category?";
+            msg.textContent = `Do you want to unlist "${name}"? It will not appear in products.`;
+            btn.className = "flex-1 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 text-center";
+        } else {
+            title.textContent = "List Category?";
+            msg.textContent = `Do you want to list "${name}" so it becomes visible?`;
+            btn.className = "flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-center";
+        }
+    
+        btn.href = `/category/toggle-status/${id}/`;
+    
+        modal.classList.remove("hidden");
+    }
+    
+    function closeCategoryStatusModal() {
+        document.getElementById("categoryStatusModal").classList.add("hidden");
+    }
+    </script>
+    
+
 {% endblock %}

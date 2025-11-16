@@ -2,8 +2,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from django.utils import timezone
 from datetime import timedelta
-
-
 import random
 import string
 
@@ -58,12 +56,12 @@ class MyAccountManager(BaseUserManager):
 class Account(AbstractBaseUser):  #account model
     first_name = models.CharField(max_length=50)
     last_name = models.CharField(max_length=50)
-    email  =models.EmailField(max_length=100, unique=True)
+    email = models.EmailField(max_length=100, unique=True)
     phone_number = models.CharField(max_length=50, blank=True, null=True)
     date_joined = models.DateTimeField(auto_now_add=True)
-    last_login =models.DateTimeField(auto_now=True)
+    last_login = models.DateTimeField(auto_now=True)
 
-    otp = models.CharField(max_length=6, blank=True, null=True) # for emai Otp yes
+    otp = models.CharField(max_length=6, blank=True, null=True) # for emai Otp
     otp_created_at = models.DateTimeField(blank=True, null=True)
     is_verified = models.BooleanField(default=False)  # user must verify OTP once
 

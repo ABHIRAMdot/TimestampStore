@@ -95,80 +95,32 @@
     </div>
   </div>
 
-  <!-- Existing Product Images -->
-  <div class="bg-white rounded-xl shadow-sm p-6">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold">Product Images</h2>
-      <span class="text-xs text-gray-500">Minimum 3 images required</span>
-    </div>
-
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="existingImagesGrid">
-      {% for image in product.images.all %}
-      <div class="relative group border rounded-lg overflow-hidden" data-image-id="{{ image.id }}">
-        <img src="{{ image.image_url.url }}" alt="Product Image" class="w-full h-48 object-cover">
-        
-        <div class="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition bg-black/40">
-          <button type="button" class="px-2 py-1 bg-white text-sm rounded hover:bg-gray-100" 
-                  onclick="editExistingImage({{ image.id }}, '{{ image.image_url.url }}')">Crop</button>
-          <button type="button" class="px-2 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700" 
-                  onclick="confirmDeleteImage({{ image.id }}, '{{ product.product_name }}')">Delete</button>
-        </div>
-
-        <input type="checkbox" name="delete_images" value="{{ image.id }}" class="hidden" id="del-{{ image.id }}">
-
-        <label class="absolute bottom-2 right-2 cursor-pointer flex items-center bg-white rounded px-2 py-1 shadow">
-          <input type="radio" name="primary_image" value="{{ image.id }}" 
-                 {% if image.is_primary %}checked{% endif %} class="h-4 w-4 text-blue-600">
-          <span class="ml-1 text-xs">Primary</span>
-        </label>
-
-        {% if image.is_primary %}
-          <span class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">Primary</span>
-        {% endif %}
-      </div>
-      {% endfor %}
-    </div>
-
-    <div class="border-t pt-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="font-semibold">Add New Images</h3>
-        <label class="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition">
-          <i class="fas fa-plus mr-2"></i>Select Images
-          <input type="file" id="newImageInput" accept="image/*" multiple class="hidden">
-        </label>
-      </div>
-
-      <div id="newImagesGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
-
-      <p id="imageCount" class="mt-3 text-sm text-gray-600">
-        Current: {{ product.images.count }} images | Minimum 3 required
-      </p>
-    </div>
-  </div>
-
   <!-- Product Variants -->
   <div class="bg-white rounded-xl shadow-sm p-6">
     <div class="flex justify-between items-center mb-4">
       <h2 class="text-lg font-semibold">Product Variants</h2>
-      <button type="button" onclick="addVariant()" 
+      <button type="button" onclick="addNewVariant()" 
               class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
         <i class="fas fa-plus mr-2"></i>Add Variant
       </button>
     </div>
+    <p class="text-sm text-gray-600 mb-6">Each variant must have at least 3 images</p>
 
-    <div id="variantsContainer" class="space-y-4">
+    <div id="variantsContainer" class="space-y-6">
       {% for variant in product.varients.all %}
-      <div class="border border-gray-200 rounded-lg p-4">
+      <!-- Existing Variant -->
+      <div class="border-2 border-gray-300 rounded-lg p-6 variant-card" data-variant-id="{{ variant.id }}" data-variant-index="{{ forloop.counter0 }}">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="font-medium text-gray-700">Variant: {{ variant.colour }}</h3>
-          <button type="button" 
-                  onclick="confirmDeleteVariant({{ variant.id }}, '{{ variant.colour }}', '{{ product.product_name }}')"
+          <h3 class="font-semibold text-gray-800">Variant: {{ variant.colour }}</h3>
+          <button type="button" onclick="confirmDeleteVariant({{ variant.id }}, '{{ variant.colour }}')"
                   class="text-red-600 hover:text-red-800 transition">
             <i class="fas fa-trash mr-1"></i>Delete
           </button>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <input type="hidden" name="variant_id[]" value="{{ variant.id }}">
+
+        <input type="hidden" name="variant_id[]" value="{{ variant.id }}">
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Color <span class="text-red-500">*</span></label>
             <select name="colour[]" required class="w-full px-4 py-2 border rounded-lg">
@@ -181,6 +133,8 @@
               <option value="Green" {% if variant.colour == 'Green' %}selected{% endif %}>Green</option>
               <option value="Yellow" {% if variant.colour == 'Yellow' %}selected{% endif %}>Yellow</option>
               <option value="Gray" {% if variant.colour == 'Gray' %}selected{% endif %}>Gray</option>
+              <option value="Silver" {% if variant.colour == 'Silver' %}selected{% endif %}>Silver</option>
+              <option value="Gold" {% if variant.colour == 'Gold' %}selected{% endif %}>Gold</option>              
             </select>
           </div>
           <div>
@@ -194,82 +148,151 @@
                    class="w-full px-4 py-2 border rounded-lg">
           </div>
         </div>
+
+        <!-- Existing Images -->
+        <div class="mb-4">
+          <h4 class="font-medium text-gray-700 mb-3">Current Images</h4>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4" id="existingImages-{{ forloop.counter0 }}">
+            {% for image in variant.images.all %}
+            <div class="relative group border rounded-lg overflow-hidden" data-image-id="{{ image.id }}">
+              <img src="{{ image.image.url }}" alt="Variant Image" class="w-full h-40 object-cover">
+              
+              <div class="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition bg-black/50">
+                <button type="button" onclick="openCropModal({{ variant.id }}, {{ image.id }}, '{{ image.image.url }}')"
+                        class="px-2 py-1 bg-white text-sm rounded hover:bg-gray-100 transition">
+                  <i class="fas fa-crop"></i>
+                </button>
+                <button type="button" class="px-2 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition" 
+                        onclick="confirmDeleteImage({{ image.id }}, '{{ variant.colour }}', {{ forloop.parentloop.counter0 }})">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+
+              <input type="checkbox" name="delete_images" value="{{ image.id }}" class="hidden" id="del-img-{{ image.id }}">
+
+              <!-- Set Primary -->
+              <label class="absolute bottom-2 right-2 cursor-pointer flex items-center bg-white/95 backdrop-blur-sm rounded-lg px-2 py-1 shadow-lg hover:bg-white transition group/radio">
+                <input type="radio" name="primary_image_{{ variant.id }}" value="{{ image.id }}" 
+                       {% if image.is_primary %}checked{% endif %} 
+                       onchange="markAsPrimary({{ variant.id }}, {{ image.id }})"
+                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 cursor-pointer">
+                <span class="ml-1 text-xs font-medium text-gray-700 group-hover/radio:text-blue-600">Primary</span>
+              </label>
+
+              {% if image.is_primary %}
+                <span class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow-lg">
+                  <i class="fas fa-star mr-1"></i>Primary
+                </span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+
+          <!-- Add New Images -->
+          <div class="border-2 border-dashed border-blue-300 rounded-lg p-4">
+            <div class="text-center">
+              <input type="file" name="variant_images_{{ forloop.counter0 }}[]" id="newImages-{{ forloop.counter0 }}" accept="image/*" multiple class="hidden">
+              <button type="button" onclick="document.getElementById('newImages-{{ forloop.counter0 }}').click()" 
+                      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                <i class="fas fa-plus mr-2"></i>Add More Images
+              </button>
+            </div>
+          </div>
+
+          <div id="newImagesPreview-{{ forloop.counter0 }}" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4"></div>
+          <p id="imageCount-{{ forloop.counter0 }}" class="text-sm mt-2 font-medium">
+            Current: {{ variant.images.count }} images
+          </p>
+        </div>
       </div>
       {% endfor %}
     </div>
-
-    <p class="text-sm text-gray-500 mt-4">At least one variant is required</p>
   </div>
+
+  <!-- Hidden inputs for primary images -->
+  <div id="primaryImageInputs"></div>
 
   <!-- Submit -->
   <div class="flex justify-end gap-4">
-    <a href="{% url 'product_list' %}" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Cancel</a>
+    <button type="button" onclick="confirmCancel()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Cancel</button>
     <button type="submit" id="submitBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
       <i class="fas fa-save mr-2"></i>Update Product
     </button>
   </div>
 </form>
 
-<!-- Delete Image Modal -->
+<!-- Modals -->
 <div id="deleteImageModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-    <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+    <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4 mx-auto">
       <i class="fas fa-trash text-red-600 text-xl"></i>
     </div>
-    <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete Image</h3>
-    <p class="text-gray-600 mb-6" id="deleteImageMessage"></p>
+    <h3 class="text-lg font-semibold text-gray-900 mb-2 text-center">Delete Image</h3>
+    <p class="text-gray-600 mb-6 text-center" id="deleteImageMessage"></p>
     <div class="flex gap-3">
-      <button onclick="closeDeleteImageModal()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-        Cancel
-      </button>
-      <button onclick="executeImageDelete()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-        Delete
-      </button>
+      <button onclick="closeDeleteImageModal()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
+      <button onclick="executeImageDelete()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
     </div>
   </div>
 </div>
 
-<!-- Delete Variant Modal -->
 <div id="deleteVariantModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-    <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4">
+    <div class="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 mb-4 mx-auto">
       <i class="fas fa-trash text-red-600 text-xl"></i>
     </div>
-    <h3 class="text-lg font-semibold text-gray-900 mb-2">Delete Variant</h3>
-    <p class="text-gray-600 mb-6" id="deleteVariantMessage"></p>
+    <h3 class="text-lg font-semibold text-gray-900 mb-2 text-center">Delete Variant</h3>
+    <p class="text-gray-600 mb-6 text-center" id="deleteVariantMessage"></p>
     <div class="flex gap-3">
-      <button onclick="closeDeleteVariantModal()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-        Cancel
-      </button>
-      <button onclick="executeVariantDelete()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-        Delete
-      </button>
+      <button onclick="closeDeleteVariantModal()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Cancel</button>
+      <button onclick="executeVariantDelete()" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
     </div>
   </div>
 </div>
 
-<!-- Cropper Modal -->
-<div id="cropperModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+<div id="cancelModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+    <div class="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 mb-4 mx-auto">
+      <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+    </div>
+    <h3 class="text-lg font-semibold text-gray-900 mb-2 text-center">Cancel Product Update?</h3>
+    <p class="text-gray-600 mb-6 text-center">All unsaved changes will be lost. Are you sure?</p>
+    <div class="flex gap-3">
+      <button onclick="closeCancelModal()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Continue Editing</button>
+      <a href="{% url 'product_list' %}" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-center">Yes, Cancel</a>
+    </div>
+  </div>
+</div>
+
+<div id="cropModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
   <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-    <div class="p-4 border-b flex justify-between items-center">
-      <h3 class="text-lg font-semibold">Crop Image</h3>
-      <button type="button" onclick="closeCropper()" class="text-gray-400 hover:text-gray-600">
+    <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+      <h3 class="text-lg font-semibold text-gray-900">Crop Image</h3>
+      <button type="button" onclick="closeCropModal()" class="text-gray-400 hover:text-gray-600 transition">
         <i class="fas fa-times text-xl"></i>
       </button>
     </div>
-    <div class="p-4 overflow-auto" style="max-height: calc(90vh - 160px);">
-      <div class="flex justify-center">
-        <img id="cropperImage" class="max-w-full" style="max-height: 65vh;">
+    <div class="p-6 overflow-auto" style="max-height: calc(90vh - 160px);">
+      <div class="flex justify-center bg-gray-100 rounded-lg p-4">
+        <img id="cropImage" class="max-w-full" style="max-height: 60vh;">
       </div>
     </div>
-    <div class="p-4 border-t flex justify-between">
-      <button type="button" onclick="resetCropper()" class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg">
-        <i class="fas fa-undo"></i> Reset
-      </button>
+    <div class="p-4 border-t bg-gray-50 flex justify-between items-center">
       <div class="flex gap-2">
-        <button type="button" onclick="closeCropper()" class="px-4 py-2 bg-gray-300 text-gray-700 hover:bg-gray-400 rounded-lg">Cancel</button>
-        <button type="button" onclick="confirmCrop()" class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg">
-          <i class="fas fa-check mr-1"></i>Crop & Use
+        <button type="button" onclick="cropper && cropper.rotate(-90)" class="px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition">
+          <i class="fas fa-undo mr-1"></i> Rotate Left
+        </button>
+        <button type="button" onclick="cropper && cropper.rotate(90)" class="px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition">
+          <i class="fas fa-redo mr-1"></i> Rotate Right
+        </button>
+        <button type="button" onclick="cropper && cropper.reset()" class="px-3 py-2 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg transition">
+          <i class="fas fa-sync mr-1"></i> Reset
+        </button>
+      </div>
+      <div class="flex gap-2">
+        <button type="button" onclick="closeCropModal()" class="px-4 py-2 bg-gray-300 text-gray-700 hover:bg-gray-400 rounded-lg transition">Cancel</button>
+        <button type="button" onclick="saveCroppedImage()" class="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition">
+          <i class="fas fa-check mr-1"></i>Apply Crop
         </button>
       </div>
     </div>
@@ -281,43 +304,188 @@
 
 <script>
 let cropper = null;
-let cropContext = null;
-let newFiles = [];
+let currentCropImageId = null;
+let currentCropVariantId = null;
 let deleteImageId = null;
 let deleteVariantId = null;
+let deleteVariantIndex = null;
+let newVariantCounter = {{ product.varients.count }};
+let primaryImageChanges = {};
 
-const existingGrid = document.getElementById('existingImagesGrid');
-const newGrid = document.getElementById('newImagesGrid');
-const countDisplay = document.getElementById('imageCount');
-const newInput = document.getElementById('newImageInput');
+document.addEventListener('DOMContentLoaded', () => {
+  {% for variant in product.varients.all %}
+  const input{{ forloop.counter0 }} = document.getElementById('newImages-{{ forloop.counter0 }}');
+  if (input{{ forloop.counter0 }}) {
+    input{{ forloop.counter0 }}.addEventListener('change', (e) => handleNewImagesForVariant(e, {{ forloop.counter0 }}));
+  }
+  {% endfor %}
+});
 
-// Image deletion
-function confirmDeleteImage(id, productName) {
-  deleteImageId = id;
+function handleNewImagesForVariant(e, variantIndex) {
+  const files = Array.from(e.target.files || []);
+
+  if (!validateImageFiles(files)) {
+      e.target.value = "";  // reset input
+      return;
+  }
+  
+  const container = document.getElementById(`newImagesPreview-${variantIndex}`);
+  
+  files.forEach(file => {
+    const preview = URL.createObjectURL(file);
+    const div = document.createElement('div');
+    div.className = 'relative group border-2 border-green-400 rounded-lg overflow-hidden';
+    div.innerHTML = `
+      <img src="${preview}" class="w-full h-40 object-cover">
+      <span class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow">
+        <i class="fas fa-plus mr-1"></i>New
+      </span>
+<div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/50 transition">
+
+    <!-- NEW: CROP BUTTON -->
+    <button type="button"
+        onclick="cropNewImage(${variantIndex}, this)"
+        class="px-2 py-1 bg-white text-sm rounded hover:bg-gray-100">
+        <i class="fas fa-crop"></i>
+    </button>
+
+    <!-- Existing delete button -->
+    <button type="button" onclick="this.closest('.relative').remove(); updateImageCount(${variantIndex})" 
+            class="px-2 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700">
+        <i class="fas fa-trash"></i> Remove
+    </button>
+
+</div>
+
+    `;
+    container.appendChild(div);
+  });
+  
+  updateImageCount(variantIndex);
+}
+
+function updateImageCount(variantIndex) {
+  const countDisplay = document.getElementById(`imageCount-${variantIndex}`);
+  const existingContainer = document.getElementById(`existingImages-${variantIndex}`);
+  const existingImages = existingContainer ? existingContainer.querySelectorAll('[data-image-id]') : [];
+  const existingCount = existingImages.length;
+  const toDelete = existingContainer ? existingContainer.querySelectorAll('input[type="checkbox"]:checked').length : 0;
+  const newPreviewContainer = document.getElementById(`newImagesPreview-${variantIndex}`);
+  const newCount = newPreviewContainer ? newPreviewContainer.children.length : 0;
+  const finalCount = existingCount - toDelete + newCount;
+  
+  countDisplay.textContent = `Current: ${existingCount} | Adding: ${newCount} | Deleting: ${toDelete} | Final: ${finalCount}`;
+  countDisplay.className = `text-sm mt-2 font-medium ${finalCount >= 3 ? 'text-green-600' : 'text-red-600'}`;
+}
+
+function markAsPrimary(variantId, imageId) {
+  primaryImageChanges[variantId] = imageId;
+  const variantCard = document.querySelector(`[data-variant-id="${variantId}"]`);
+  if (variantCard) {
+    variantCard.querySelectorAll('.absolute.top-2.left-2.bg-blue-600').forEach(badge => badge.remove());
+    const imageCard = variantCard.querySelector(`[data-image-id="${imageId}"]`);
+    if (imageCard && !imageCard.querySelector('.bg-blue-600')) {
+      const badge = document.createElement('span');
+      badge.className = 'absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow-lg';
+      badge.innerHTML = '<i class="fas fa-star mr-1"></i>Primary';
+      imageCard.insertBefore(badge, imageCard.firstChild);
+    }
+  }
+}
+
+function openCropModal(variantId, imageId, imageUrl) {
+  currentCropVariantId = variantId;
+  currentCropImageId = imageId;
+  const modal = document.getElementById('cropModal');
+  const img = document.getElementById('cropImage');
+  img.src = imageUrl;
+  modal.classList.remove('hidden');
+  if (cropper) cropper.destroy();
+  cropper = new Cropper(img, {
+    aspectRatio: NaN,
+    viewMode: 1,
+    dragMode: 'move',
+    autoCropArea: 1,
+    restore: false,
+    guides: true,
+    center: true,
+    highlight: false,
+    cropBoxMovable: true,
+    cropBoxResizable: true,
+  });
+}
+
+function closeCropModal() {
+  document.getElementById('cropModal').classList.add('hidden');
+  if (cropper) {
+    cropper.destroy();
+    cropper = null;
+  }
+  currentCropImageId = null;
+  currentCropVariantId = null;
+}
+
+function saveCroppedImage() {
+  if (!cropper) return;
+  const canvas = cropper.getCroppedCanvas({
+    maxWidth: 2000,
+    maxHeight: 2000,
+    fillColor: '#fff',
+    imageSmoothingEnabled: true,
+    imageSmoothingQuality: 'high',
+  });
+  canvas.toBlob((blob) => {
+    const url = URL.createObjectURL(blob);
+    const imageCard = document.querySelector(`[data-image-id="${currentCropImageId}"] img`);
+    if (imageCard) imageCard.src = url;
+    const imageCardContainer = document.querySelector(`[data-image-id="${currentCropImageId}"]`);
+    if (imageCardContainer) {
+      const existingBadge = imageCardContainer.querySelector('.top-2.right-2.bg-green-600');
+      if (existingBadge) existingBadge.remove();
+      const successBadge = document.createElement('span');
+      successBadge.className = 'absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow-lg z-10';
+      successBadge.innerHTML = '<i class="fas fa-check mr-1"></i>Cropped';
+      imageCardContainer.appendChild(successBadge);
+      setTimeout(() => successBadge.remove(), 3000);
+    }
+    closeCropModal();
+    alert('Image cropped! Note: Visual preview only. Original saved on submit.');
+  }, 'image/jpeg', 0.9);
+}
+
+function confirmDeleteImage(imageId, variantColour, variantIndex) {
+  deleteImageId = imageId;
+  deleteVariantIndex = variantIndex;
   document.getElementById('deleteImageMessage').textContent = 
-    `Are you sure you want to delete this image from "${productName}"?`;
+    `Delete this image from "${variantColour}" variant?`;
   document.getElementById('deleteImageModal').classList.remove('hidden');
 }
 
 function executeImageDelete() {
-  const cb = document.getElementById('del-' + deleteImageId);
+  const cb = document.getElementById('del-img-' + deleteImageId);
   if (cb) cb.checked = true;
-  const card = existingGrid.querySelector(`[data-image-id="${deleteImageId}"]`);
-  if (card) card.classList.add('opacity-30', 'pointer-events-none');
+  const card = document.querySelector(`[data-image-id="${deleteImageId}"]`);
+  if (card) {
+    card.classList.add('opacity-30', 'pointer-events-none');
+    const badge = document.createElement('span');
+    badge.className = 'absolute top-2 right-2 bg-red-600 text-white text-xs px-2 py-1 rounded shadow-lg z-10';
+    badge.innerHTML = '<i class="fas fa-trash mr-1"></i>Deleted';
+    card.appendChild(badge);
+  }
+  updateImageCount(deleteVariantIndex);
   closeDeleteImageModal();
-  updateImageCount();
 }
 
 function closeDeleteImageModal() {
   document.getElementById('deleteImageModal').classList.add('hidden');
   deleteImageId = null;
+  deleteVariantIndex = null;
 }
 
-// Variant deletion
-function confirmDeleteVariant(id, colour, productName) {
-  deleteVariantId = id;
+function confirmDeleteVariant(variantId, colour) {
+  deleteVariantId = variantId;
   document.getElementById('deleteVariantMessage').textContent = 
-    `Are you sure you want to delete the "${colour}" variant from "${productName}"?`;
+    `Delete "${colour}" variant and all its images?`;
   document.getElementById('deleteVariantModal').classList.remove('hidden');
 }
 
@@ -326,19 +494,17 @@ function executeVariantDelete() {
   input.type = 'hidden';
   input.name = 'delete_variants';
   input.value = deleteVariantId;
-  
-  const container = document.getElementById('variantsContainer');
-  const variants = container.querySelectorAll('.border');
-  
-  variants.forEach(v => {
-    const hiddenInput = v.querySelector('input[name="variant_id[]"]');
-    if (hiddenInput && hiddenInput.value == deleteVariantId) {
-      v.style.opacity = '0.3';
-      v.style.pointerEvents = 'none';
-      v.appendChild(input);
-    }
-  });
-  
+  const variantCard = document.querySelector(`[data-variant-id="${deleteVariantId}"]`);
+  if (variantCard) {
+    variantCard.style.opacity = '0.5';
+    variantCard.style.pointerEvents = 'none';
+    variantCard.appendChild(input);
+    const badge = document.createElement('div');
+    badge.className = 'absolute top-4 right-4 bg-red-600 text-white px-3 py-1 rounded-lg shadow-lg z-10';
+    badge.innerHTML = '<i class="fas fa-trash mr-2"></i>Marked for Deletion';
+    variantCard.style.position = 'relative';
+    variantCard.insertBefore(badge, variantCard.firstChild);
+  }
   closeDeleteVariantModal();
 }
 
@@ -347,192 +513,365 @@ function closeDeleteVariantModal() {
   deleteVariantId = null;
 }
 
-// New images
-newInput.addEventListener('change', (e) => {
+function addNewVariant() {
+
+//  Check if any new variant block is incomplete
+const newVariantDivs = document.querySelectorAll('[id^="variant-new-"]');
+
+for (let div of newVariantDivs) {
+  const variantIndex = div.id.split('-')[2];
+
+  const colour = div.querySelector('select[name="colour[]"]').value.trim();
+  const price = div.querySelector('input[name="price[]"]').value.trim();
+  const stock = div.querySelector('input[name="stock[]"]').value.trim();
+  const fileInput = document.getElementById(`newVariantImages-${variantIndex}`);
+  const fileCount = fileInput && fileInput.files ? fileInput.files.length : 0;
+
+  if (!colour || !price || !stock || fileCount < 3) {
+    showToast("Please complete the existing new variant before adding another.", "error");
+    return;
+  }
+}
+
+// If all new variants are valid, allow adding a new one
+const variantIndex = newVariantCounter;
+newVariantCounter++;
+const container = document.getElementById('variantsContainer');
+const div = document.createElement('div');
+div.className = 'border-2 border-green-300 bg-green-50 rounded-lg p-6';
+div.id = `variant-new-${variantIndex}`;
+
+div.innerHTML = `
+  <div class="flex justify-between items-center mb-4">
+    <div><h3 class="font-semibold text-gray-800">New Variant #${variantIndex + 1}</h3>
+    <span class="text-xs text-green-600 font-medium"><i class="fas fa-plus-circle mr-1"></i>Will be created on save</span></div>
+    <button type="button" onclick="removeNewVariant(${variantIndex})" 
+            class="text-red-600 hover:text-red-800 transition">
+      <i class="fas fa-times mr-1"></i>Remove
+    </button>
+  </div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Color <span class="text-red-500">*</span></label>
+      <select name="colour[]" required class="w-full px-4 py-2 border rounded-lg">
+        <option value="">Select Color</option>
+        <option value="Black">Black</option>
+        <option value="Blue">Blue</option>
+        <option value="Brown">Brown</option>
+        <option value="White">White</option>
+        <option value="Red">Red</option>
+        <option value="Green">Green</option>
+        <option value="Yellow">Yellow</option>
+        <option value="Gray">Gray</option>
+        <option value="Silver">Silver</option>
+        <option value="Gold">Gold</option>        
+      </select>
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Price <span class="text-red-500">*</span></label>
+      <input type="number" name="price[]" step="0.01" min="0" required
+             class="w-full px-4 py-2 border rounded-lg" placeholder="0.00">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-700 mb-2">Stock <span class="text-red-500">*</span></label>
+      <input type="number" name="stock[]" min="0" required
+             class="w-full px-4 py-2 border rounded-lg" placeholder="0">
+    </div>
+  </div>
+
+  <div class="mb-4">
+    <h4 class="font-medium text-gray-700 mb-3">Add Images (Minimum 3 Required) <span class="text-red-500">*</span></h4>
+    <div class="border-2 border-dashed border-green-300 rounded-lg p-4 bg-white">
+      <div class="text-center">
+        <input type="file" name="variant_images_${variantIndex}[]" id="newVariantImages-${variantIndex}" 
+               accept="image/*" multiple required class="hidden">
+        <button type="button" onclick="document.getElementById('newVariantImages-${variantIndex}').click()" 
+                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+          <i class="fas fa-upload mr-2"></i>Upload Images (Min 3)
+        </button>
+        <p class="text-xs text-gray-500 mt-2">Click to select multiple images</p>
+      </div>
+    </div>
+    <div id="newVariantImagesPreview-${variantIndex}" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4"></div>
+    <p id="newVariantImageCount-${variantIndex}" class="text-sm mt-2 font-medium text-red-600">
+      Images added: 0 (Need at least 3)
+    </p>
+  </div>
+`;
+
+container.appendChild(div);
+
+const input = document.getElementById(`newVariantImages-${variantIndex}`);
+if (input) {
+  input.addEventListener('change', (e) => handleNewVariantImages(e, variantIndex));
+}
+}
+
+
+function handleNewVariantImages(e, variantIndex) {
   const files = Array.from(e.target.files || []);
-  files.forEach((file) => {
+
+    // Block invalid files
+  if (!validateImageFiles(files)) {
+    e.target.value = "";  // reset input
+    return;
+  }
+  const container = document.getElementById(`newVariantImagesPreview-${variantIndex}`);
+  const countDisplay = document.getElementById(`newVariantImageCount-${variantIndex}`);
+  
+  // Clear previous previews
+  container.innerHTML = '';
+  
+  files.forEach((file, index) => {
     const preview = URL.createObjectURL(file);
-    newFiles.push({ file, preview });
-  });
-  renderNewGrid();
-  updateImageCount();
-  newInput.value = '';
-});
-
-function renderNewGrid() {
-  newGrid.innerHTML = '';
-  newFiles.forEach((nf, idx) => {
     const div = document.createElement('div');
-    div.className = 'relative group border rounded-lg overflow-hidden';
+    div.className = 'relative group border-2 border-green-400 rounded-lg overflow-hidden';
     div.innerHTML = `
-      <img src="${nf.preview}" class="w-full h-48 object-cover">
-      <div class="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 bg-black/40">
-        <button type="button" class="px-2 py-1 bg-white text-sm rounded" onclick="editNewImage(${idx})">Crop</button>
-        <button type="button" class="px-2 py-1 bg-red-600 text-white text-sm rounded" onclick="deleteNewImage(${idx})">Delete</button>
-      </div>
-      ${nf.replaceOf ? `<span class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded">Replaces #${nf.replaceOf}</span>` : ''}
+      <img src="${preview}" class="w-full h-40 object-cover">
+      <span class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow">
+        <i class="fas fa-image mr-1"></i>Image ${index + 1}
+      </span>
+      ${index === 0 ? `
+        <span class="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow">
+          <i class="fas fa-star mr-1"></i>Primary
+        </span>
+      ` : ''}
     `;
-    newGrid.appendChild(div);
+    container.appendChild(div);
+
+    div.innerHTML = `
+      <img src="${preview}" class="w-full h-40 object-cover">
+
+      <span class="absolute top-2 left-2 bg-green-600 text-white text-xs px-2 py-1 rounded shadow">
+        <i class="fas fa-image mr-1"></i>Image ${index + 1}
+      </span>
+
+      ${index === 0 ? `
+        <span class="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow">
+          <i class="fas fa-star mr-1"></i>Primary
+        </span>
+      ` : ''}
+
+      <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-black/50 transition">
+        
+        <!-- CROP BUTTON (NEW) -->
+        <button type="button"
+                onclick="cropNewVariantImage(${variantIndex}, this)"
+                class="px-2 py-1 bg-white text-sm rounded hover:bg-gray-100">
+            <i class="fas fa-crop"></i>
+        </button>
+
+        <!-- DELETE BUTTON -->
+        <button type="button"
+                onclick="this.closest('.relative').remove(); updateNewVariantCount(${variantIndex})"
+                class="px-2 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 ml-2">
+            <i class="fas fa-trash"></i>
+        </button>
+
+      </div>
+`;
+
   });
+  
+  const count = files.length;
+  countDisplay.textContent = `Images added: ${count} ${count >= 3 ? '✓' : '(Need at least 3)'}`;
+  countDisplay.className = `text-sm mt-2 font-medium ${count >= 3 ? 'text-green-600' : 'text-red-600'}`;
 }
 
-function editExistingImage(id, url) {
-  cropContext = { mode: 'existing', imageId: id, src: url };
-  openCropper(url);
+function removeNewVariant(variantIndex) {
+  const variantDiv = document.getElementById(`variant-new-${variantIndex}`);
+  if (variantDiv) {
+    variantDiv.remove();
+  }
 }
 
-function editNewImage(index) {
-  const src = newFiles[index].preview;
-  cropContext = { mode: 'new', newIndex: index, src };
-  openCropper(src);
+function confirmCancel() {
+  document.getElementById('cancelModal').classList.remove('hidden');
 }
 
-function deleteNewImage(index) {
-  URL.revokeObjectURL(newFiles[index].preview);
-  newFiles.splice(index, 1);
-  renderNewGrid();
-  updateImageCount();
+function closeCancelModal() {
+  document.getElementById('cancelModal').classList.add('hidden');
 }
 
-function openCropper(src) {
-  const img = document.getElementById('cropperImage');
-  img.src = src;
-  document.getElementById('cropperModal').classList.remove('hidden');
+function openGlobalCropper(src, callback) {
+    const modal = document.getElementById("cropModal");
+    const img = document.getElementById("cropImage");
 
-  setTimeout(() => {
-    if (cropper) cropper.destroy();
-    cropper = new Cropper(img, {
-      viewMode: 1,
-      dragMode: 'crop',
-      background: false,
-      zoomOnWheel: true,
-      autoCrop: true,
-      autoCropArea: 0.8,
-      responsive: true
+    img.src = src;
+    modal.classList.remove("hidden");
+
+    setTimeout(() => {
+        // destroy old cropper
+        if (cropper) cropper.destroy();
+
+        // create new cropper
+        cropper = new Cropper(img, {
+            viewMode: 1,
+            dragMode: "move",
+            autoCropArea: 1,
+            background: false,
+            responsive: true,
+        });
+    }, 50);
+
+    // override save button functionality
+    const applyBtn = modal.querySelector("button[onclick='saveCroppedImage()']");
+    applyBtn.onclick = () => {
+        if (!cropper) return;
+
+        cropper.getCroppedCanvas({
+            imageSmoothingEnabled: true,
+            imageSmoothingQuality: 'high'
+        }).toBlob((blob) => {
+            callback(blob);
+            closeCropModal();
+        }, "image/jpeg", 0.9);
+    };
+}
+
+function cropNewImage(variantIndex, button) {
+    const imgTag = button.closest(".relative").querySelector("img");
+    const previewURL = imgTag.src;
+
+    openGlobalCropper(previewURL, (blob) => {
+        const newFile = new File([blob], `crop_${Date.now()}.jpg`, { type: "image/jpeg" });
+        const newPreview = URL.createObjectURL(newFile);
+
+        imgTag.src = newPreview; 
+
+        // IMPORTANT — detect the correct input
+        const input =
+            document.getElementById(`newImages-${variantIndex}`) ||
+            document.getElementById(`newVariantImages-${variantIndex}`);
+
+        if (!input) {
+            console.error("Cannot find file input for variant", variantIndex);
+            return;
+        }
+
+        // Replace file in input
+        const dt = new DataTransfer();
+        dt.items.add(newFile);
+        input.files = dt.files;
     });
-  }, 50);
 }
 
-function resetCropper() {
-  if (cropper) cropper.reset();
+
+
+function cropNewVariantImage(variantIndex, button) {
+    const imgTag = button.closest(".relative").querySelector("img");
+    const previewURL = imgTag.src;
+
+    openGlobalCropper(previewURL, (blob) => {
+        const newFile = new File([blob], `crop_${Date.now()}.jpg`, { type: "image/jpeg" });
+        const newPreview = URL.createObjectURL(newFile);
+
+        imgTag.src = newPreview;
+
+        const input = 
+            document.getElementById(`newVariantImages-${variantIndex}`) ||
+            document.getElementById(`newImages-${variantIndex}`);
+
+        if (!input) return;
+
+        // Replace file
+        const dt = new DataTransfer();
+        dt.items.add(newFile);
+        input.files = dt.files;
+    });
 }
 
-function closeCropper() {
-  document.getElementById('cropperModal').classList.add('hidden');
-  if (cropper) { cropper.destroy(); cropper = null; }
-  cropContext = null;
+function updateNewVariantCount(variantIndex) {
+    const countDisplay = document.getElementById(`newVariantImageCount-${variantIndex}`);
+    const container = document.getElementById(`newVariantImagesPreview-${variantIndex}`);
+    const count = container.children.length;
+
+    countDisplay.textContent = `Images added: ${count} ${count >= 3 ? '✓' : '(Need at least 3)'}`;
+    countDisplay.className = `text-sm mt-2 font-medium ${count >= 3 ? 'text-green-600' : 'text-red-600'}`;
 }
 
-function confirmCrop() {
-  if (!cropper || !cropContext) return;
 
-  cropper.getCroppedCanvas({
-    imageSmoothingEnabled: true,
-    imageSmoothingQuality: 'high'
-  }).toBlob((blob) => {
-    const newFile = new File([blob], `cropped_${Date.now()}.jpg`, { type: 'image/jpeg' });
-    const preview = URL.createObjectURL(newFile);
 
-    if (cropContext.mode === 'existing') {
-      const id = cropContext.imageId;
-      const cb = document.getElementById('del-' + id);
-      if (cb) cb.checked = true;
 
-      newFiles.push({ file: newFile, preview, replaceOf: id });
 
-      const card = existingGrid.querySelector(`[data-image-id="${id}"]`);
-      if (card) card.classList.add('opacity-60');
-
-      renderNewGrid();
-      updateImageCount();
-
-    } else if (cropContext.mode === 'new') {
-      const i = cropContext.newIndex;
-      URL.revokeObjectURL(newFiles[i].preview);
-      newFiles[i] = { ...newFiles[i], file: newFile, preview };
-      renderNewGrid();
+// Form submission handler
+document.getElementById('productForm').addEventListener('submit', function(e) {
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Updating...';
+  
+  // Add hidden inputs for primary image changes
+  const primaryInputsContainer = document.getElementById('primaryImageInputs');
+  primaryInputsContainer.innerHTML = '';
+  
+  for (const [variantId, imageId] of Object.entries(primaryImageChanges)) {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = `set_primary_${variantId}`;
+    input.value = imageId;
+    primaryInputsContainer.appendChild(input);
+  }
+  
+  // Validate all variants have at least 3 images
+  const variantCards = document.querySelectorAll('.variant-card');
+  let hasError = false;
+  
+  variantCards.forEach((card, index) => {
+    const variantIndex = card.dataset.variantIndex;
+    const existingContainer = document.getElementById(`existingImages-${variantIndex}`);
+    const existingImages = existingContainer ? existingContainer.querySelectorAll('[data-image-id]') : [];
+    const toDelete = existingContainer ? existingContainer.querySelectorAll('input[type="checkbox"]:checked').length : 0;
+    const newPreviewContainer = document.getElementById(`newImagesPreview-${variantIndex}`);
+    const newCount = newPreviewContainer ? newPreviewContainer.children.length : 0;
+    const finalCount = existingImages.length - toDelete + newCount;
+    
+    if (finalCount < 3) {
+      e.preventDefault();
+      hasError = true;
+      alert(`Variant ${index + 1} must have at least 3 images. Current count: ${finalCount}`);
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Update Product';
+      return false;
     }
-
-    closeCropper();
-  }, 'image/jpeg', 0.9);
-}
-
-function updateImageCount() {
-  const existingCount = {{ product.images.count }};
-  const toDelete = document.querySelectorAll('input[name="delete_images"]:checked').length;
-  const newCount = newFiles.length;
-  const finalCount = existingCount - toDelete + newCount;
-
-  countDisplay.textContent = `Current: ${existingCount} | Adding: ${newCount} | Deleting: ${toDelete} | Final: ${finalCount}`;
-  countDisplay.className = 'mt-3 text-sm ' + (finalCount < 3 ? 'text-red-600' : 'text-green-600');
-}
-
-// Form submit
-document.getElementById('productForm').addEventListener('submit', (e) => {
-  e.preventDefault();
-  const formData = new FormData(e.target);
-
-  newFiles.forEach((nf) => {
-    formData.append('images', nf.file, nf.file.name);
   });
-
-  fetch(e.target.action, {
-    method: 'POST',
-    body: formData,
-    headers: { 'X-Requested-With': 'XMLHttpRequest' }
-  }).then(r => {
-    if (r.redirected) { window.location.href = r.url; return null; }
-    return r.text();
-  }).then(html => {
-    if (html) {
-      document.open(); document.write(html); document.close();
+  
+  // Validate new variants
+  const newVariantDivs = document.querySelectorAll('[id^="variant-new-"]');
+  newVariantDivs.forEach((div, index) => {
+    const variantIndex = div.id.split('-')[2];
+    const fileInput = document.getElementById(`newVariantImages-${variantIndex}`);
+    const fileCount = fileInput && fileInput.files ? fileInput.files.length : 0;
+    
+    if (fileCount < 3) {
+      e.preventDefault();
+      hasError = true;
+      alert(`New variant ${index + 1} must have at least 3 images. Current count: ${fileCount}`);
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Update Product';
+      return false;
     }
-  }).catch(() => alert('An error occurred while updating the product.'));
+  });
+  
+  if (hasError) {
+    return false;
+  }
 });
 
-// Add variant
-let variantCount = 0;
-function addVariant() {
-  variantCount++;
-  const container = document.getElementById('variantsContainer');
-  const div = document.createElement('div');
-  div.className = 'border border-green-300 rounded-lg p-4 bg-green-50';
-  div.innerHTML = `
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="font-medium text-gray-700">New Variant #${variantCount}</h3>
-      <button type="button" onclick="this.closest('div.border').remove()" class="text-red-600 hover:text-red-800">
-        <i class="fas fa-trash"></i>
-      </button>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Color <span class="text-red-500">*</span></label>
-        <select name="colour[]" required class="w-full px-4 py-2 border rounded-lg">
-          <option value="">Select Color</option>
-          <option value="Black">Black</option>
-          <option value="Blue">Blue</option>
-          <option value="Brown">Brown</option>
-          <option value="White">White</option>
-          <option value="Red">Red</option>
-          <option value="Green">Green</option>
-          <option value="Yellow">Yellow</option>
-          <option value="Gray">Gray</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Price <span class="text-red-500">*</span></label>
-        <input type="number" name="price[]" step="0.01" min="0" required
-               class="w-full px-4 py-2 border rounded-lg" placeholder="0.00">
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-2">Stock <span class="text-red-500">*</span></label>
-        <input type="number" name="stock[]" min="0" required
-               class="w-full px-4 py-2 border rounded-lg" placeholder="0">
-      </div>
-    </div>
-  `;
-  container.appendChild(div);
+// VALID IMAGE TYPES
+const allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+
+// Validate selected files are images ONLY
+function validateImageFiles(files) {
+    for (const file of files) {
+        if (!allowedImageTypes.includes(file.type)) {
+            alert(`Invalid file: ${file.name}\nOnly JPG, PNG, WEBP images are allowed.`);
+            return false;
+        }
+    }
+    return true;
 }
+
 </script>
 
 {% endblock %}

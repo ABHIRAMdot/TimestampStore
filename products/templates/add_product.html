@@ -32,7 +32,7 @@
                 <select name="category" required class="w-full px-4 py-2 border rounded-lg">
                     <option value="">Select Category</option>
                     {% for cat in categories %}
-                        <option value="{{ cat.id }}">{{ cat.category_name }}</option>
+                        <option value="{{ cat.id }}">{{ cat.parent.category_name }} → {{ cat.category_name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -64,43 +64,68 @@
         </div>
     </div>
 
-    <!-- IMAGES -->
-    <div class="bg-white rounded-xl shadow-sm p-6">
-        <h2 class="text-lg font-semibold mb-4">Product Images</h2>
-
-        <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-            <input type="file" id="imageInput" name="images[]" accept="image/*" multiple class="hidden">
-            <button type="button" onclick="document.getElementById('imageInput').click()" class="px-6 py-3 bg-blue-600 text-white rounded-lg">Select Images</button>
-        </div>
-
-        <div id="imagePreviewContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6"></div>
-        <p id="imageCount" class="text-sm text-red-600 mt-2">0 images selected</p>
-    </div>
-
-    <!-- VARIANTS -->
+    <!-- CHANGED: VARIANTS WITH IMAGES -->
     <div class="bg-white rounded-xl shadow-sm p-6">
         <div class="flex justify-between items-center mb-4">
-            <h2 class="text-lg font-semibold">Product Variants</h2>
-            <button type="button" onclick="addVariant()" class="px-4 py-2 bg-green-600 text-white rounded-lg">Add Variant</button>
+            <h2 class="text-lg font-semibold">Product Variants <span class="text-red-500">*</span></h2>
+            <button type="button" onclick="addVariant()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                <i class="fas fa-plus mr-2"></i>Add Variant
+            </button>
         </div>
-        <div id="variantsContainer" class="space-y-4"></div>
+        <p class="text-sm text-gray-600 mb-4">Each variant must have at least 3 images</p>
+        <div id="variantsContainer" class="space-y-6"></div>
     </div>
 
     <!-- SUBMIT -->
     <div class="flex justify-end gap-4">
-        <a href="{% url 'product_list' %}" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg">Cancel</a>
-        <button type="submit" id="submitBtn" disabled class="px-6 py-3 bg-blue-600 text-white rounded-lg opacity-50 cursor-not-allowed">Save Product</button>
+        <button type="button" onclick="confirmCancel()" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition">Cancel</button>
+        <button type="submit" id="submitBtn" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+            <i class="fas fa-save mr-2"></i>Save Product
+        </button>
     </div>
 </form>
 
-<!-- 🟢 CROPPER MODAL -->
+<!-- CHANGED: CROPPER MODAL -->
 <div id="cropModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
-    <div class="bg-white p-4 rounded-lg max-w-3xl w-full">
-        <div class="text-right"><button onclick="cancelCrop()" class="text-gray-500 text-xl">&times;</button></div>
-        <img id="cropImage" style="max-height:75vh; display:block; margin:auto;">
-        <div class="flex justify-end gap-2 mt-4">
-            <button onclick="cancelCrop()" class="px-4 py-2 bg-gray-300 rounded">Cancel</button>
-            <button onclick="saveCrop()" class="px-4 py-2 bg-blue-600 text-white rounded">Crop & Save</button>
+    <div class="bg-white p-6 rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-semibold">Crop Image</h3>
+            <button type="button" onclick="cancelCrop()" class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <div class="overflow-auto" style="max-height: calc(90vh - 160px);">
+            <img id="cropImage" style="max-height:60vh; display:block; margin:auto;">
+        </div>
+        <div class="flex justify-between items-center mt-4 pt-4 border-t">
+            <button type="button" onclick="resetCropper()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg">
+                <i class="fas fa-undo mr-1"></i>Reset
+            </button>
+            <div class="flex gap-2">
+                <button type="button" onclick="cancelCrop()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
+                <button type="button" onclick="saveCrop()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-check mr-1"></i>Crop & Save
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CHANGED: CANCEL CONFIRMATION MODAL -->
+<div id="cancelModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div class="flex items-center justify-center w-12 h-12 rounded-full bg-yellow-100 mb-4 mx-auto">
+            <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2 text-center">Cancel Product Creation?</h3>
+        <p class="text-gray-600 mb-6 text-center">All unsaved changes will be lost. Are you sure you want to cancel?</p>
+        <div class="flex gap-3">
+            <button onclick="closeCancelModal()" class="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                Continue Editing
+            </button>
+            <a href="{% url 'product_list' %}" class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-center">
+                Yes, Cancel
+            </a>
         </div>
     </div>
 </div>
@@ -109,102 +134,334 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
 
 <script>
-// ==================== CHANGED CROP SCRIPT ==================== //
-let imageFiles = [];
-let primaryIndex = 0;
+// CHANGED: Complete rewrite for variant-based image management
+let variantCount = 0;
+let variantData = {}; // Stores image data for each variant
 let cropper = null;
-let currentEditIndex = null;
+let currentCropContext = null;
 
-const previewContainer = document.getElementById("imagePreviewContainer");
-const countDisplay = document.getElementById("imageCount");
-const submitBtn = document.getElementById("submitBtn");
+const submitBtn = document.getElementById('submitBtn');
 
-function updateUI() {
-    previewContainer.innerHTML = "";
-    imageFiles.forEach((img, i) => {
-        previewContainer.innerHTML += `
-        <div class="relative group border rounded overflow-hidden">
-            <img src="${img.preview}" class="w-full h-40 object-cover">
-            <div class="absolute inset-0 flex justify-center items-center gap-2 opacity-0 group-hover:opacity-100 bg-black/40 transition">
-                <button onclick="editImage(${i})" class="px-2 py-1 bg-white text-sm rounded">Crop</button>
-                <button onclick="deleteImage(${i})" class="px-2 py-1 bg-red-600 text-white text-sm rounded">Delete</button>
-                <button onclick="setPrimary(${i})" class="px-2 py-1 bg-blue-600 text-white text-sm rounded">Primary</button>
+// CHANGED: Add variant with image upload section
+function addVariant() {
+    variantCount++;
+    const variantId = variantCount;
+    variantData[variantId] = {
+        images: [],
+        primaryIndex: 0
+    };
+
+    const container = document.getElementById('variantsContainer');
+    const variantDiv = document.createElement('div');
+    variantDiv.className = 'border-2 border-gray-200 rounded-lg p-6';
+    variantDiv.id = `variant-${variantId}`;
+    variantDiv.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="font-semibold text-gray-800">Variant #${variantId}</h3>
+            <button type="button" onclick="confirmDeleteVariant(${variantId})" class="text-red-600 hover:text-red-800 transition">
+                <i class="fas fa-trash mr-1"></i>Delete
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Color <span class="text-red-500">*</span></label>
+                <select name="colour[]" required class="w-full px-4 py-2 border rounded-lg">
+                    <option value="">Select Color</option>
+                    <option value="Black">Black</option>
+                    <option value="Blue">Blue</option>
+                    <option value="Brown">Brown</option>
+                    <option value="White">White</option>
+                    <option value="Red">Red</option>
+                    <option value="Green">Green</option>
+                    <option value="Yellow">Yellow</option>
+                    <option value="Gray">Gray</option>
+                    <option value="Silver">Silver</option>
+                    <option value="Gold">Gold</option>
+                </select>
             </div>
-            ${primaryIndex == i ? `<span class="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-1 rounded">Primary</span>` : ``}
-        </div>`;
-    });
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Price <span class="text-red-500">*</span></label>
+                <input type="number" name="price[]" step="0.01" min="0" required class="w-full px-4 py-2 border rounded-lg" placeholder="0.00">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Stock <span class="text-red-500">*</span></label>
+                <input type="number" name="stock[]" min="0" required class="w-full px-4 py-2 border rounded-lg" placeholder="0">
+            </div>
+        </div>
 
-    countDisplay.textContent = `${imageFiles.length} image(s) selected`;
-    if (imageFiles.length >= 3) {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove("opacity-50", "cursor-not-allowed");
-    } else {
-        submitBtn.disabled = true;
-        submitBtn.classList.add("opacity-50", "cursor-not-allowed");
-    }
+        <div class="border-2 border-dashed border-blue-300 rounded-lg p-4 mb-4">
+            <div class="text-center">
+                <input type="file" id="imageInput-${variantId}" accept="image/*" multiple class="hidden">
+                <button type="button" onclick="document.getElementById('imageInput-${variantId}').click()" 
+                        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    <i class="fas fa-upload mr-2"></i>Upload Images
+                </button>
+                <p class="text-sm text-gray-500 mt-2">Minimum 3 images required</p>
+            </div>
+        </div>
+
+        <div id="imagePreview-${variantId}" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+        <p id="imageCount-${variantId}" class="text-sm mt-2 font-medium">0 images selected</p>
+    `;
+    
+    container.appendChild(variantDiv);
+
+    // Attach event listener to file input
+    document.getElementById(`imageInput-${variantId}`).addEventListener('change', (e) => handleImageSelect(e, variantId));
+    
+    updateSubmitButton();
 }
 
-document.getElementById("imageInput").addEventListener("change", e => {
-    imageFiles= [];
-    [...e.target.files].forEach(file => imageFiles.push({ file, preview: URL.createObjectURL(file) }));
-    updateUI();
+// CHANGED: Handle image selection for variant
+function handleImageSelect(e, variantId) {
+    const files = Array.from(e.target.files || []);
+
+    // Block non-image files
+    if (!validateImageFiles(files)) {
+        e.target.value = "";  // Reset input
+        return;
+    }    
+
+    files.forEach(file => {
+        const preview = URL.createObjectURL(file);
+        variantData[variantId].images.push({ file, preview });
+    });
+    renderVariantImages(variantId);
+    updateSubmitButton();
+    e.target.value = ''; // Reset input
+}
+
+// CHANGED: Render variant images with crop, delete, primary controls
+function renderVariantImages(variantId) {
+    const container = document.getElementById(`imagePreview-${variantId}`);
+    const countDisplay = document.getElementById(`imageCount-${variantId}`);
+    const images = variantData[variantId].images;
+    const primaryIndex = variantData[variantId].primaryIndex;
+
+    container.innerHTML = '';
+    images.forEach((img, index) => {
+        const div = document.createElement('div');
+        div.className = 'relative group border rounded-lg overflow-hidden';
+        div.innerHTML = `
+            <img src="${img.preview}" class="w-full h-40 object-cover">
+            <div class="absolute inset-0 flex justify-center items-center gap-2 opacity-0 group-hover:opacity-100 bg-black/50 transition">
+                <button type="button" onclick="editImage(${variantId}, ${index})" 
+                        class="px-2 py-1 bg-white text-sm rounded hover:bg-gray-100">
+                    <i class="fas fa-crop"></i>
+                </button>
+                <button type="button" onclick="deleteImage(${variantId}, ${index})" 
+                        class="px-2 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700">
+                    <i class="fas fa-trash"></i>
+                </button>
+                <button type="button" onclick="setPrimary(${variantId}, ${index})" 
+                        class="px-2 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                    <i class="fas fa-star"></i>
+                </button>
+            </div>
+            ${primaryIndex === index ? `<span class="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded shadow"><i class="fas fa-star mr-1"></i>Primary</span>` : ''}
+        `;
+        container.appendChild(div);
+    });
+
+    const count = images.length;
+    countDisplay.textContent = `${count} image(s) selected`;
+    countDisplay.className = `text-sm mt-2 font-medium ${count >= 3 ? 'text-green-600' : 'text-red-600'}`;
+}
+
+// CHANGED: Edit image (open cropper)
+function editImage(variantId, imageIndex) {
+    currentCropContext = { variantId, imageIndex };
+    const img = variantData[variantId].images[imageIndex];
+    openGlobalCropper(img.preview, (blob) => {
+    const newFile = new File([blob], `crop_${Date.now()}.jpg`, { type: 'image/jpeg' });
+    const newPreview = URL.createObjectURL(newFile);
+    variantData[variantId].images[imageIndex] = { file: newFile, preview: newPreview };
+    renderVariantImages(variantId);
 });
 
-function editImage(index) {
-    currentEditIndex = index;
-    document.getElementById("cropImage").src = imageFiles[index].preview;
-    document.getElementById("cropModal").classList.remove("hidden");
+}
+
+// CHANGED: Delete image
+function deleteImage(variantId, imageIndex) {
+    URL.revokeObjectURL(variantData[variantId].images[imageIndex].preview);
+    variantData[variantId].images.splice(imageIndex, 1);
+    
+    // Adjust primary index if needed
+    if (variantData[variantId].primaryIndex >= imageIndex) {
+        variantData[variantId].primaryIndex = Math.max(0, variantData[variantId].primaryIndex - 1);
+    }
+    
+    renderVariantImages(variantId);
+    updateSubmitButton();
+}
+
+// CHANGED: Set primary image
+function setPrimary(variantId, imageIndex) {
+    variantData[variantId].primaryIndex = imageIndex;
+    renderVariantImages(variantId);
+}
+
+// CHANGED: Open cropper modal
+function openCropper(src) {
+    const img = document.getElementById('cropImage');
+    img.src = src;
+    document.getElementById('cropModal').classList.remove('hidden');
 
     setTimeout(() => {
         if (cropper) cropper.destroy();
-        cropper = new Cropper(document.getElementById("cropImage"), {
-            aspectRatio: NaN,
+        cropper = new Cropper(img, {
             viewMode: 1,
-            autoCropArea: 0.7,
-            dragMode: 'crop'
+            dragMode: 'crop',
+            aspectRatio: NaN,
+            autoCropArea: 0.8,
+            zoomOnWheel: true,
+            background: false,
+            responsive: true
         });
     }, 100);
 }
 
-function saveCrop() {
-    cropper.getCroppedCanvas().toBlob(blob => {
-        const newFile = new File([blob], imageFiles[currentEditIndex].file.name, { type: "image/jpeg" });
-        URL.revokeObjectURL(imageFiles[currentEditIndex].preview);
-        imageFiles[currentEditIndex] = { file: newFile, preview: URL.createObjectURL(newFile) };
-        cancelCrop();
-        updateUI();
-    });
+// CHANGED: Reset cropper
+function resetCropper() {
+    if (cropper) cropper.reset();
 }
 
+// CHANGED: Cancel crop
 function cancelCrop() {
-    if (cropper) cropper.destroy();
-    cropper = null;
-    document.getElementById("cropModal").classList.add("hidden");
+    if (cropper) {
+        cropper.destroy();
+        cropper = null;
+    }
+    document.getElementById('cropModal').classList.add('hidden');
+    currentCropContext = null;
 }
 
-function deleteImage(i) { imageFiles.splice(i, 1); updateUI(); }
-function setPrimary(i) { primaryIndex = i; updateUI(); }
+// CHANGED: Save cropped image
+function saveCrop() {
+    if (!cropper || !currentCropContext) return;
 
-// ================= VARIANTS (UNCHANGED) ================= //
-let variantCount = 0;
-function addVariant() {
-    variantCount++;
-    document.getElementById("variantsContainer").insertAdjacentHTML("beforeend", `
-        <div class="border border-gray-200 rounded-lg p-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="font-medium text-gray-700">Variant #${variantCount}</h3>
-                <button type="button" onclick="this.parentElement.parentElement.parentElement.remove()" class="text-red-600 hover:text-red-800"><i class="fas fa-trash"></i></button>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div><label>Color *</label><select name="colour[]" required class="w-full px-4 py-2 border rounded-lg"><option value="">Select</option><option>Black</option><option>Blue</option><option>Brown</option><option>White</option><option>Red</option><option>Green</option><option>Yellow</option><option>Gray</option></select></div>
-                <div><label>Price *</label><input type="number" name="price[]" required class="w-full px-4 py-2 border rounded-lg"></div>
-                <div><label>Old Price</label><input type="number" name="old_price[]" class="w-full px-4 py-2 border rounded-lg"></div>
-                <div><label>Stock *</label><input type="number" name="stock[]" required class="w-full px-4 py-2 border rounded-lg"></div>
-            </div>
-        </div>
-    `);
+    cropper.getCroppedCanvas({
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high'
+    }).toBlob((blob) => {
+        const { variantId, imageIndex } = currentCropContext;
+        const newFile = new File([blob], `cropped_${Date.now()}.jpg`, { type: 'image/jpeg' });
+        const newPreview = URL.createObjectURL(newFile);
+
+        // Replace old preview
+        URL.revokeObjectURL(variantData[variantId].images[imageIndex].preview);
+        variantData[variantId].images[imageIndex] = { file: newFile, preview: newPreview };
+
+        renderVariantImages(variantId);
+        cancelCrop();
+    }, 'image/jpeg', 0.9);
 }
-document.addEventListener("DOMContentLoaded", () => addVariant());
+
+// CHANGED: Confirm delete variant
+function confirmDeleteVariant(variantId) {
+    if (confirm(`Are you sure you want to delete Variant #${variantId}?`)) {
+        // Clean up images
+        variantData[variantId].images.forEach(img => URL.revokeObjectURL(img.preview));
+        delete variantData[variantId];
+        
+        // Remove DOM element
+        document.getElementById(`variant-${variantId}`).remove();
+        updateSubmitButton();
+    }
+}
+
+// CHANGED: Update submit button state
+function updateSubmitButton() {
+    const variantIds = Object.keys(variantData);
+    let allValid = variantIds.length > 0;
+
+    variantIds.forEach(id => {
+        if (variantData[id].images.length < 3) {
+            allValid = false;
+        }
+    });
+
+    if (allValid && variantIds.length > 0) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    } else {
+        submitBtn.disabled = true;
+        submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+// CHANGED: Form submission - append variant images
+document.getElementById('productForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+
+    // Append images for each variant
+    Object.keys(variantData).forEach((variantId, variantIndex) => {
+        const images = variantData[variantId].images;
+        const primaryIndex = variantData[variantId].primaryIndex;
+
+        // Reorder so primary is first
+        const orderedImages = [
+            images[primaryIndex],
+            ...images.filter((_, i) => i !== primaryIndex)
+        ];
+
+        orderedImages.forEach(img => {
+            formData.append(`variant_images_${variantIndex}[]`, img.file);
+        });
+    });
+
+    // Submit form
+    fetch(e.target.action, {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).then(r => {
+        if (r.redirected) {
+            window.location.href = r.url;
+            return null;
+        }
+        return r.text();
+    }).then(html => {
+        if (html) {
+            document.open();
+            document.write(html);
+            document.close();
+        }
+    }).catch(() => {
+        alert('An error occurred while saving the product.');
+    });
+});
+
+// Cancel confirmation
+function confirmCancel() {
+    document.getElementById('cancelModal').classList.remove('hidden');
+}
+
+function closeCancelModal() {
+    document.getElementById('cancelModal').classList.add('hidden');
+}
+
+// Initialize with one variant
+document.addEventListener('DOMContentLoaded', () => {
+    addVariant();
+});
+
+// VALID IMAGE TYPES
+const allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/jpg"];
+
+// Validate selected files are images ONLY
+function validateImageFiles(files) {
+    for (const file of files) {
+        if (!allowedImageTypes.includes(file.type)) {
+            alert(`Invalid file: ${file.name}\nOnly JPG, PNG, WEBP images are allowed.`);
+            return false;
+        }
+    }
+    return true;
+}
+
 </script>
 
 {% endblock %}
