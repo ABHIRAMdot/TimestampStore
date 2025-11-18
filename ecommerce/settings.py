@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR/ '.env')
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -28,7 +28,16 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG =os.getenv('DEBUG') == 'True'
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = [ 
+    "127.0.0.1",
+    "localhost",
+    "transmentally-unresentful-yvette.ngrok-free.dev",
+    ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.ngrok-free.dev",      # prevent Login/signup POST failing
+]
+
 
 
 # Application definition
@@ -83,7 +92,6 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'category.context_processor.menu_links',
-                'django.template.context_processors.request',
 
                 'home.context_processors.navbar_context',
                 
@@ -96,14 +104,18 @@ WSGI_APPLICATION = 'ecommerce.wsgi.application'
 
 AUTH_USER_MODEL = 'accounts.Account'
 
-LOGIN_URL = 'login'                 # login page
-LOGIN_REDIRECT_URL = 'admin_dashboard'         # where to go after login
-LOGOUT_REDIRECT_URL = 'login'       # after logout
-
-ADMIN_LOGIN_URL = 'admin_login'
+# LOGIN_URL = 'login'                 # login page
+# LOGOUT_REDIRECT_URL = 'login'       # after logout
 
 
+LOGIN_REDIRECT_URL = 'home'                 # Django login redirect
+LOGOUT_REDIRECT_URL = 'login'              # Django logout redirect
 
+ACCOUNT_LOGIN_REDIRECT_URL = 'home'        # Allauth login redirect
+ACCOUNT_LOGOUT_REDIRECT_URL = 'login'      # Allauth logout redirect
+
+
+ADMIN_LOGIN_URL = 'admin_login'  #@login_required(login_url=ADMIN_LOGIN_URL)
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -156,11 +168,12 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-STATIC_ROOT = BASE_DIR /'static'
-
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR,'ecommerce/static')  #actual path from folder
 ]
+
+STATIC_ROOT = BASE_DIR /'staticfiles' #for collectstatic
+
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT =BASE_DIR /'media'
@@ -182,8 +195,8 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTHENTICATION_BACKENDS = [
-    'django.contrib.auth.backends.ModelBackend',               # uses your Account model's USERNAME_FIELD
     'allauth.account.auth_backends.AuthenticationBackend',      # enables allauth login
+    'django.contrib.auth.backends.ModelBackend',               # uses your Account model's USERNAME_FIELD
 ]
 
 SOCIALACCOUNT_PROVIDERS = {
@@ -198,15 +211,12 @@ SOCIALACCOUNT_PROVIDERS = {
         'VERIFIED_EMAIL': True,  # Trust Google's email verification
     }
 }
-# OTP_EXPIRY_MINUTES = 15
-
+# OTP_EXPIRY_MINUTES = 10
 
 # Login/Authentication Settings
-
 ACCOUNT_AUTHENTICATION_METHOD = 'email'      # Only email login, no username
-
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_EMAIL_VERIFICATION = 'none'  # We handle OTP verification manually
+ACCOUNT_EMAIL_VERIFICATION = 'none'  # We handle OTP verification manually, not using the default allauth login/signup page 
 ACCOUNT_SESSION_REMEMBER = True    # Keep users logged in
 
 #For allauth to display the username(default) change it to email or fullname
@@ -225,12 +235,6 @@ SOCIALACCOUNT_LOGIN_ON_GET = True  # Enable auto-login
 SOCIALACCOUNT_QUERY_EMAIL = True
 
 SITE_ID = 1
-
-
-LOGIN_REDIRECT_URL = 'home'
-LOGOUT_REDIRECT_URL = 'login'
-
-
 
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
 ACCOUNT_DOMAIN = "127.0.0.1:8000"

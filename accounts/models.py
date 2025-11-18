@@ -60,6 +60,7 @@ class Account(AbstractBaseUser):  #account model
     phone_number = models.CharField(max_length=50, blank=True, null=True)
     date_joined = models.DateTimeField(auto_now_add=True)
     last_login = models.DateTimeField(auto_now=True)
+    profile_image = models.ImageField(upload_to='profile_images/', blank=True, null=True)
 
     otp = models.CharField(max_length=6, blank=True, null=True) # for emai Otp
     otp_created_at = models.DateTimeField(blank=True, null=True)
@@ -97,7 +98,7 @@ class Account(AbstractBaseUser):  #account model
     def generate_otp(self):
         self.otp = ''.join(random.choices(string.digits, k=6))
         self.otp_created_at = timezone.now()
-        self.save(using=self._db)
+        self.save()
         return self.otp
     
 
@@ -111,11 +112,19 @@ class Address(models.Model):
     city = models.CharField(max_length=100)
     state = models.CharField(max_length=100)
     postal_code = models.CharField(max_length=20)
+    is_default = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         verbose_name_plural = "Addresses"
+        ordering = ['-is_default', '-created_at']
 
     def __str__(self):
         return f"{self.full_name}, {self.city}"
+    
+    def save(self, *args, **kwargs):
+        # If this is set as default, unset other defaults for this user
+        if self.is_default:
+            Address.objects.filter(user=self.user, is_default=True).update(is_default=False)
+        super().save(*args, **kwargs)

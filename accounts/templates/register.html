@@ -9,7 +9,7 @@
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
     <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
-        <div class="grid grid-cols-1 lg:grid-cols-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2">
             
             <!-- Signup Form -->
             <div class="p-8 md:p-12">
@@ -158,8 +158,8 @@
         const spinner = document.getElementById('spinner');
         const text = document.getElementById('signupText');
         btn.addEventListener('click', () => {
-            spinner.classList.remove('hidden');
-            text.textContent = 'Creating Account...';
+            // spinner.classList.remove('hidden');
+            text.textContent = 'Create Account...';
         });
     </script>
 </body>

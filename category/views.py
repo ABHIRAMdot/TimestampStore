@@ -36,7 +36,7 @@ def category_list(request):
             categories = categories.filter(parent_id=parent_filter)
 
 
-    paginator = Paginator(categories,2)
+    paginator = Paginator(categories,3)
     page_number = request.GET.get('page')
     categories_page = paginator.get_page(page_number)
 
@@ -77,8 +77,11 @@ def add_category(request):
                 'parent_id': parent_id,
             })
         # Allow only MEN and WOMEN as main categories
-        if parent_id == '' and category_name.lower() not in ['men', 'women']:
-            messages.error(request, 'Only MEN and WOMEN can be added as main categories. All others must be subcategories.')
+        # if parent_id == '' and category_name.lower() not in ['men', 'women']:
+        #     messages.error(request, 'Only MEN and WOMEN can be added as main categories. All others must be subcategories.')
+
+        if parent_id == '':
+            messages.error(request, 'You must select a parent category (Men or Women).')
             return render(request, 'add_category.html', {
                 'main_categories': main_categories,
                 'category_name': category_name,

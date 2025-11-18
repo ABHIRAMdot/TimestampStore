@@ -9,11 +9,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-50 min-h-screen flex items-center justify-center p-4">
+    
     <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden">
         <div class="grid grid-cols-1 lg:grid-cols-2">
             
             <!-- Login Form -->
             <div class="p-8 md:p-12">
+                <div class="text- font-bold">
+                    <a href="{% url 'home' %}" class="hover:text-secondary transition "> TimeStamp</a>
+                </div>
                 <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Login</h2>
 
                 <!-- Django Messages -->
@@ -145,7 +149,7 @@
         const spinner = document.getElementById('spinner');
         const text = document.getElementById('loginText');
         btn.addEventListener('click', () => {
-            spinner.classList.remove('hidden');
+            // spinner.classList.remove('hidden');
             text.textContent = 'Logging in...';
         });
     </script>

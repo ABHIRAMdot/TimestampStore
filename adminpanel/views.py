@@ -89,7 +89,7 @@ def user_list(request):
             Q(phone_number__icontains=search_query)
         )        
 
-    paginator = Paginator(users,10) # 10 users per page
+    paginator = Paginator(users,5) # 10 users per page
     page_number = request.GET.get('page')
     users_page = paginator.get_page(page_number) #paginator method
 

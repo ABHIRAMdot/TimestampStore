@@ -1,0 +1,179 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Address - Timestamp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Page Header -->
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+        <div class="container mx-auto px-4 py-8">
+            <div class="flex items-center">
+                <a href="{% url 'address_list' %}" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg mr-4 transition">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="text-3xl font-bold mb-1">Add New Address</h1>
+                    <p class="text-indigo-100">Add a delivery address</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
+                    <div class="flex items-center justify-between">
+                        <span>{{ message }}</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="text-current hover:opacity-75">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="p-8">
+                    <form method="post">
+                        {% csrf_token %}
+
+                        <!-- Contact Information Section -->
+                        <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                            <h3 class="text-lg font-semibold text-indigo-600 mb-4 pb-3 border-b-2 border-gray-200">
+                                <i class="fas fa-user mr-2"></i>Contact Information
+                            </h3>
+                            
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="{{ form.full_name.id_for_label }}" class="block text-gray-700 font-semibold mb-2">
+                                        Full Name <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="{{ form.full_name.id_for_label }}" name="full_name" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                           placeholder="Full Name">
+                                    {% if form.full_name.errors %}
+                                        <div class="text-red-600 text-sm mt-1">{{ form.full_name.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="{{ form.mobile.id_for_label }}" class="block text-gray-700 font-semibold mb-2">
+                                        Mobile Number <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="{{ form.mobile.id_for_label }}" name="mobile" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                           placeholder="10-digit mobile number">
+                                    {% if form.mobile.errors %}
+                                        <div class="text-red-600 text-sm mt-1">{{ form.mobile.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="{{ form.second_mobile.id_for_label }}" class="block text-gray-700 font-semibold mb-2">
+                                        Alternate Mobile <span class="text-gray-400 text-sm">(Optional)</span>
+                                    </label>
+                                    <input type="text" id="{{ form.second_mobile.id_for_label }}" name="second_mobile" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                           placeholder="Alternate mobile number">
+                                    {% if form.second_mobile.errors %}
+                                        <div class="text-red-600 text-sm mt-1">{{ form.second_mobile.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Address Information Section -->
+                        <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                            <h3 class="text-lg font-semibold text-indigo-600 mb-4 pb-3 border-b-2 border-gray-200">
+                                <i class="fas fa-map-marker-alt mr-2"></i>Address Information
+                            </h3>
+
+                            <div class="mb-6">
+                                <label for="{{ form.street_address.id_for_label }}" class="block text-gray-700 font-semibold mb-2">
+                                    Street Address <span class="text-red-500">*</span>
+                                </label>
+                                <textarea id="{{ form.street_address.id_for_label }}" name="street_address" rows="3"
+                                          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                          placeholder="House No., Building Name, Street Name, Area"></textarea>
+                                {% if form.street_address.errors %}
+                                    <div class="text-red-600 text-sm mt-1">{{ form.street_address.errors }}</div>
+                                {% endif %}
+                                <small class="text-gray-500 text-sm">House No., Building Name, Street Name, Area</small>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-6">
+                                <div>
+                                    <label for="{{ form.city.id_for_label }}" class="block text-gray-700 font-semibold mb-2">
+                                        City <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="{{ form.city.id_for_label }}" name="city" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                           placeholder="City">
+                                    {% if form.city.errors %}
+                                        <div class="text-red-600 text-sm mt-1">{{ form.city.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="{{ form.state.id_for_label }}" class="block text-gray-700 font-semibold mb-2">
+                                        State <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="{{ form.state.id_for_label }}" name="state" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                           placeholder="State">
+                                    {% if form.state.errors %}
+                                        <div class="text-red-600 text-sm mt-1">{{ form.state.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div>
+                                    <label for="{{ form.postal_code.id_for_label }}" class="block text-gray-700 font-semibold mb-2">
+                                        Postal Code <span class="text-red-500">*</span>
+                                    </label>
+                                    <input type="text" id="{{ form.postal_code.id_for_label }}" name="postal_code" 
+                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                           placeholder="6-digit PIN code">
+                                    {% if form.postal_code.errors %}
+                                        <div class="text-red-600 text-sm mt-1">{{ form.postal_code.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Default Address Option -->
+                        <div class="mb-8">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="checkbox" id="{{ form.is_default.id_for_label }}" name="is_default" 
+                                       class="w-5 h-5 text-indigo-600 border-gray-300 rounded focus:ring-2 focus:ring-indigo-500">
+                                <span class="ml-3 text-gray-700 font-semibold">
+                                    <i class="fas fa-star text-yellow-500 mr-1"></i>
+                                    Set as default address
+                                </span>
+                            </label>
+                            <small class="text-gray-500 text-sm ml-8 block mt-1">This address will be used by default for orders</small>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="flex gap-3">
+                            <button type="submit" class="flex-1 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 font-semibold transition">
+                                <i class="fas fa-save mr-2"></i>Save Address
+                            </button>
+                            <a href="{% url 'address_list' %}" class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 font-semibold text-center transition">
+                                <i class="fas fa-times mr-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

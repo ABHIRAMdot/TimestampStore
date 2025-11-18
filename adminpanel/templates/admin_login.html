@@ -17,6 +17,7 @@
       <p class="text-gray-400 text-sm mt-1">Sign in to manage Timestamp</p>
     </div>
 
+
     <!-- Django Messages -->
     {% if messages %}
       <div class="space-y-2">
@@ -78,8 +79,8 @@
       </button>
 
       <!-- Footer -->
-      <div class="text-center text-gray-500 text-sm mt-4">
-        <p>© {{ now|date:"Y" }} Timestamp Admin Panel</p>
+      <div class="text-center  text-sm mt-4">
+        <p>© {{ now|date:"Y" }} <a href="{% url 'home' %}" class="hover:text-light transition "> TimeStamp</a><span class="text-gray-500"> Admin Panel</span></p>
       </div>
     </form>
   </div>
