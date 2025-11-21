@@ -5,11 +5,23 @@
 <div class="container mx-auto px-4 py-8">
   
   <!-- Breadcrumb -->
-  <nav class="text-sm text-gray-600 mb-6">
-    <a href="{% url 'home' %}" class="hover:text-blue-600">Home</a>
-    <span class="mx-2">/</span>
-    <span class="text-gray-900 font-medium">Products</span>
-  </nav>
+  <nav class="text-sm text-gray-600 mb-8 flex items-center gap-2">
+    {% for crumb in breadcrumbs %}
+        {% if crumb.url %}
+            <a href="{{ crumb.url }}" class="hover:text-blue-600 transition">{{ crumb.label }}</a>
+        {% else %}
+            <span class="text-gray-900 font-medium">{{ crumb.label }}</span>
+        {% endif %}
+
+        {% if not forloop.last %}
+            <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/>
+            </svg>
+        {% endif %}
+    {% endfor %}
+</nav>
+
 
   <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
@@ -135,31 +147,24 @@
       <!-- Search Bar & Sort -->
       <div class="bg-white rounded-xl shadow-md border border-gray-100 p-4 mb-6">
         <form method="get" class="flex flex-col sm:flex-row gap-3">
-          
-          <!-- Preserve filters when searching/sorting -->
-          {% if request.GET.main %}
-            <input type="hidden" name="main" value="{{ request.GET.main }}">
-          {% endif %}
-          {% if request.GET.category %}
-            <input type="hidden" name="category" value="{{ request.GET.category }}">
-          {% endif %}
-          {% if request.GET.min_price %}
-            <input type="hidden" name="min_price" value="{{ request.GET.min_price }}">
-          {% endif %}
-          {% if request.GET.max_price %}
-            <input type="hidden" name="max_price" value="{{ request.GET.max_price }}">
-          {% endif %}
 
+          <!-- Preserve all filters when searching or sorting -->
+          {% for key, value in request.GET.items %}
+              {% if key != 'search' and key != 'sort' and key != 'page' %}
+                  <input type="hidden" name="{{ key }}" value="{{ value }}">
+              {% endif %}
+          {% endfor %}
+      
           <!-- Search Input -->
           <div class="flex-1 relative">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-            </svg>
-            <input type="text" name="search" value="{{ request.GET.search }}" 
-                   placeholder="Search products..." 
-                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+              <input type="text" name="search" value="{{ request.GET.search }}" 
+                     placeholder="Search products..." 
+                     class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
           </div>
-
+      
           <!-- Sort Dropdown -->
           <select name="sort" onchange="this.form.submit()"
                   class="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
@@ -170,23 +175,20 @@
             <option value="name_desc" {% if request.GET.sort == 'name_desc' %}selected{% endif %}>Name: Z to A</option>
             <option value="new" {% if request.GET.sort == 'new' %}selected{% endif %}>New Arrivals</option>
           </select>
-
+      
           <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-            Search
+              Search
           </button>
 
-              <!-- CLEAR BUTTON (NEW) -->
-              {% if request.GET.search %}
-              <a href="?{% if request.GET.main %}main={{ request.GET.main }}&{% endif %}
-                        {% if request.GET.category %}category={{ request.GET.category }}&{% endif %}
-                        {% if request.GET.min_price %}min_price={{ request.GET.min_price }}&{% endif %}
-                        {% if request.GET.max_price %}max_price={{ request.GET.max_price }}&{% endif %}
-                        {% if request.GET.sort %}sort={{ request.GET.sort }}{% endif %}" 
-                class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors">
-                Clear
-              </a>
-              {% endif %}
-        </form>
+          {% if request.GET.search %}
+            <a href="?{% for key,value in request.GET.items %}{% if key != 'search' %}{{ key }}={{ value }}&{% endif %}{% endfor %}"
+            class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors">
+          Clear
+            </a>
+        {% endif %}
+
+      </form>
+      
       </div>
 
       <!-- Results Count -->
@@ -230,11 +232,20 @@
       {% endif %}
       
       <!-- Wishlist Button -->
-      <button class="absolute top-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-white transition-all shadow-md">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-        </svg>
-      </button>
+      <button
+      type="button"
+      class="absolute top-3 right-3 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center 
+             text-gray-400 hover:text-red-500 hover:bg-white transition-all shadow-md"
+      onclick="toggleWishlistFromGrid(event, this)"
+      data-product-id="{{ product.id }}"
+      data-variant-id="{{ product.min_variant.id|default:0 }}"
+  >  
+      <svg class="w-5 h-5 wishlist-heart transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+      </svg>
+  </button>
+  
     </div>
     
     <!-- Product Info -->
@@ -307,7 +318,7 @@
         </nav>
       </div>
       {% endif %}
-
+      
     </div>
   </div>
 </div>

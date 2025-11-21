@@ -127,6 +127,10 @@
     {% block extra_js %}{% endblock %}
     
     <div id="toastContainer" class="fixed top-5 right-5 z-50 space-y-3"></div>
+    <!-- Toast Notification -->
+<div id="toast"
+class="hidden fixed top-5 right-5 px-4 py-3 rounded-lg shadow-lg text-white text-sm z-50">
+</div>
 
 <script>
   //  Toast Function (Global)
@@ -149,6 +153,379 @@
     }, 2500);
   }
 </script>
+
+
+
+<script>
+    function updateWishlistCount() {
+        fetch("{% url 'get_wishlist_count' %}")
+        .then(res => res.json())
+        .then(data => {
+            const wishlistLink = document.querySelector('a[href*="wishlist"]');
+            if (wishlistLink) {
+                let badge = wishlistLink.querySelector('.badge');
+                if (data.count > 0) {
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'absolute -top-2 -right-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded-full';
+                        wishlistLink.appendChild(badge);
+                    }
+                    badge.textContent = data.count;
+                } else {
+                    if (badge) badge.remove();
+                }
+            }
+        });
+    }
+    </script>
+    
+    
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let cookie of cookies) {
+                    cookie = cookie.trim();
+                    if (cookie.startsWith(name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // TOGGLE WISHLIST
+        function toggleWishlistFromGrid(event, button) {
+            event.stopPropagation();       // 🔥 prevents opening product detail page
+            event.preventDefault();        // 🔥 prevents link default action
+            
+            const productId = button.dataset.productId;
+            const variantId = button.dataset.variantId;
+            const heartIcon = button.querySelector(".wishlist-heart");
+
+            fetch("{% url 'toggle_wishlist' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+                body: `product_id=${productId}&variant_id=${variantId}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    updateHeartUIFromGrid(heartIcon, data.in_wishlist);
+                    showToast(data.message, data.in_wishlist ? "success" : "error");
+                    updateWishlistCount();
+                } else {
+                    showToast(data.message, "error");
+                }
+            })
+            .catch(() => showToast("Something went wrong", "error"));
+        }
+
+        
+        // HEART ICON UI UPDATE
+        function updateHeartUIFromGrid(icon, inWishlist) {
+            if (inWishlist) {
+                icon.setAttribute("fill", "currentColor");
+                icon.setAttribute("stroke", "none");
+                icon.classList.add("text-red-500");
+        
+                // animation
+                icon.classList.add("scale-125");
+                setTimeout(() => icon.classList.remove("scale-125"), 200);
+        
+            } else {
+                icon.setAttribute("fill", "none");
+                icon.setAttribute("stroke", "currentColor");
+                icon.classList.remove("text-red-500");
+            }
+        }
+        
+        // AUTO LOAD WISHLIST STATUS
+        document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll("button[data-product-id]").forEach(btn => {
+                const productId = btn.dataset.productId;
+                const variantId = btn.dataset.variantId;
+                const icon = btn.querySelector(".wishlist-heart");
+        
+                fetch(`{% url 'check_wishlist_status' %}?product_id=${productId}&variant_id=${variantId}`)
+                .then(res => res.json())
+                .then(data => updateHeartUIFromGrid(icon, data.in_wishlist));
+            });
+        });
+        
+        // UPDATE WISHLIST COUNT IN NAV
+        function updateWishlistCount() {
+            fetch("{% url 'get_wishlist_count' %}")
+            .then(res => res.json())
+            .then(data => {
+                const wishlistLink = document.querySelector("a[href*='wishlist']");
+                if (!wishlistLink) return;
+        
+                let badge = wishlistLink.querySelector(".wishlist-badge");
+        
+                if (data.count > 0) {
+                    if (!badge) {
+                        badge = document.createElement("span");
+                        badge.className = "wishlist-badge absolute -top-1 -right-1 bg-red-600 text-white text-xs px-2 py-0.5 rounded-full";
+                        wishlistLink.appendChild(badge);
+                    }
+                    badge.textContent = data.count;
+                } else if (badge) {
+                    badge.remove();
+                }
+            });
+        }
+        
+        // SHOW TOAST
+        function showToast(message, type) {
+            const toast = document.getElementById("toast");
+        
+            toast.textContent = message;
+            toast.className = "fixed top-5 right-5 px-4 py-3 rounded-lg shadow-lg text-white text-sm z-50";
+        
+            if (type === "success") {
+                toast.classList.add("bg-green-600");
+            } else {
+                toast.classList.add("bg-red-600");
+            }
+        
+            toast.classList.remove("hidden", "opacity-0");
+            toast.classList.add("opacity-100");
+        
+            setTimeout(() => {
+                toast.classList.add("opacity-0");
+                setTimeout(() => toast.classList.add("hidden"), 300);
+            }, 2500);
+        }
+        </script>
+        
+
+
+
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        document.querySelectorAll("button[data-product-id]").forEach(btn => {
+            const productId = btn.dataset.productId;
+            const variantId = btn.dataset.variantId;
+            const icon = btn.querySelector('.wishlist-heart');
+    
+            fetch(`{% url 'check_wishlist_status' %}?product_id=${productId}&variant_id=${variantId}`)
+            .then(res => res.json())
+            .then(data => updateHeartUIFromGrid(icon, data.in_wishlist));
+        });
+    });
+    </script>
+
+<script>
+    /* Helper to format amount (simple) */
+    function formatCurrency(value) {
+        // value likely a string from JSON; ensure two decimals
+        const num = Number(value);
+        return "₹" + num.toFixed(2);
+    }
+    
+    /* Update page DOM after server response */
+    function updateCartDOMAfterQty(resp) {
+        if (resp.removed) {
+            const el = document.getElementById('cart-item-' + resp.cart_item_id);
+            if (el) el.remove();
+        } else {
+            // update qty and subtotal if present
+            if (resp.new_quantity !== undefined) {
+                const qEl = document.getElementById('qty-display-' + resp.cart_item_id);
+                if (qEl) qEl.textContent = resp.new_quantity;
+            }
+            if (resp.item_subtotal !== undefined) {
+                const sEl = document.getElementById('item-subtotal-' + resp.cart_item_id);
+                if (sEl) sEl.textContent = formatCurrency(resp.item_subtotal);
+            }
+        }
+    
+        // Update cart total displayed on summary
+        const totalEls = document.querySelectorAll('[data-cart-total]');
+        totalEls.forEach(e => e.textContent = formatCurrency(resp.cart_total));
+    
+        // Update cart_count in various places
+        updateCartCountUI(resp.cart_count);
+    }
+    
+    /* Update cart count in navbar */
+    function updateCartCountUI(count) {
+        // try element with id 'cart-count' or anchor badge
+        const cartCountEl = document.getElementById('cart-count');
+        if (cartCountEl) {
+            cartCountEl.textContent = count;
+        }
+        // call your existing updateWishlistCount if needed
+        // fallback: fetch get_cart_count endpoint
+    }
+    
+    /* AJAX: increase / decrease */
+    function updateQtyAjax(cart_item_id, action, btn) {
+        btn.disabled = true;
+        const formData = new URLSearchParams();
+        formData.append('cart_item_id', cart_item_id);
+        formData.append('action', action);
+    
+        fetch("{% url 'update_cart_quantity_ajax' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": getCookie('csrftoken')
+            },
+            body: formData.toString()
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                updateCartDOMAfterQty(data);
+                showToast(data.message, "success");
+            } else {
+                // If server removed the item, it returns removed + message
+                if (data.removed) {
+                    updateCartDOMAfterQty(data);
+                    showToast(data.message, "warning");
+                } else {
+                    showToast(data.message || "Could not update quantity", "error");
+                }
+            }
+        })
+        .catch(() => showToast("An error occurred. Please try again.", "error"))
+        .finally(() => { btn.disabled = false; });
+    }
+    
+    /* Remove modal & action */
+    let _modalTargetItemId = null;
+    function confirmRemoveModal(cart_item_id, product_name) {
+        _modalTargetItemId = cart_item_id;
+        document.getElementById('confirmModalTitle').textContent = "Remove item";
+        document.getElementById('confirmModalMessage').textContent = `Remove "${product_name}" from cart?`;
+        document.getElementById('confirmModalActionBtn').textContent = "Remove";
+        document.getElementById('confirmModalActionBtn').onclick = performRemoveAjax;
+        document.getElementById('confirmModal').classList.remove('hidden');
+        document.getElementById('confirmModal').classList.add('flex');
+    }
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.add('hidden');
+        document.getElementById('confirmModal').classList.remove('flex');
+        _modalTargetItemId = null;
+    }
+    function performRemoveAjax() {
+        if (!_modalTargetItemId) return closeConfirmModal();
+        const formData = new URLSearchParams();
+        formData.append('cart_item_id', _modalTargetItemId);
+    
+        const btn = document.getElementById('confirmModalActionBtn');
+        btn.disabled = true;
+    
+        fetch("{% url 'remove_from_cart_ajax' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": getCookie('csrftoken')
+            },
+            body: formData.toString()
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // remove DOM
+                const el = document.getElementById('cart-item-' + data.cart_item_id);
+                if (el) el.remove();
+    
+                // update totals
+                document.querySelectorAll('[data-cart-total]').forEach(e => e.textContent = formatCurrency(data.cart_total));
+                updateCartCountUI(data.cart_count);
+    
+                showToast(data.message, "success");
+            } else {
+                showToast(data.message || "Could not remove item", "error");
+            }
+        })
+        .catch(() => showToast("An error occurred. Please try again.", "error"))
+        .finally(() => {
+            btn.disabled = false;
+            closeConfirmModal();
+        });
+    }
+    
+    /* Clear cart with confirmation */
+    function confirmClearCart() {
+        document.getElementById('confirmModalTitle').textContent = "Clear cart";
+        document.getElementById('confirmModalMessage').textContent = "Clear all items from your cart?";
+        document.getElementById('confirmModalActionBtn').textContent = "Clear Cart";
+        document.getElementById('confirmModalActionBtn').onclick = performClearCartAjax;
+        document.getElementById('confirmModal').classList.remove('hidden');
+        document.getElementById('confirmModal').classList.add('flex');
+    }
+    function performClearCartAjax() {
+        const btn = document.getElementById('confirmModalActionBtn');
+        btn.disabled = true;
+    
+        fetch("{% url 'clear_cart_ajax' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": getCookie('csrftoken')
+            },
+            body: ""
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                // remove all cart items from DOM
+                document.querySelectorAll("[id^='cart-item-']").forEach(n => n.remove());
+                document.querySelectorAll('[data-cart-total]').forEach(e => e.textContent = formatCurrency(data.cart_total));
+                updateCartCountUI(data.cart_count);
+    
+                showToast(data.message, "success");
+            } else {
+                showToast(data.message || "Could not clear cart", "error");
+            }
+        })
+        .catch(() => showToast("An error occurred. Please try again.", "error"))
+        .finally(() => {
+            btn.disabled = false;
+            closeConfirmModal();
+        });
+    }
+    </script>
+
+
+<script>
+    let modalAction = null;
+    
+    function openModal(title, message, confirmCallback) {
+        document.getElementById("modalTitle").innerText = title;
+        document.getElementById("modalMessage").innerText = message;
+        
+        modalAction = confirmCallback;
+    
+        document.getElementById("confirmModal").classList.remove("hidden");
+    }
+    
+    document.getElementById("modalCancel").addEventListener("click", () => {
+        document.getElementById("confirmModal").classList.add("hidden");
+        modalAction = null;
+    });
+    
+    document.getElementById("modalConfirm").addEventListener("click", () => {
+        if (modalAction) modalAction();   // execute the callback
+        document.getElementById("confirmModal").classList.add("hidden");
+    });
+    </script>
+    
+
+
+
+    
+    
 
 
 </body>

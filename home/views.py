@@ -6,6 +6,8 @@ from products.models import Product, VariantImage
 from django.core.paginator import Paginator
 from category.models import Category
 import math
+from django.urls import reverse
+
 
 
 
@@ -83,7 +85,7 @@ def user_product_list(request):
     rounded_max_price = math.ceil(int(highest_variant_price) / 5000) * 5000
 
     # pagination
-    paginator = Paginator(products, 3)
+    paginator = Paginator(products, 4)
     page = request.GET.get('page')
     products_page = paginator.get_page(page)
 
@@ -95,11 +97,17 @@ def user_product_list(request):
     # Subcategories for dropdown
     categories = Category.objects.filter(parent__isnull=False, is_listed=True)
 
+    breadcrumbs = [
+        {"label": "Home", "url": reverse("home")},
+        
+    ]
+
     return render(request, 'home/user_product_list.html', {
         'products': products_page,
         'categories': categories,
         'request': request,    #Important for retaining filter values
         'max_price': rounded_max_price,
+        'breadcrumbs': breadcrumbs,
     })
 
 
@@ -108,11 +116,10 @@ def user_product_list(request):
 def user_product_detail(request, slug):
     """ display product detail page with variants """
     try:
-        product = get_object_or_404(Product, slug=slug)
-    except Exception as e:
-        # redirect if product is not listed
-        messages.error(request, f"This product is unavailable.{e}")
-        return redirect('user_product_list')
+        product = Product.objects.get(slug=slug)
+    except Product.DoesNotExist:
+        # Product completely missing
+        return render(request, "errors/product_unavailable.html", status=404)
     
     #Block unlisted product even user came erlier
     if not product.is_listed:
@@ -168,6 +175,12 @@ def user_product_detail(request, slug):
     #get main categories for navbar
     main_categories = Category.objects.filter(parent__isnull=True, is_listed=True).order_by('category_name')
 
+    breadcrumbs = [
+        {"label": "Home", "url": reverse("home")},
+        {"label": "All Products", "url": reverse("user_product_list")},
+        
+    ]
+
     return render(request, 'home/user_product_detail.html', {
         'product': product,
         'variants': variants,
@@ -175,6 +188,7 @@ def user_product_detail(request, slug):
         'variant_images': variant_images,
         'related': related,
         'main_categories' : main_categories,
+        'breadcrumbs': breadcrumbs,
         
     }) 
 

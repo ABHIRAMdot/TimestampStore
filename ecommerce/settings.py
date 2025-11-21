@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'cart',
     'offers',
     'home',
+    'wishlist',
 
     'django.contrib.sites',
 
@@ -94,6 +95,9 @@ TEMPLATES = [
                 'category.context_processor.menu_links',
 
                 'home.context_processors.navbar_context',
+                'cart.context_processors.cart_count',
+                'wishlist.context_processors.wishlist_count',
+
                 
             ],
         },
