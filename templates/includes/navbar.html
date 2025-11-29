@@ -52,21 +52,19 @@
                     <div class="relative">
                         <a href="{% url 'wishlist_view' %}" class="fas fa-heart cursor-pointer hover:text-secondary transition"></a>
                         {% if wishlist_item_count > 0 %}
-                        <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                        <span class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-3 h-3 flex items-center justify-center">
                             {{ wishlist_item_count }}
                         </span>
                         {% endif %}
                     </div>
-                    {% endif %}
-                    <!-- ============= END CHANGE #1 ============= -->
-            
+                    {% endif %}            
                     <!-- ============= CHANGE #2: UPDATED CART LINK ============= -->
                     <!-- Cart with Badge -->
                     <div class="relative">
                         {% if user.is_authenticated %}
                             <a href="{% url 'cart_view' %}" class="fas fa-shopping-bag cursor-pointer hover:text-secondary transition"></a>
                             {% if cart_item_count > 0 %}
-                            <span class="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                            <span class="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-3 h-3 flex items-center justify-center">
                                 {{ cart_item_count }}
                             </span>
                             {% endif %}
@@ -92,9 +90,11 @@
                                 <a href="{% url 'profile' %}" class="block px-4 py-2 hover:bg-gray-100 transition">
                                     <i class="fas fa-user mr-2"></i>My Profile
                                 </a>
-                                <a href="#" class="block px-4 py-2 hover:bg-gray-100 transition">
+                                {% if user.is_authenticated %}
+                                <a href="{% url 'user_orders_list' %}" class="block px-4 py-2 hover:bg-gray-100 transition">
                                     <i class="fas fa-box mr-2"></i>My Orders
                                 </a>
+                                {% endif %}
                                 <a href="{% url 'wishlist_view' %}" class="block px-4 py-2 hover:bg-gray-100 transition">
                                     <i class="fas fa-heart mr-2"></i>Wishlist
                                     {% if wishlist_item_count > 0 %}

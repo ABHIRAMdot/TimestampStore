@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'offers',
     'home',
     'wishlist',
+    'orders',
 
     'django.contrib.sites',
 

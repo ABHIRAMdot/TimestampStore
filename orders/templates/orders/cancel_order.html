@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Cancel Order - Timestamp{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Breadcrumbs -->
+        <nav class="mb-6 text-sm">
+            <ol class="flex items-center space-x-2">
+                {% for crumb in breadcrumbs %}
+                    <li class="flex items-center">
+                        {% if crumb.url %}
+                            <a href="{{ crumb.url }}" class="text-blue-600 hover:text-blue-800">{{ crumb.label }}</a>
+                            <svg class="w-4 h-4 mx-2 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/>
+                            </svg>
+                        {% else %}
+                            <span class="text-gray-500">{{ crumb.label }}</span>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ol>
+        </nav>
+
+        <div class="bg-white rounded-lg shadow-sm p-8">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900">Cancel Order</h1>
+                <p class="mt-2 text-gray-600">Order ID: {{ order.order_id }}</p>
+            </div>
+
+            <div class="border-t border-b border-gray-200 py-4 mb-6">
+                <p class="text-sm text-gray-700">
+                    <strong>Order Total:</strong> ₹{{ order.total_amount }}<br>
+                    <strong>Order Date:</strong> {{ order.created_at|date:"d F, Y" }}<br>
+                    <strong>Items:</strong> {{ order.items.count }}
+                </p>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-6">
+                    {{ form.as_p }}
+                </div>
+
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <p class="text-sm text-yellow-800">
+                        <strong>Note:</strong> Cancelling this order will restore the stock for all items. If you've already made a payment, the refund will be processed within 5-7 business days.
+                    </p>
+                </div>
+
+                <div class="flex gap-4">
+                    <button type="submit" 
+                            class="flex-1 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium">
+                        Confirm Cancellation
+                    </button>
+                    <a href="{% url 'user_order_detail' order.order_id %}" 
+                       class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-center font-medium">
+                        Go Back
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

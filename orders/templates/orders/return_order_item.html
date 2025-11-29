@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Return Item - Timestamp{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="bg-white rounded-lg shadow-sm p-8">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"/>
+                    </svg>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900">Request Return</h1>
+                <p class="mt-2 text-gray-600">Order ID: {{ item.order.order_id }}</p>
+            </div>
+
+            <!-- Item Details -->
+            <div class="border border-gray-200 rounded-lg p-4 mb-6">
+                <div class="flex gap-4">
+                    {% if item.variant.images.first %}
+                    <img src="{{ item.variant.images.first.image.url }}" 
+                         alt="{{ item.product_name }}"
+                         class="w-24 h-24 object-cover rounded">
+                    {% else %}
+                    <div class="w-24 h-24 bg-gray-200 rounded flex items-center justify-center">
+                        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900">{{ item.product_name }}</h3>
+                        <p class="text-sm text-gray-600 mt-1">Colour: {{ item.variant_colour }}</p>
+                        <p class="text-sm text-gray-600">Quantity: {{ item.quantity }}</p>
+                        <p class="text-lg font-semibold text-gray-900 mt-2">₹{{ item.get_total }}</p>
+                        {% if item.delivered_at %}
+                        <p class="text-xs text-gray-500 mt-2">
+                            <i class="fas fa-check-circle text-green-600"></i> 
+                            Delivered on {{ item.delivered_at|date:"d M, Y" }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Return Policy Info -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 class="font-semibold text-blue-900 mb-2 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    Return Policy
+                </h3>
+                <ul class="text-sm text-blue-800 space-y-1 ml-7">
+                    <li>• Returns accepted within 7 days of delivery</li>
+                    <li>• Product must be unused and in original packaging</li>
+                    <li>• Refund will be processed after inspection</li>
+                    <li>• Processing time: 5-7 business days</li>
+                </ul>
+            </div>
+
+            <!-- Return Form -->
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Return Reason <span class="text-red-600">*</span>
+                    </label>
+                    {{ form.reason }}
+                    {% if form.reason.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.reason.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-1 text-xs text-gray-500">
+                        Please provide a detailed reason for the return (minimum 10 characters). This helps us improve our products and services.
+                    </p>
+                </div>
+
+                <!-- Common Return Reasons (Helper) -->
+                <div class="mb-6">
+                    <p class="text-sm font-medium text-gray-700 mb-2">Common reasons:</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button type="button" onclick="setReason('Product quality is not satisfactory')" 
+                                class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-gray-200 transition">
+                            Quality issue
+                        </button>
+                        <button type="button" onclick="setReason('Product does not match description')" 
+                                class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-gray-200 transition">
+                            Not as described
+                        </button>
+                        <button type="button" onclick="setReason('Received damaged or defective product')" 
+                                class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-gray-200 transition">
+                            Damaged/Defective
+                        </button>
+                        <button type="button" onclick="setReason('Wrong product delivered')" 
+                                class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-gray-200 transition">
+                            Wrong product
+                        </button>
+                        <button type="button" onclick="setReason('Changed my mind about the purchase')" 
+                                class="px-3 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-gray-200 transition">
+                            Changed mind
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                    <div class="flex gap-3">
+                        <svg class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                        <div>
+                            <p class="text-sm font-medium text-amber-800">What happens next?</p>
+                            <ol class="mt-2 text-sm text-amber-700 space-y-1">
+                                <li>1. Your return request will be reviewed by our team</li>
+                                <li>2. You'll receive a confirmation email within 24 hours</li>
+                                <li>3. Once approved, we'll arrange pickup</li>
+                                <li>4. After inspection, refund will be processed</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <button type="submit" 
+                            class="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium">
+                        <i class="fas fa-paper-plane mr-2"></i>Submit Return Request
+                    </button>
+                    <a href="{% url 'user_order_detail' item.order.order_id %}" 
+                       class="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-center font-medium">
+                        <i class="fas fa-arrow-left mr-2"></i>Go Back
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function setReason(reason) {
+    const textarea = document.querySelector('textarea[name="reason"]');
+    if (textarea) {
+        textarea.value = reason;
+    }
+}
+</script>
+{% endblock %}

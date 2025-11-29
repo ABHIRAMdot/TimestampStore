@@ -1,0 +1,213 @@
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block title %}Return Requests - Admin{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Return Requests</h1>
+            <p class="text-gray-600 mt-1">Manage customer return requests</p>
+        </div>
+        <div class="bg-orange-100 px-4 py-2 rounded-lg">
+            <span class="text-orange-800 font-semibold">{{ total_pending }} Pending</span>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-800{% elif message.tags == 'error' %}bg-red-50 text-red-800{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800{% else %}bg-blue-50 text-blue-800{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Search -->
+    <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+        <form method="GET" class="flex gap-3">
+            <input type="text" 
+                   name="search" 
+                   value="{{ search_query }}"
+                   placeholder="Search by Order ID, Product, or Customer Email..."
+                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                <i class="fas fa-search mr-2"></i>Search
+            </button>
+            {% if search_query %}
+            <a href="{% url 'admin_return_requests_list' %}" class="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                Clear
+            </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Return Requests Table -->
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+        {% if page_obj %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Return Reason</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Requested On</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for item in page_obj %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <a href="{% url 'admin_order_detail' item.order.order_id %}" class="text-blue-600 hover:text-blue-800 font-medium">
+                                #{{ item.order.order_id }}
+                            </a>
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-gray-100 rounded overflow-hidden flex-shrink-0">
+                                    {% if item.variant.images.all %}
+                                        {% with item.variant.images.all|first as image %}
+                                        <img src="{{ image.image.url }}" alt="{{ item.product_name }}" class="w-full h-full object-cover">
+                                        {% endwith %}
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-900">{{ item.product_name }}</p>
+                                    <p class="text-sm text-gray-500">{{ item.variant_colour }} | Qty: {{ item.quantity }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <p class="text-gray-900">{{ item.order.user.get_full_name }}</p>
+                            <p class="text-sm text-gray-500">{{ item.order.user.email }}</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-sm text-gray-700 max-w-xs">{{ item.return_reason|truncatewords:15 }}</p>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {{ item.return_request_at|date:"d M, Y" }}<br>
+                            {{ item.return_request_at|time:"h:i A" }}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex gap-2">
+                                <!-- Approve Button -->
+                                <form method="POST" action="{% url 'admin_approve_return' item.id %}" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="return_requests_list">
+                                    <button type="submit" 
+                                            onclick="return confirm('Approve this return request? Stock will be restored.')"
+                                            class="px-3 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700">
+                                        <i class="fas fa-check mr-1"></i>Approve
+                                    </button>
+                                </form>
+
+                                <!-- Reject Button -->
+                                <button onclick="openRejectModal({{ item.id }}, '{{ item.product_name }}')"
+                                        class="px-3 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700">
+                                    <i class="fas fa-times mr-1"></i>Reject
+                                </button>
+
+                                <!-- View Order -->
+                                <a href="{% url 'admin_order_detail' item.order.order_id %}" 
+                                   class="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} results
+                </div>
+                <div class="flex gap-2">
+                    {% if page_obj.has_previous %}
+                    <a href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}" 
+                       class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">First</a>
+                    <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                       class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">Previous</a>
+                    {% endif %}
+                    
+                    <span class="px-4 py-1 bg-blue-600 text-white rounded">{{ page_obj.number }}</span>
+                    
+                    {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                       class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">Next</a>
+                    <a href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}" 
+                       class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">Last</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-12">
+            <i class="fas fa-inbox text-gray-400 text-5xl mb-4"></i>
+            <p class="text-gray-600 text-lg">No return requests found</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Reject Modal -->
+<div id="rejectModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <h3 class="text-lg font-medium text-gray-900 mb-4">Reject Return Request</h3>
+            <p class="text-sm text-gray-600 mb-4">Product: <span id="modalProductName" class="font-medium"></span></p>
+            
+            <form id="rejectForm" method="POST" action="">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="return_requests_list">
+                <textarea name="rejection_reason" 
+                          rows="4" 
+                          required
+                          placeholder="Enter rejection reason..."
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"></textarea>
+                
+                <div class="flex gap-3">
+                    <button type="submit" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">
+                        Reject Return
+                    </button>
+                    <button type="button" onclick="closeRejectModal()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function openRejectModal(itemId, productName) {
+    document.getElementById('rejectModal').classList.remove('hidden');
+    document.getElementById('modalProductName').textContent = productName;
+    document.getElementById('rejectForm').action = `/admin/return/${itemId}/reject/`;
+}
+
+function closeRejectModal() {
+    document.getElementById('rejectModal').classList.add('hidden');
+}
+
+// Close modal on outside click
+document.getElementById('rejectModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeRejectModal();
+    }
+});
+</script>
+{% endblock %}

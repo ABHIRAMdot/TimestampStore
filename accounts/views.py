@@ -438,13 +438,12 @@ def profile(request):
     user = request.user
     addresses = Address.objects.filter(user=user)
 
-    # Get orders if you have an Order model
-    # orders = Order.objects.filter(user=user).order_by('-created_at')
+    orders = request.user.orders.prefetch_related("items").order_by("-created_at")
 
     context = {
         'user': user,
         'addresses': addresses,
-        # 'orders': orders,
+        'orders': orders,
     }    
     return render(request, 'accounts/profile.html',context)
 
@@ -647,7 +646,7 @@ def verify_email_change_otp(request):
 @never_cache
 def address_list(request):
     """Display all user addresses"""
-    addresses = Address.objects.filter(user=request.user)
+    addresses = Address.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'accounts/address_list.html', {'addresses': addresses})
 
 @login_required
@@ -662,14 +661,21 @@ def add_address(request):
             address.save()
             messages.success(request, "Address added successfully!")
 
-            # Redirect based on where user came from
-            next_url = request.GET.get('next', 'address_list')
-            return redirect(next_url)
+            # Redirect based on context
+            if request.GET.get('next') == 'checkout':
+                return redirect('checkout')
+            return redirect('address_list')
+
+            
         else:
             messages.error(request, 'Please correct the errors below.')
     else:
         form = AddressForm()
-    return render(request, 'accounts/add_address.html', {'form': form})
+    context = {
+            'form':form,
+            'is_checkout': request.GET.get('next') == 'checkout',
+    }        
+    return render(request, 'accounts/add_address.html', context)
 
 
 @login_required
@@ -679,10 +685,14 @@ def edit_address(request, address_id):
     address = get_object_or_404(Address, id=address_id, user=request.user)
     
     if request.method == 'POST':
-        form = AddressForm(request.POST, instance=add_address)
+        form = AddressForm(request.POST, instance=address)
         if form.is_valid():
             form.save()
             messages.success(request, 'Address updated successfully!')
+
+            #Redirect based on context
+            if request.GET.get('next') == 'checkout':
+                return redirect('checkout')
             return redirect('address_list')
         else:
             messages.error(request, 'Please correct the errors below.')
@@ -691,12 +701,14 @@ def edit_address(request, address_id):
     
     context = {
         'form': form,
-        'address': address
+        'address': address,
+        'is_checkout': request.GET.get('next') == 'checkout',
     }
     return render(request, 'accounts/edit_address.html', context)
 
 
-@login_required
+@login_required(login_url='login')
+@require_POST
 def delete_address(request, address_id):
     """Delete address"""
     address = get_object_or_404(Address, id=address_id, user=request.user)
@@ -704,10 +716,13 @@ def delete_address(request, address_id):
     if request.method == 'POST':
         address.delete()
         messages.success(request,  'Address deleted successfully!')
+
+    if request.session.get('selected_address_id') == address_id:
+        del request.session['selected_address_id']
     
     return redirect('address_list')
 
-@login_required
+@login_required(login_url='login')
 def set_default_address(request, address_id):
     """Set address as default"""
     address = get_object_or_404(Address, id=address_id, user=request.user)

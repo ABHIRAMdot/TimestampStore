@@ -28,6 +28,7 @@ urlpatterns = [
     path('category/',include('category.urls')),
     path('cart/', include('cart.urls')),
     path('wishlist/',include('wishlist.urls')),
+    path('orders/',include('orders.urls')),
     path('accounts/', include('allauth.urls')),
     path('offers/', include('offers.urls')),
     path('system-admin/', admin.site.urls),
@@ -36,3 +37,5 @@ urlpatterns = [
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
+
+handler404 = 'home.views.custom_404'

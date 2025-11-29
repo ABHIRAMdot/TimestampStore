@@ -23,8 +23,7 @@ from .utils import(
 
 
 # views.py (add these imports at top if not present)
-from django.views.decorators.http import require_http_methods
-from django.http import JsonResponse
+# from django.views.decorators.http import require_http_methods
 
 # ---------- AJAX: update quantity ----------
 @login_required(login_url='login')
@@ -116,7 +115,7 @@ def update_cart_quantity_ajax(request):
     return JsonResponse({'success': False, 'message': 'Invalid action.'})
 
 
-# ---------- AJAX: remove item ----------
+#  AJAX: remove item
 @login_required(login_url='login')
 @require_POST
 def remove_from_cart_ajax(request):
@@ -135,7 +134,7 @@ def remove_from_cart_ajax(request):
     })
 
 
-# ---------- AJAX: clear cart ----------
+#  AJAX: clear cart
 @login_required(login_url='login')
 @require_POST
 def clear_cart_ajax(request):
@@ -152,19 +151,18 @@ def clear_cart_ajax(request):
 
 
 
-
 @login_required
 def cart_view(request):
     """Display cart items"""
     cart = get_or_create_cart(request.user)
-
-    #Clean invalid items (unlisted products, out of stock, etc..)
-    removed_items = clean_cart_invalid_items(cart)
-
-    if removed_items:
-        messages.warning(request, f"Some items were removeed from your cart: {', '.join(removed_items)}")
     
     cart_items = cart.items.select_related('product', 'variant', 'product__category').all()
+
+    for item in cart_items:
+        if not item.variant.product.is_listed or not item.variant.is_listed or item.variant.stock <= 0:
+            item.unavailable = True
+        else:
+            item.unavailable = False
 
     breadcrumbs = [
         {"label": "Home", "url": reverse("home")},
@@ -174,9 +172,10 @@ def cart_view(request):
 
     context = {
         'cart': cart,
-        'cart_items': cart_items,
+        'cart_items': cart_items, 
         'cart_count': cart.get_item_count(),
-        'breadcrumbs': breadcrumbs, 
+        'breadcrumbs': breadcrumbs,
+        'any_unavailable': any(item.unavailable for item in cart_items)
     }
     return render(request, 'cart/cart.html', context)
 
@@ -245,7 +244,7 @@ def add_to_cart(request):
             #Check against stock
             if new_quantity > variant.stock:
                 messages.error(request, f"Cannot add more. Only {variant.stock} items available.")
-                return redirect('product_details', slug=product.slug) 
+                return redirect('product_detail', slug=product.slug) 
             
             #Check against maximum quantity
             if new_quantity > CartItem.MAX_QUANTITY_PER_PRODUCT:
@@ -268,12 +267,8 @@ def add_to_cart(request):
 
         # recalculate cart total
         cart.calculate_total()
-    # Now try safe redirect:
-    # 1) If product still exists and is listable -> go to detail
-    # 2) If not, show custom page
 
     try:
-        # re-fetch product from DB to ensure latest state
         product = Product.objects.filter(id=product.id).first()
         if not product or not product.is_listed or (product.category and not product.category.is_listed):
             # product just became unavailable
@@ -284,92 +279,91 @@ def add_to_cart(request):
             return render(request, 'errors/product_unavailable.html', context, status=410)
 
         # OK product is available - redirect to detail using slug (match urlconf)
-        return redirect('product_detail', slug=product.slug)
+        return redirect(f"/product/{product.slug}/?variant={variant.id}")
 
     except NoReverseMatch:
-        # Shouldn't happen if we pass slug correctly, but safe fallback:
         messages.info(request, "Product added to cart. You can continue shopping.")
+        
         return redirect('user_product_list')        
 
-    # return redirect('cart_view')
 
 
-@login_required(login_url='login')
-@require_POST
-def update_cart_quantity(request):
-    """Update cart item quantity (increment/decrement)"""
-    cart_item_id = request.POST.get('cart_item_id')
-    action = request.POST.get('action')  # increasse or decrease
+# @login_required(login_url='login')
+# @require_POST
+# def update_cart_quantity(request):
+#     """Update cart item quantity (increment/decrement)"""
+#     cart_item_id = request.POST.get('cart_item_id')
+#     action = request.POST.get('action')  # increasse or decrease
 
-    cart_item = get_object_or_404(CartItem, id=cart_item_id, cart__user=request.user)
+#     cart_item = get_object_or_404(CartItem, id=cart_item_id, cart__user=request.user)
 
 
-    # Check if product is still available
-    if not cart_item.is_product_available():
-        messages.error(request, "This product is no longer available.")
-        cart_item.delete()
-        cart_item.cart.calculate_total()
-        return redirect('cart_view') 
+#     # Check if product is still available
+#     if not cart_item.is_product_available():
+#         messages.error(request, "This product is no longer available.")
+#         cart_item.delete()
+#         cart_item.cart.calculate_total()
+#         return redirect('cart_view') 
     
-    with transaction.atomic():
-        if action == 'increase':
-            # check if can increase
-            if not cart_item.can_increase_quantity():
-                if cart_item.quantity >= cart_item.variant.stock:
-                    messages.error(request, f"Cannot add more. Only {cart_item.variant.stock} items available.")
-                elif cart_item.quantity >= CartItem.MAX_QUANTITY_PER_PRODUCT:
-                    messages.error(request, f"Maximum {CartItem.MAX_QUANTITY_PER_PRODUCT} items allowed.")
-                    return redirect('cart_view')
+#     with transaction.atomic():
+#         if action == 'increase':
+#             # check if can increase
+#             if not cart_item.can_increase_quantity():
+#                 if cart_item.quantity >= cart_item.variant.stock:
+#                     messages.error(request, f"Cannot add more. Only {cart_item.variant.stock} items available.")
+#                 elif cart_item.quantity >= CartItem.MAX_QUANTITY_PER_PRODUCT:
+#                     messages.error(request, f"Maximum {CartItem.MAX_QUANTITY_PER_PRODUCT} items allowed.")
+#                     return redirect('cart_view')
 
-            cart_item.quantity +=1
-            cart_item.save()
-            messages.success(request, "Quantity increased.")
+#             cart_item.quantity +=1
+#             cart_item.save()
+#             messages.success(request, "Quantity increased.")
 
-        elif action == 'decrease':
-            if cart_item.quantity > 1:
-                cart_item.quantity -= 1
-                cart_item.save()
-                messages.success(request, f"Quantity decreased.")
-            else:
-                # if quantity is 1, remove item instead
-                product_name = cart_item.product.product_name
-                cart_item.delete()
-                messages.success(request, f"{product_name} removed from cart")
+#         elif action == 'decrease':
+#             if cart_item.quantity > 1:
+#                 cart_item.quantity -= 1
+#                 cart_item.save()
+#                 messages.success(request, f"Quantity decreased.")
+#             else:
+#                 # if quantity is 1, remove item instead
+#                 product_name = cart_item.product.product_name
+#                 cart_item.delete()
+#                 messages.success(request, f"{product_name} removed from cart")
 
-        # Recalculate total
-        cart_item.cart.calculate_total()
+#         # Recalculate total
+#         cart_item.cart.calculate_total()
 
-    return redirect('cart_view')
-
-
-@login_required(login_url='login')
-@require_POST
-def remove_from_cart(request):
-    """Remove item from cart"""
-    cart_item_id = request.POST.get('cart_item_id')
-
-    cart_item = get_object_or_404(CartItem, id=cart_item_id, cart__user=request.user)
-
-    product_name = cart_item.product.product_name
-    cart = cart_item.cart
-
-    cart_item.delete()
-    cart.calculate_total()
-
-    messages.success(request, f"{product_name} removed from your cart.")
-    return redirect('cart_view')
+#     return redirect('cart_view')
 
 
-@login_required(login_url='login')
-def clear_cart(request):
-    """Clear all items from cart"""
-    cart = get_or_create_cart(request.user)
-    cart.items.all().delete()
-    cart.total = Decimal('0.00')
-    cart.save()
+# @login_required(login_url='login')
+# @require_POST
+# def remove_from_cart(request):
+#     """Remove item from cart"""
+#     cart_item_id = request.POST.get('cart_item_id')
 
-    messages.success(request, "Your cart has been cleared.")
-    return redirect('car_view')
+#     cart_item = get_object_or_404(CartItem, id=cart_item_id, cart__user=request.user)
+
+#     product_name = cart_item.product.product_name
+#     cart = cart_item.cart
+
+#     cart_item.delete()
+#     cart.calculate_total()
+
+#     messages.success(request, f"{product_name} removed from your cart.")
+#     return redirect('cart_view')
+
+
+# @login_required(login_url='login')
+# def clear_cart(request):
+#     """Clear all items from cart"""
+#     cart = get_or_create_cart(request.user)
+#     cart.items.all().delete()
+#     cart.total = Decimal('0.00')
+#     cart.save()
+
+#     messages.success(request, "Your cart has been cleared.")
+#     return redirect('car_view')
 
 
 @login_required(login_url='login')

@@ -41,7 +41,7 @@ class CartItem(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ('cart', 'product')
+        unique_together = ('cart', 'product','variant')
 
     def __str__(self):
         return f"{self.quantity} × {self.product.product_name}"

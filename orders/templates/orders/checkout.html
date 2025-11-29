@@ -1,0 +1,186 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - Timestamp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50">
+    
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+
+        {% if messages %}
+        <div class="mb-6 space-y-2">
+            {% for message in messages %}
+            <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-800{% elif message.tags == 'error' %}bg-red-50 text-red-800{% else %}bg-blue-50 text-blue-800{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Address Selection -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-900">
+                            <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>
+                            Delivery Address
+                        </h2>
+                        <a href="{% url 'add_address' %}?next=checkout" class="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                            <i class="fas fa-plus mr-1"></i> Add New
+                        </a>
+                    </div>
+
+                    {% if not addresses %}
+                    <div class="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                        <p class="text-gray-600 mb-4">No saved addresses</p>
+                        <a href="{% url 'add_address' %}?next=checkout" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                            Add Address
+                        </a>
+                    </div>
+                    {% else %}
+                    <div class="space-y-3">
+                        {% for address in addresses %}
+                        <div class="border-2 {% if selected_address.id == address.id %}border-blue-600 bg-blue-50{% else %}border-gray-200{% endif %} rounded-lg p-4">
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-start flex-1">
+                                    <input type="radio" name="delivery_address" value="{{ address.id }}"
+                                           {% if selected_address.id == address.id %}checked{% endif %}
+                                           onchange="window.location.href='{% url 'select_address' address.id %}'"
+                                           class="mt-1 mr-3">
+                                    <div class="flex-1">
+                                        <h3 class="font-semibold text-gray-900">{{ address.full_name }}</h3>
+                                        <p class="text-gray-700 text-sm">{{ address.street_address }}</p>
+                                        <p class="text-gray-700 text-sm">{{ address.city }}, {{ address.state }} - {{ address.postal_code }}</p>
+                                        <p class="text-gray-600 text-sm mt-1">
+                                            <i class="fas fa-phone"></i> {{ address.mobile }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <a href="{% url 'edit_address' address.id %}?next=checkout" class="ml-4 text-blue-600 hover:text-blue-700 text-sm">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Cart Items -->
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-shopping-bag text-blue-600 mr-2"></i>
+                        Order Items ({{ cart_items|length }})
+                    </h2>
+                    
+                    <div class="space-y-4">
+                        {% for item in cart_items %}
+                        <div class="flex items-start border-b border-gray-200 pb-4 last:border-b-0">
+                            <div class="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                {% if item.variant.images.all %}
+                                    {% with item.variant.images.all|first as image %}
+                                    <img src="{{ image.image.url }}" alt="{{ item.product.product_name }}" class="w-full h-full object-cover">
+                                    {% endwith %}
+                                {% endif %}
+                            </div>
+                            
+                            <div class="ml-4 flex-1">
+                                <h3 class="font-semibold text-gray-900">{{ item.product.product_name }}</h3>
+                                <p class="text-sm text-gray-600 mt-1">Color: {{ item.variant.colour }}</p>
+                                <div class="flex items-center justify-between mt-2">
+                                    <span class="text-sm text-gray-600">Qty: {{ item.quantity }}</span>
+                                    <div class="text-right">
+                                        <p class="font-semibold text-gray-900">₹{{ item.price }} × {{ item.quantity }}</p>
+                                        <p class="text-sm font-bold text-gray-900">₹{{ item.get_subtotal }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-sm p-6 sticky top-4">
+                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
+                    
+                    <div class="space-y-3 mb-4 pb-4 border-b border-gray-200">
+                        <div class="flex justify-between text-gray-700">
+                            <span>Subtotal</span>
+                            <span>₹{{ subtotal }}</span>
+                        </div>
+                        
+                        {% if discount_amount > 0 %}
+                        <div class="flex justify-between text-green-600">
+                            <span>Discount</span>
+                            <span>-₹{{ discount_amount }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="flex justify-between text-gray-700">
+                            <span>Shipping</span>
+                            <span>{% if shipping_charge == 0 %}FREE{% else %}₹{{ shipping_charge }}{% endif %}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center text-lg font-bold text-gray-900 mb-6">
+                        <span>Total</span>
+                        <span>₹{{ total_amount }}.00</span>
+                    </div>
+                    
+                    <!-- Payment Method -->
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-900 mb-3">Payment</h3>
+                        <div class="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                            <div class="flex items-center">
+                                <i class="fas fa-money-bill-wave text-green-600 text-xl mr-3"></i>
+                                <div>
+                                    <p class="font-medium text-gray-900">Cash on Delivery</p>
+                                    <p class="text-xs text-gray-600">Pay when you receive</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Place Order -->
+                    <form method="POST" action="{% url 'place_order' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="product_id" value="{{ product.id }}">
+                        <input type="hidden" name="variant_id" value="{{ selected_variant.id }}">
+                        <input type="hidden" name="slug" value="{{ selected_variant.product.slug }}">                                    
+                        
+                        <textarea name="order_note" placeholder="Order notes (optional)" rows="2" 
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-4"></textarea>
+                        
+                        {% if selected_address %}
+                        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
+                            <i class="fas fa-check-circle mr-2"></i>
+                            Place Order
+                        </button>
+                        {% else %}
+                        <button type="button" disabled class="w-full bg-gray-300 text-gray-500 py-3 rounded-lg font-semibold cursor-not-allowed">
+                            Select Address to Continue
+                        </button>
+                        {% endif %}
+                    </form>
+                    
+                    <div class="mt-4 text-center">
+                        <a href="{% url 'cart_view' %}" class="text-blue-600 hover:text-blue-700 text-sm">
+                            <i class="fas fa-arrow-left mr-1"></i> Back to Cart
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

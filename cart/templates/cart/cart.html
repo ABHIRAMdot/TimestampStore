@@ -47,22 +47,30 @@
             <div class="bg-white rounded shadow p-6">
                 
                 {% for item in cart_items %}
-<!-- inside for loop -->
-<div class="flex flex-col md:flex-row items-start gap-4 pb-6 mb-6 border-b" id="cart-item-{{ item.id }}">
-    <!-- Image (clickable) -->
-    <div class="w-24 h-24 flex-shrink-0">
-        <a href="{% url 'product_detail' item.product.slug %}" class="block">
-            {% if item.variant.images.all %}
-                <img src="{{ item.variant.images.first.image.url }}" 
-                     alt="{{ item.product.product_name }}"
-                     class="w-full h-full object-cover rounded">
-            {% else %}
-                <div class="w-full h-full flex items-center justify-center bg-gray-100 rounded text-gray-400">
-                    No Image
+
+            <!-- inside for loop -->
+            <div class="flex flex-col md:flex-row items-start gap-4 pb-6 mb-6 border-b" id="cart-item-{{ item.id }}">
+                <!-- Image (clickable) -->
+                <div class="w-24 h-24 flex-shrink-0">
+                    <a
+                    {% if not item.unavailable %}
+                    href="{% url 'product_detail' item.product.slug %}" 
+                    {% else %}
+                    href="javascript:void(0)"
+                    class="block opacity-50 cursor-not-allowed"
+                {% endif %}
+                    >
+                        {% if item.variant.images.all %}
+                            <img src="{{ item.variant.images.first.image.url }}" 
+                                alt="{{ item.product.product_name }}"
+                                class="w-full h-full object-cover rounded">
+                        {% else %}
+                            <div class="w-full h-full flex items-center justify-center bg-gray-100 rounded text-gray-400">
+                                No Image
+                            </div>
+                        {% endif %}
+                    </a>
                 </div>
-            {% endif %}
-        </a>
-    </div>
 
     <!-- Product Details -->
     <div class="flex-1">
@@ -70,6 +78,13 @@
             {{ item.product.product_name }}
         </a>
         <p class="text-gray-500 text-sm">Color: {{ item.variant.colour }}</p>
+
+        {% if item.unavailable %}
+    <span class="inline-block mt-2 px-2 py-1 bg-red-600 text-white rounded text-xs">
+        This product is currently unavailable
+    </span>
+{% endif %}
+
 
         {% if not item.is_product_available %}
             <span class="inline-block mt-2 px-2 py-1 bg-red-500 text-white rounded text-xs">Unavailable</span>
@@ -88,7 +103,8 @@
                 onclick="updateQtyAjax({{ item.id }}, 'decrease', this)"
                 data-cart-item-id="{{ item.id }}"
                 class="px-3 py-1 border text-gray-600 rounded disabled:opacity-50"
-                id="decrease-btn-{{ item.id }}">
+                id="decrease-btn-{{ item.id }}"
+                {% if item.unavailable %} disabled {% endif %}>
             <i class="fas fa-minus"></i>
         </button>
 
@@ -100,7 +116,8 @@
                 onclick="updateQtyAjax({{ item.id }}, 'increase', this)"
                 data-cart-item-id="{{ item.id }}"
                 class="px-3 py-1 border text-gray-600 rounded disabled:opacity-50"
-                id="increase-btn-{{ item.id }}">
+                id="increase-btn-{{ item.id }}"
+                {% if item.unavailable %} disabled {% endif %}>
             <i class="fas fa-plus"></i>
         </button>
     </div>
@@ -156,13 +173,22 @@
                     <span>₹{{ cart.total }}</span>
                 </div>
 
-                <form method="POST" action="#">   <!--{% url 'proceed_to_checkout' %} -->
+                {% if any_unavailable %}
+                <button class="w-full bg-gray-300 text-gray-500 py-2 rounded cursor-not-allowed" disabled>
+                    Remove unavailable items to continue
+                </button>
+            {% else %}
+
+                <form method="POST" action="{% url 'checkout' %}">   <!--{% url 'proceed_to_checkout' %} -->
                     {% csrf_token %}
                     <button type="submit"
                         class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
                         Proceed to Checkout
                     </button>
                 </form>
+
+                {% endif %}
+
 
                 <a href="{% url 'user_product_list' %}" 
                    class="w-full mt-3 inline-block text-center border py-2 rounded hover:bg-gray-100">

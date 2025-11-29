@@ -28,7 +28,6 @@ def home_page(request):
     #get main categories for navbar dropdown(parent categories only)
     main_categories = Category.objects.filter(parent__isnull=True, is_listed=True).order_by('category_name')
 
-    print("get user home page")
     return render(request, 'home/home.html', {'products': products, 'main_categories' : main_categories })
 
 
@@ -36,7 +35,6 @@ def user_product_list(request):
     """ product listing wiith filter adnsearch """
     products = Product.objects.filter(is_listed=True, varients__is_listed=True, varients__stock__gt=0).annotate(min_price=Min('varients__price')).prefetch_related('varients__images','varients', 'category')
 
-    #  filter - Men and Women(main category slug)
     main=request.GET.get('main')
     if main:
         # filter by parent slug
@@ -84,7 +82,6 @@ def user_product_list(request):
     #  Round up to nearest 5000 
     rounded_max_price = math.ceil(int(highest_variant_price) / 5000) * 5000
 
-    # pagination
     paginator = Paginator(products, 4)
     page = request.GET.get('page')
     products_page = paginator.get_page(page)
@@ -94,12 +91,10 @@ def user_product_list(request):
     for product in products_page:
         product.min_variant = product.varients.filter(is_listed=True, price=product.min_price).first()
 
-    # Subcategories for dropdown
     categories = Category.objects.filter(parent__isnull=False, is_listed=True)
 
     breadcrumbs = [
         {"label": "Home", "url": reverse("home")},
-        
     ]
 
     return render(request, 'home/user_product_list.html', {
@@ -109,8 +104,6 @@ def user_product_list(request):
         'max_price': rounded_max_price,
         'breadcrumbs': breadcrumbs,
     })
-
-
 
 
 def user_product_detail(request, slug):
@@ -194,3 +187,6 @@ def user_product_detail(request, slug):
 
 def product_unavailable(request):
     return render(request, "errors/product_unavailable.html", status=410)
+
+def custom_404(request, exception):     # only works in DEBUG = False
+    return render(request, '404.html', status=404)

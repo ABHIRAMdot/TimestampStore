@@ -1,0 +1,198 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Successful - Timestamp</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes checkmark {
+            0% {
+                stroke-dashoffset: 100;
+            }
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+        
+        .animate-slide-up {
+            animation: slideInUp 0.6s ease-out forwards;
+        }
+        
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 2;
+            stroke-miterlimit: 10;
+            stroke: #22c55e;
+            fill: none;
+            animation: checkmark 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            stroke: #22c55e;
+            animation: checkmark 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.4s forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Include your navbar here -->
+    {% include 'includes/navbar.html' %}
+
+    
+    <div class="container mx-auto px-4 py-12 max-w-4xl">
+        <div class="bg-white rounded-2xl shadow-lg p-8 md:p-12 text-center animate-slide-up">
+            <!-- Success Icon -->
+            <div class="mb-6 flex justify-center">
+                <svg class="w-24 h-24" viewBox="0 0 52 52">
+                    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                    <path class="checkmark-check" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                </svg>
+            </div>
+            
+            <!-- Success Message -->
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Order Placed Successfully! 🎉
+            </h1>
+            
+            <p class="text-lg text-gray-600 mb-8">
+                Thank you for shopping with us. Your order has been received and is being processed.
+            </p>
+            
+            <!-- Order Details Card -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8 max-w-md mx-auto">
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-700 font-medium">Order Number:</span>
+                        <span class="text-blue-600 font-bold">{{ order.order_number }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-700 font-medium">Total Amount:</span>
+                        <span class="text-gray-900 font-bold text-lg">₹{{ order.total_amount|floatformat:2 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-700 font-medium">Payment Method:</span>
+                        <span class="text-gray-900 font-semibold">Cash on Delivery</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-700 font-medium">Order Date:</span>
+                        <span class="text-gray-900">{{ order.created_at|date:"d M, Y" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Delivery Address -->
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-8 max-w-md mx-auto text-left">
+                <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+                    <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>
+                    Delivery Address
+                </h3>
+                <p class="text-gray-900 font-medium">{{ order.address_snapshot.full_name }}</p>
+                <p class="text-gray-700 text-sm mt-1">{{ order.address_snapshot.street_address }}</p>
+                <p class="text-gray-700 text-sm">{{ order.address_snapshot.city }}, {{ order.address_snapshot.state }} - {{ order.address_snapshot.postal_code }}</p>
+                <p class="text-gray-600 text-sm mt-2">
+                    <i class="fas fa-phone text-gray-500"></i> {{ order.address_snapshot.mobile }}
+                </p>
+            </div>
+            
+            <!-- What's Next Section -->
+            <div class="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
+                <h3 class="font-semibold text-green-900 mb-3 flex items-center justify-center">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    What Happens Next?
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-left">
+                    <div class="flex items-start">
+                        <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mr-3">1</div>
+                        <div>
+                            <p class="font-semibold text-gray-900">Order Confirmation</p>
+                            <p class="text-gray-600 text-xs mt-1">You'll receive an email confirmation shortly</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mr-3">2</div>
+                        <div>
+                            <p class="font-semibold text-gray-900">Order Processing</p>
+                            <p class="text-gray-600 text-xs mt-1">We'll prepare your items for shipment</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mr-3">3</div>
+                        <div>
+                            <p class="font-semibold text-gray-900">Delivery</p>
+                            <p class="text-gray-600 text-xs mt-1">Your order will be delivered soon</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="{% url 'user_order_detail' order.order_id %}" 
+                   class="inline-flex items-center justify-center bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors w-full sm:w-auto">
+                    <i class="fas fa-receipt mr-2"></i>
+                    View Order Details
+                </a>
+                
+                <a href="{% url 'user_product_list' %}" 
+                   class="inline-flex items-center justify-center bg-gray-200 text-gray-800 px-8 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors w-full sm:w-auto">
+                    <i class="fas fa-shopping-bag mr-2"></i>
+                    Continue Shopping
+                </a>
+            </div>
+            
+            <!-- Additional Info -->
+            <div class="mt-8 pt-8 border-t border-gray-200">
+                <p class="text-gray-600 text-sm">
+                    Need help? Contact our customer support at 
+                    <a href="mailto:support@timestamp.com" class="text-blue-600 hover:text-blue-700 font-medium">support@timestamp.com</a>
+                </p>
+            </div>
+        </div>
+        
+        <!-- Illustration/Image -->
+        <div class="mt-12 text-center animate-slide-up" style="animation-delay: 0.3s; opacity: 0; animation-fill-mode: forwards;">
+            <div class="inline-block">
+                <svg class="w-64 h-64 mx-auto" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Package Box -->
+                    <rect x="70" y="80" width="60" height="50" fill="#3b82f6" stroke="#1e40af" stroke-width="2" rx="2"/>
+                    <rect x="70" y="80" width="60" height="15" fill="#1e40af"/>
+                    
+                    <!-- Tape -->
+                    <rect x="95" y="80" width="10" height="50" fill="#fbbf24"/>
+                    
+                    <!-- Stars/Sparkles -->
+                    <circle cx="50" cy="60" r="3" fill="#fbbf24"/>
+                    <circle cx="150" cy="70" r="2" fill="#fbbf24"/>
+                    <circle cx="60" cy="140" r="2" fill="#fbbf24"/>
+                    <circle cx="145" cy="130" r="3" fill="#fbbf24"/>
+                    
+                    <!-- Check mark -->
+                    <circle cx="100" cy="50" r="15" fill="#22c55e"/>
+                    <path d="M95 50 L98 53 L105 46" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include your footer here -->
+    {% include 'includes/footer.html' %}
+
+</body>
+</html>

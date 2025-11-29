@@ -86,7 +86,7 @@ def clean_cart_invalid_items(cart):
     for item in cart.items.all():
         if not item.is_product_available() or not item.is_in_stock():
             removed_items.append(str(item))
-            item.delete()
+            # item.delete()
 
     if removed_items:
         cart.calculate_total()

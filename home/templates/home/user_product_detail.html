@@ -237,6 +237,7 @@
               {% csrf_token %}
               <input type="hidden" name="product_id" value="{{ product.id }}">
               <input type="hidden" name="variant_id" value="{{ selected_variant.id }}">
+              <input type="hidden" name="slug" value="{{ selected_variant.product.slug }}">              
               <input type="hidden" name="quantity" value="1">
 
               <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2">
@@ -246,10 +247,20 @@
                 Add to Cart
               </button>
             </form>
-
-            <button onclick="buyNow()" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-4 rounded-xl transition-all shadow-md hover:shadow-lg">
+          
+          <form method="POST" action="{% url 'checkout' %}">
+            {% csrf_token %}
+            <input type="hidden" name="buy_now_product_id" value="{{ product.id }}">
+            <input type="hidden" name="buy_now_variant_id" value="{{ selected_variant.id }}">
+            <input type="hidden" name="buy_now_slug" value="{{ selected_variant.product.slug }}">              
+            <input type="hidden" name="buy_now_qty" value="1">
+          
+            <button type="submit" class="w-full bg-gray-900 hover:bg-gray-800 text-white font-semibold py-4 rounded-xl">
               Buy Now
             </button>
+          </form>
+            
+
           {% else %}
             <button disabled class="w-full bg-gray-300 text-gray-500 font-semibold py-4 rounded-xl cursor-not-allowed flex items-center justify-center gap-2">
               <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
