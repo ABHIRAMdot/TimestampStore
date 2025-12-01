@@ -19,7 +19,6 @@ def is_product_addable_to_cart(product, variant=None):
     Check if product can be added to cart
     Return: (bool, str) - (can_add, error_message)
     """
-    #check if product is listed
     if not product.is_listed:
         return False, "This product is currently unavailable."
     
@@ -68,7 +67,7 @@ def remove_from_wishlist_if_exists(user, product, variant=None):
         if variant:
             filters['variant'] = variant
 
-        delete_count = WishlistItem.objects.filter(**filters).delete()
+        delete_count, _ = WishlistItem.objects.filter(**filters).delete()
         return delete_count > 0
     except Exception as e:
         # Wishlist app might exists or other error

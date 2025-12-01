@@ -11,12 +11,14 @@ class CancelOrderForm(forms.Form):
     )
 
     def clean(self):
-        reason = self.cleaned_data.get('reason', '').strip()
+        cleaned_data = super().clean()
+        reason = cleaned_data.get('reason', '').strip()
         if not reason:
             raise forms.ValidationError('Cancel reason is required.')
         if len(reason) < 10:
             raise forms.ValidationError('Please provide a more detailed reason (at least 10 character).')
-        return reason
+        cleaned_data['reason'] = reason
+        return cleaned_data
 
 
 class CancelOrderItemForm(forms.Form):

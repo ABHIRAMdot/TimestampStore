@@ -253,7 +253,8 @@ def checkout_view(request):
         }
         
         return redirect('checkout')
-    if request.method != 'POST' or not request.POST.get('buy_now_product_id'):
+    
+    if request.method == 'POST' and not request.POST.get('buy_now_product_id'):
         if 'buy_now' in request.session:
             del request.session['buy_now']
     

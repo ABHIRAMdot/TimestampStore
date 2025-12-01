@@ -8,7 +8,7 @@ from decimal import Decimal
 from django.urls import reverse, NoReverseMatch
 from django.http import HttpResponseRedirect
 
-
+import logging
 from .models import Cart, CartItem
 from products.models import Product, Product_varients
 from .utils import(
@@ -21,15 +21,13 @@ from .utils import(
 )
 
 
+logger = logging.getLogger('project_logger')
 
-# views.py (add these imports at top if not present)
-# from django.views.decorators.http import require_http_methods
-
-# ---------- AJAX: update quantity ----------
+# AJAX: update quantity
 @login_required(login_url='login')
 @require_POST
 def update_cart_quantity_ajax(request):
-    """AJAX: increase/decrease quantity of a cart item, return JSON"""
+    """AJAX increase/decrease quantity of a cart item, return jason"""
     cart_item_id = request.POST.get('cart_item_id')
     action = request.POST.get('action')  # 'increase' or 'decrease'
     cart_item = get_object_or_404(CartItem, id=cart_item_id, cart__user=request.user)
@@ -184,6 +182,11 @@ def cart_view(request):
 @require_POST
 def add_to_cart(request):
     """Add product to cart"""
+    logger.info("Add to cart function called")
+    # logger.debug(f"User: {request.user.email}")
+    # logger.warning("Test warning message")
+    # logger.error("Something went wrong in add_to_cart")
+
     product_id = request.POST.get('product_id')
     variant_id = request.POST.get('variant_id')
     quantity = int(request.POST.get('quantity', 1))
@@ -209,17 +212,15 @@ def add_to_cart(request):
         messages.error(request, error_message)
         return redirect('product_detail', slug=product.slug)
     
-    #Check stock availability
     if quantity > variant.stock:
         messages.error(request, f" Only {variant.stock} items available in stock.")
         return redirect('product_detail', slug=product.slug)
 
-    # Check maximum quantity limit
     if quantity > CartItem.MAX_QUANTITY_PER_PRODUCT:
         messages.error(request, f"Maximum {CartItem.MAX_QUANTITY_PER_PRODUCT} items allowed per product.")
         return redirect('product_detail', slug=product.slug)
 
-    # Use transaction to ensure data consistancy 
+    # transaction to ensure data consistancy 
     with transaction.atomic():
         cart = get_or_create_cart(request.user)
 
@@ -246,7 +247,6 @@ def add_to_cart(request):
                 messages.error(request, f"Cannot add more. Only {variant.stock} items available.")
                 return redirect('product_detail', slug=product.slug) 
             
-            #Check against maximum quantity
             if new_quantity > CartItem.MAX_QUANTITY_PER_PRODUCT:
                 messages.error(request,
                     f"Cannot add more. Maximum {CartItem.MAX_QUANTITY_PER_PRODUCT} "
@@ -380,7 +380,7 @@ def proceed_to_checkout(request):
         return redirect('cart_view')
     
     # If valid, redirect to checkout
-    return redirect('checkout')   # You'll create this view later
+    return redirect('checkout')
 
 
 # AJAX endpoint for cart count (for navbar)

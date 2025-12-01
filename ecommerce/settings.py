@@ -19,6 +19,42 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+
+    'handlers': {
+        # Your custom project logs
+        'project_file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'project.log'),
+        },
+
+        # Django internal logs (kept separate)
+        'django_file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'django.log'),
+        },
+    },
+
+    'loggers': {
+        # LOG ONLY DJANGO STUFF IN django.log
+        'django': {
+            'handlers': ['django_file'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+
+        # LOG ONLY YOUR PROJECT IN project.log
+        'project_logger': {
+            'handlers': ['project_file'],
+            'level': 'DEBUG',
+            'propagate': False,  # VERY IMPORTANT
+        },
+    }
+}
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 

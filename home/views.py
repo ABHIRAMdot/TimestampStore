@@ -33,7 +33,7 @@ def home_page(request):
 
 def user_product_list(request):
     """ product listing wiith filter adnsearch """
-    products = Product.objects.filter(is_listed=True, varients__is_listed=True, varients__stock__gt=0).annotate(min_price=Min('varients__price')).prefetch_related('varients__images','varients', 'category')
+    products = Product.objects.filter(is_listed=True, varients__is_listed=True, varients__stock__gte=0).annotate(min_price=Min('varients__price')).prefetch_related('varients__images','varients', 'category').order_by('-created_at')
 
     main=request.GET.get('main')
     if main:
