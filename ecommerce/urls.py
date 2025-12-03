@@ -31,6 +31,7 @@ urlpatterns = [
     path('orders/',include('orders.urls')),
     path('accounts/', include('allauth.urls')),
     path('offers/', include('offers.urls')),
+    path('reviews/', include('reviews.urls')),
     path('system-admin/', admin.site.urls),
 
 

@@ -1,5 +1,6 @@
 from django.db import models
 from category.models import Category,Offer
+from django.db.models import Avg, Count
 
 # Create your models here.
 
@@ -21,6 +22,25 @@ class Product(models.Model):
         return self.product_name
     class Meta:
         ordering = ['-created_at']
+
+    @property
+    def avg_rating(self):
+        return self.reviews.aggregate(avg=models.Avg('rating'))['avg'] or 0
+    
+
+    @property
+    def review_count(self):
+        return self.reviews.count()
+
+    @property
+    def rating_distribution(self):
+        """Returns dict like {5:10, 4:3, 3:1, 2:0, 1:0}"""
+        dist = self.reviews.values('rating').annotate(count=Count('rating'))
+        data = {i: 0 for i in range(1, 6)}
+        for d in dist:
+            data[d['rating']] = d['count']
+        return data
+
 
 class Product_varients(models.Model):
     product = models.ForeignKey(Product ,on_delete=models.CASCADE,related_name='varients')

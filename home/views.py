@@ -1,8 +1,10 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
-from django.db.models import Min, Max, Q
+from django.db.models import Min, Max, Q, Avg
 from django.http import JsonResponse
 from products.models import Product, VariantImage
+from reviews.models import Review
+from reviews.utils import has_purchased_product
 from django.core.paginator import Paginator
 from category.models import Category
 import math
@@ -168,6 +170,27 @@ def user_product_detail(request, slug):
     #get main categories for navbar
     main_categories = Category.objects.filter(parent__isnull=True, is_listed=True).order_by('category_name')
 
+    reviews = Review.objects.filter(product=product).select_related('user').order_by("-created_at")
+    rating_dist = product.rating_distribution
+    avg_rating =product.avg_rating
+    review_count = product.review_count
+
+    # #average rating
+    # avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
+
+    #Review count
+    # reviews_count = reviews.count()
+
+    #has the logged-in user purchased this product?
+    user_can_review = False
+    ueser_reviewed = False
+    user_review =None
+
+    if request.user.is_authenticated:
+        user_can_review = has_purchased_product(request.user, product=product)
+        ueser_reviewed = Review.objects.filter(user=request.user, product=product).exists()
+        user_review = Review.objects.filter(user=request.user, product=product).first()
+
     breadcrumbs = [
         {"label": "Home", "url": reverse("home")},
         {"label": "All Products", "url": reverse("user_product_list")},
@@ -182,6 +205,14 @@ def user_product_detail(request, slug):
         'related': related,
         'main_categories' : main_categories,
         'breadcrumbs': breadcrumbs,
+
+        'reviews': reviews,
+        'review_count': review_count,
+        'avg_rating': avg_rating,
+        'rating_dist': rating_dist,
+        'user_can_review': user_can_review,
+        'user_reviewed': ueser_reviewed,
+        'user_review': user_review,
         
     }) 
 

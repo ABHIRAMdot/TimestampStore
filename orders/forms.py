@@ -130,8 +130,7 @@ class AdminOrderStatusForm(forms.ModelForm):
             if current_status in ['cancelled', 'returned']:
                 self.fields['status'].help_text =f'This order is {current_status}. Status cannot be changed further.'
                 self.fields['status'].disabled = True
-            else:
-                raise ValueError(f"Invalid current_status: {current_status}")
+
 
 class OrderSearchForm(forms.Form):
     """Form for search orders"""

@@ -7,6 +7,13 @@
 
 {% block content %}
 
+<style>
+    table th, table td {
+        vertical-align: middle !important;
+    }
+</style>
+
+<div class="max-w-7xl mx-auto px-1">
 <!-- STATS CARDS -->
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
     
@@ -150,10 +157,10 @@
                 Clear Filters
             </a>
 
-            <!-- <button type="button" class="ml-auto flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium shadow-sm">
+            <button type="button" class="ml-auto flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium shadow-sm">
                 <i class="fas fa-file-excel"></i>
                 Export Excel
-            </button> -->
+            </button>
         </div>
 
     </form>
@@ -174,7 +181,7 @@
     </div>
 
     <!-- Table Content -->
-    <div class="overflow-x-auto">
+    <div class="overflow-x-auto border rounded-xl shadow-sm">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
                 <tr>
@@ -294,7 +301,19 @@
                             
                             {{ order.get_status_display }}
                         </span>
-                    </td>
+
+                    <!-- RETURN REQUEST BADGE -->
+                    {% if order.has_return_request %}
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-bold 
+                                    bg-red-100 text-red-700 border border-red-300">
+                            <i class="fas fa-undo mr-1"></i>
+                            Return Requested
+                        </span>
+                    
+                {% endif %}
+                                   
+                    
+                </td>
 
                     <!-- Actions -->
                     <td class="px-6 py-4 whitespace-nowrap text-right">
@@ -384,6 +403,7 @@
     </div>
     {% endif %}
 
+</div>
 </div>
 
 {% endblock %}

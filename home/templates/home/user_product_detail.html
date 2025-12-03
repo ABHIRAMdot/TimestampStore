@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
+{% load review_extras %}
+
 {% block content %}
 <div class="container mx-auto px-4 py-8">
   <!-- Breadcrumb -->
@@ -117,29 +119,133 @@
         <div class="flex items-center gap-4 mb-4">
           <div class="flex items-center gap-1">
             <div class="flex text-yellow-400">
-              {% for i in "12345" %}
-                <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20">
-                  <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                </svg>
-              {% endfor %}
+              {% if reviews %}
+              <div class="space-y-6">
+              
+                  {% for r in reviews %}
+                  <div class="border-b border-gray-200 pb-6">
+                      <div class="flex items-start gap-4">
+              
+                          <!-- Profile circle -->
+                          <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                              {{ r.user.first_name|default:r.user.email|slice:":1" | upper }}
+                          </div>
+              
+                          <div class="flex-1">
+              
+                              <!-- Header: Name + time -->
+                              <div class="flex items-center justify-between mb-2">
+                                  <h4 class="font-semibold text-gray-900">
+                                      {{ r.user.first_name|default:r.user.email }}
+                                  </h4>
+                                  <span class="text-sm text-gray-500">{{ r.created_at|timesince }} ago</span>
+                              </div>
+              
+                              <!-- Rating -->
+                              <div class="flex text-yellow-400 mb-2">
+                                  {% for i in "12345" %}
+                                      {% if forloop.counter <= r.rating %}
+                                          <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 ..." /></svg>
+                                      {% else %}
+                                          <svg class="w-4 h-4 text-gray-300 fill-current" viewBox="0 0 20 20"><path d="M10 15l-5.878 3.09 ..." /></svg>
+                                      {% endif %}
+                                  {% endfor %}
+                              </div>
+              
+                              <!-- Review Text -->
+                              <p class="text-gray-700 text-sm leading-relaxed">
+                                  {{ r.review_text }}
+                              </p>
+              
+                              <!-- Edit Link for Your Own Review -->
+                              {% if r.user == user %}
+                              <a href="{% url 'add_review' product.id %}"
+                                 class="text-blue-600 text-xs font-medium mt-2 inline-block">
+                                  Edit review
+                              </a>
+                              {% endif %}
+              
+                          </div>
+                      </div>
+                  </div>
+                  {% endfor %}
+              
+              </div>
+              {% else %}
+              <p class="text-gray-500 text-sm mt-4">
+                  No reviews yet. Be the first to review!
+              </p>
+              {% endif %}
+              
             </div>
-            <span class="text-sm font-semibold text-gray-900 ml-1">4.8</span>
           </div>
-          <p class="text-sm text-gray-600">(128 reviews)</p>
-          <button class="text-sm text-blue-600 hover:text-blue-700 font-medium">Write a review</button>
-        </div>
+          
+          <span class="text-sm font-semibold text-gray-900 ml-1">
+            {{ avg_rating|floatformat:1 }}
+        </span>
+        
+        <p class="text-sm text-gray-600">
+            ({{ review_count }} reviews)
+        </p>
+        
 
-        <div class="flex-1">
-          {% for star in "54321" %}
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-sm text-gray-600 w-12">{{ star }} star</span>
-            <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-              <div class="h-full bg-yellow-400" style="width: {% if star == '5' %}70{% elif star == '4' %}20{% elif star == '3' %}5{% elif star == '2' %}3{% else %}2{% endif %}%"></div>
+          {% if user.is_authenticated %}
+
+          {% if user_reviewed %}
+              <a href="{% url 'add_review' product.id %}"
+                 class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  Edit your review
+              </a>
+      
+          {% elif user_can_review %}
+              <a href="{% url 'add_review' product.id %}"
+                 class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  Write a review
+              </a>
+      
+          {% else %}
+              <span class="text-xs text-gray-500">
+                  Purchase required to review
+              </span>
+          {% endif %}
+      
+      {% else %}
+          <a href="{% url 'login' %}?next={{ request.path }}"
+             class="text-sm text-blue-600 hover:text-blue-700 font-medium">
+              Login to write a review
+          </a>
+      {% endif %}
+
+              </div>
+
+              <div class="flex-1">
+                <div class="flex text-yellow-400">
+                  {% for i in "12345" %}
+                    <svg class="w-5 h-5 fill-current" viewBox="0 0 20 20">
+                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                    </svg>
+                  {% endfor %}
+                </div>
+
+                {% for star in "54321" %}
+                <div class="flex items-center gap-2 mb-2">
+            
+                    <!-- Star label -->
+                    <span class="text-sm text-gray-600 w-12">{{ star }} star</span>
+            
+                    <!-- Bar -->
+                    <div class="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        {% with percent=rating_dist|dict_get:star|div:review_count|mul:100 %}
+                        <div class="h-full bg-yellow-400" style="width: {{ percent }}%"></div>
+                        {% endwith %}
+                    </div>
+            
+                    <!-- Count -->
+                    <span class="text-sm text-gray-600 w-12">{{ rating_dist|dict_get:star }}</span>
+                </div>
+                {% endfor %}
             </div>
-            <span class="text-sm text-gray-600 w-12">{% if star == '5' %}90{% elif star == '4' %}26{% elif star == '3' %}6{% elif star == '2' %}4{% else %}2{% endif %}</span>
-          </div>
-          {% endfor %}
-        </div>
+            
       </div>
 
       <!-- Price & Discount -->
@@ -348,7 +454,7 @@
           Description
         </button>
         <button onclick="showTab('reviews')" id="reviewTab" class="tab-button px-8 py-4 font-semibold text-gray-600 border-b-2 border-transparent hover:text-gray-900">
-          Reviews (128)
+          Reviews ({{ review_count }})
         </button>
         <button onclick="showTab('specs')" id="specsTab" class="tab-button px-8 py-4 font-semibold text-gray-600 border-b-2 border-transparent hover:text-gray-900">
           Specifications
@@ -378,38 +484,49 @@
               </svg>
             {% endfor %}
           </div>
-          <span class="text-sm font-semibold text-gray-900 ml-1">4.8</span>
+          <span class="text-sm font-semibold text-gray-900 ml-1">{{ avg_rating }}</span>
         </div>
-        <span class="text-sm text-gray-600">(128 reviews)</span>
+        <span class="text-sm text-gray-600">({{ review_count }} reviews)</span>
       </div>
 
       <div class="space-y-6">
-        {% for i in "123" %}
+        {% for review in reviews %}
         <div class="border-b border-gray-200 pb-6">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
-              {{ "ABC"|slice:forloop.counter0|first }}
+            <div class="flex items-start gap-4">
+    
+                <!-- Avatar (first letter of user name) -->
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">
+                    {{ review.user.first_name|default:"U"|first }}
+                </div>
+    
+                <div class="flex-1">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-semibold text-gray-900">{{ review.user.first_name }} {{ review.user.last_name }}</h4>
+                        <span class="text-sm text-gray-500">{{ review.created_at|timesince }} ago</span>
+                    </div>
+    
+                    <!-- Dynamic Rating Stars -->
+                    <div class="flex text-yellow-400 mb-2">
+                        {% for i in "12345" %}
+                            <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"
+                                 style="opacity: {% if forloop.counter <= review.rating %}1{% else %}0.3{% endif %}">
+                                <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                            </svg>
+                        {% endfor %}
+                    </div>
+    
+                    <!-- Review Text -->
+                    <p class="text-gray-700 text-sm leading-relaxed">
+                        {{ review.review_text }}
+                    </p>
+                </div>
             </div>
-            <div class="flex-1">
-              <div class="flex items-center justify-between mb-2">
-                <h4 class="font-semibold text-gray-900">Customer {{ i }}</h4>
-                <span class="text-sm text-gray-500">2 days ago</span>
-              </div>
-              <div class="flex text-yellow-400 mb-2">
-                {% for j in "12345" %}
-                  <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20">
-                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                  </svg>
-                {% endfor %}
-              </div>
-              <p class="text-gray-700 text-sm leading-relaxed">
-                Great product! Excellent quality and fits perfectly. Highly recommend to anyone looking for this style.
-              </p>
-            </div>
-          </div>
         </div>
+        {% empty %}
+        <p class="text-gray-600">No reviews yet. Be the first to review!</p>
         {% endfor %}
-      </div>
+    </div>
+    
 
       <button class="mt-6 text-blue-600 hover:text-blue-700 font-semibold text-sm">
         Load More Reviews →

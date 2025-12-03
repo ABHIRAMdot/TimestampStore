@@ -33,6 +33,7 @@ class Order(models.Model):
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
         ('returned', 'Returned'),
+        
     ]
 
     status = models.CharField(max_length=200, choices=STATUS_CHOICES, default='pending')
@@ -120,6 +121,10 @@ class Order(models.Model):
             total += item.refund_amount
         return total
     
+    @property
+    def has_return_request(self):
+        return self.items.filter(status='return_requested').exists()
+
 
     def get_cancellable_items(self):
         """Get items that can be cancelled"""
@@ -153,7 +158,7 @@ class Order(models.Model):
     
     def update_status_based_on_items(self):
         """Update order status based on item statuses"""
-        items = list(self.items.all())
+        items = self.items.all()
         for item in items:
             item.refresh_from_db()
         
