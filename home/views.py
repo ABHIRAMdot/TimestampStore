@@ -82,7 +82,7 @@ def user_product_list(request):
     #  Round up to nearest 5000 
     rounded_max_price = math.ceil(int(highest_variant_price) / 5000) * 5000
 
-    paginator = Paginator(products, 4)
+    paginator = Paginator(products, 5)
     page = request.GET.get('page')
     products_page = paginator.get_page(page)
 

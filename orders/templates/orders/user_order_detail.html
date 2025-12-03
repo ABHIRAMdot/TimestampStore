@@ -245,7 +245,7 @@
                     </a>
                     {% endif %}
 
-                    {% if order.status == 'delivered' %}
+                    {% if order.status != 'returned'  %}
                     <a href="{% url 'download_invoice' order.order_id %}"
                        class="block w-full text-center bg-gray-800 text-white py-2 rounded-lg font-medium hover:bg-gray-900 transition">
                         <i class="fas fa-file-pdf mr-2"></i> Download Invoice

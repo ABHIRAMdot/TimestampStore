@@ -94,6 +94,7 @@ INSTALLED_APPS = [
     'home',
     'wishlist',
     'orders',
+    'reviews',
 
     'django.contrib.sites',
 

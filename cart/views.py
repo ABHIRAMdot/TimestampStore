@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST
 from django.db import transaction
 from decimal import Decimal
 from django.urls import reverse, NoReverseMatch
-from django.http import HttpResponseRedirect
+from datetime import date, timedelta
 
 import logging
 from .models import Cart, CartItem
@@ -168,12 +168,15 @@ def cart_view(request):
         {"label": "Cart", "url": None},
     ]    
 
+    estimated_delivery = date.today() + timedelta(days=7)
+
     context = {
         'cart': cart,
         'cart_items': cart_items, 
         'cart_count': cart.get_item_count(),
         'breadcrumbs': breadcrumbs,
-        'any_unavailable': any(item.unavailable for item in cart_items)
+        'any_unavailable': any(item.unavailable for item in cart_items),
+        'estimated_delivery': estimated_delivery,
     }
     return render(request, 'cart/cart.html', context)
 

@@ -235,6 +235,36 @@
             <div class="bg-white rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Update Order Status</h2>
                 
+                <!-- Status Flow Indicator -->
+                <div class="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p class="text-sm font-medium text-blue-900 mb-2">
+                        <i class="fas fa-info-circle mr-1"></i> Order Status Flow
+                    </p>
+                    <div class="flex items-center text-xs text-blue-800 overflow-x-auto">
+                        <span class="{% if order.status == 'pending' %}font-bold bg-blue-200 px-2 py-1 rounded{% endif %}">Pending</span>
+                        <i class="fas fa-arrow-right mx-2 text-blue-400"></i>
+                        <span class="{% if order.status == 'confirmed' %}font-bold bg-blue-200 px-2 py-1 rounded{% endif %}">Confirmed</span>
+                        <i class="fas fa-arrow-right mx-2 text-blue-400"></i>
+                        <span class="{% if order.status == 'processing' %}font-bold bg-blue-200 px-2 py-1 rounded{% endif %}">Processing</span>
+                        <i class="fas fa-arrow-right mx-2 text-blue-400"></i>
+                        <span class="{% if order.status == 'shipped' %}font-bold bg-blue-200 px-2 py-1 rounded{% endif %}">Shipped</span>
+                        <i class="fas fa-arrow-right mx-2 text-blue-400"></i>
+                        <span class="{% if order.status == 'out_for_delivery' %}font-bold bg-blue-200 px-2 py-1 rounded{% endif %}">Out for Delivery</span>
+                        <i class="fas fa-arrow-right mx-2 text-blue-400"></i>
+                        <span class="{% if order.status == 'delivered' %}font-bold bg-green-200 px-2 py-1 rounded{% endif %}">Delivered</span>
+                    </div>
+                    <p class="text-xs text-blue-700 mt-2">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        {% if order.status == 'cancelled' %}
+                            This order is cancelled and cannot be changed.
+                        {% elif order.status == 'returned' %}
+                            This order is returned and cannot be changed.
+                        {% else %}
+                            You can only move to the next step or cancel the order.
+                        {% endif %}
+                    </p>
+                </div>
+                
                 <form method="post">
                     {% csrf_token %}
                     
@@ -242,21 +272,43 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
                             {{ form.status }}
+                            {% if form.status.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.status.errors.0 }}</p>
+                            {% endif %}
+                            {% if form.status.help_text %}
+                                <p class="mt-1 text-sm text-gray-500">{{ form.status.help_text }}</p>
+                            {% endif %}
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Tracking Number</label>
                             {{ form.tracking_number }}
+                            {% if form.tracking_number.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.tracking_number.errors.0 }}</p>
+                            {% endif %}
                         </div>
                         
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
                             {{ form.notes }}
+                            {% if form.notes.errors %}
+                                <p class="mt-1 text-sm text-red-600">{{ form.notes.errors.0 }}</p>
+                            {% endif %}
                         </div>
                         
-                        <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-                            Update Status
+                        {% if order.status not in 'cancelled,returned' %}
+                        <button type="submit" 
+                                class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                                onclick="return confirm('Are you sure you want to update the order status?')">
+                            <i class="fas fa-save mr-2"></i>Update Status
                         </button>
+                        {% else %}
+                        <button type="button" 
+                                class="w-full px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed" 
+                                disabled>
+                            <i class="fas fa-lock mr-2"></i>Status Locked
+                        </button>
+                        {% endif %}
                     </div>
                 </form>
             </div>

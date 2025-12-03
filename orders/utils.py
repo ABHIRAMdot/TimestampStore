@@ -38,7 +38,7 @@ def create_order_form_cart(user, cart, shipping_address, payment_method):
             #Check stock
             if cart_item.quantity > cart_item.variant.stock:
                 order.delete()
-                return None, f"Insufficient stock for (cart_item.product.product_name)"
+                return None, f"Insufficient stock for {cart_item.product.product_name}"
             
             #Calculate pricing
             original_price = cart_item.variant.price
@@ -75,7 +75,6 @@ def create_order_form_cart(user, cart, shipping_address, payment_method):
     
     except Exception as e:
         return None, str(e)
-    
 
 def cancel_order(order, reason=None, cancelled_by=None):
     """
@@ -103,6 +102,7 @@ def cancel_order(order, reason=None, cancelled_by=None):
     order.cancellation_reason = reason
     order.cancelled_by = cancelled_by
     order.cancelled_at = timezone.now()
+    order.payment_status = 'cancelled'
     order.save()
 
     # Record status change
@@ -116,6 +116,33 @@ def cancel_order(order, reason=None, cancelled_by=None):
 
     return True, "Order cancelled successfully"
 
+def validate_status_transition(current_status, new_staus):
+    """
+    Validate if status transition is allowed (step-by-step progression)
+    Returns: (is_valid, error_message)
+    """
+    #allowed status
+    STATUS_FLOW = {
+        'pending': ['confirmed', 'cancelled'],
+        'confirmed': ['processing', 'cancelled'],
+        'processing': ['shipped', 'cancelled'],
+        'shipped': ['out_for_delivery', 'cancelled'],
+        'out_for_delivery': ['delivered', 'cancelled'],
+        'delivered': ['returned'],  # Can only be returned after delivery
+        'cancelled': [],  # Cannot change from cancelled
+        'returned': []  # Cannot change from returned    
+    }
+
+    if current_status == new_staus:
+        return True, None
+    
+    #check if transaction is allowed 
+    allowed_transitions = STATUS_FLOW.get(current_status, [])
+
+    if new_staus not in allowed_transitions:
+        return False, f"Cannot change status from '{current_status}' to '{new_staus}'. Please follow the proper order flow."
+    return True, None
+
 
 def update_order_status(order, new_status, changed_by=None, notes=None):
     """
@@ -123,13 +150,16 @@ def update_order_status(order, new_status, changed_by=None, notes=None):
     Returns: (success, message)
     """
     old_status = order.status
-    status_changed = (old_status != new_status)
+    # status_changed = (old_status != new_status)
+    is_valid, error_message = validate_status_transition(old_status, new_status)
+    if not is_valid:
+        return False, error_message
     
-    if old_status == 'cancelled' and new_status != 'cancelled':
-        return False, "Cannot change status of cancelled order"
+    # if old_status == 'cancelled' and new_status != 'cancelled':
+    #     return False, "Cannot change status of cancelled order"
     
-    if old_status == 'delivered' and new_status not in ['returned', 'delivered']:
-        return False, "Cannot change status of delivered oreder"
+    # if old_status == 'delivered' and new_status not in ['returned', 'delivered']:
+    #     return False, "Cannot change status of delivered oreder"
 
     # Update order status
     order.status = new_status    
@@ -141,6 +171,7 @@ def update_order_status(order, new_status, changed_by=None, notes=None):
         order.payment_status = 'completed'
         if not order.delivered_at:
             order.delivered_at = timezone.now()
+            
     elif new_status == 'returned':
         order.payment_status = 'refunded'
     elif new_status == 'cancelled':
@@ -149,7 +180,7 @@ def update_order_status(order, new_status, changed_by=None, notes=None):
     order.save()
     
     # Update all order items to same status (except cancelled ones)
-    order.items.exclude(status='cancelled').update(
+    order.items.exclude(status__in=['cancelled', 'returned', 'return_requested']).update(
         status=new_status,
         delivered_at=order.delivered_at if new_status == 'delivered' else None
     )
@@ -159,22 +190,56 @@ def update_order_status(order, new_status, changed_by=None, notes=None):
     for item in order.items.all():
         item.refresh_from_db()
 
-    # Create history only when the order status actually changed (not only when payment_status was corrected)
-    if status_changed:
+    OrderStatusHistory.objects.create(
+        order=order,
+        old_status=old_status,
+        new_status=new_status,
+        changed_by=changed_by,
+        notes=notes or f"Status updated from {old_status} to {new_status}"
+    )
+
+    return True, f"Order status updated to {order.get_status_display()}"
+
+
+def check_and_update_order_status_after_item_change(order):
+    """
+    Check if all items are cancelled/returned and update order status accordingly
+    This is called after individual item cancellation or return
+    """
+    items = order.items.all()
+
+    total_items = items.count()
+    cancelled_items = items.filter(status='cancelled').count()
+    returned_items = items.filter(status='returned').count()
+
+    #if all items are cancelled
+    if cancelled_items == total_items:
+        old_status = order.status
+        order.status = 'cancelled'
+        order.payment_status = 'cancelled'
+        order.cancelled_at = timezone.now()
+        order.save()
+
         OrderStatusHistory.objects.create(
             order=order,
             old_status=old_status,
-            new_status=new_status,
-            changed_by=changed_by,
-            notes=notes
+            new_status='cancelled',
+            changed_by=None,
+            notes="All items cancelled"
         )
+    elif returned_items == total_items:
+        old_status = order.status
+        order.status = 'returned'
+        order.payment_status = 'refunded'
+        order.save()
 
-    if status_changed:
-        msg = f"Order status updated to {order.status}"
-    else:
-        msg = "Order status re-synchronised."
-    
-    return True, msg  #f"Order status updated to {order.status}"
+        OrderStatusHistory.objects.create(
+            order=order,
+            old_status=old_status,
+            new_status='returned',
+            changed_by=None,
+            notes="All items retunred"
+        )
 
 
 def search_orders(queryset, search_query):

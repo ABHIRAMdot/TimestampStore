@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q, Sum, Count
+from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib.auth.decorators import login_required
 from .invoice import generate_invoice_pdf
-
+from django.views.decorators.csrf import csrf_protect
 
 from .models import Order, OrderItem, OrderStatusHistory
 from .forms import AdminOrderStatusForm, OrderSearchForm
@@ -15,6 +15,7 @@ from .utils import (
     search_orders, 
     filter_orders,
     get_order_statistics,
+    check_and_update_order_status_after_item_change,
 )
 from products.models import Product_varients
 
@@ -55,7 +56,7 @@ def admin_orders_list(request):
         sort_by = form.cleaned_data.get('sort_by') or '-created_at'
         orders = orders.order_by(sort_by)
     
-    paginator = Paginator(orders, 20)
+    paginator = Paginator(orders, 15)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -71,6 +72,7 @@ def admin_orders_list(request):
 
 
 
+@csrf_protect
 @admin_required
 def admin_order_detail(request, order_id):
     """Admin view: Detailed view of order with status update"""
@@ -86,14 +88,14 @@ def admin_order_detail(request, order_id):
         if form.is_valid():
             new_status = form.cleaned_data['status']
             notes = form.cleaned_data.get('notes', '')
-            
             tracking = form.cleaned_data.get('tracking_number')
-            order.tracking_number = tracking
             
             success, message = update_order_status(order, new_status, changed_by=request.user, notes=notes)
-            order.save()
             
             if success:
+                if tracking:
+                    order.tracking_number = tracking
+                    order.save()
                 messages.success(request, message)
             else:
                 messages.error(request, message)
@@ -185,7 +187,7 @@ def admin_inventory_management(request):
     else:
         variants = variants.order_by('product__product_name')
     
-    paginator = Paginator(variants, 25)
+    paginator = Paginator(variants, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     

@@ -75,6 +75,16 @@
                                     <p class="text-xs text-gray-500 uppercase">Total Amount</p>
                                     <p class="font-semibold text-gray-900">₹{{ order.total_amount }}</p>
                                 </div>
+
+                                <div>
+                                    <p class="text-xs text-gray-500 uppercase">Expected Delivery</p>
+                                    {% if order.estimated_delivery %}
+                                        <p class="text-green-700 font-medium">{{ order.estimated_delivery|date:"d M, Y" }}</p>
+                                    {% else %}
+                                        <p class="text-gray-500">-</p>
+                                    {% endif %}
+                                </div>
+
                             </div>
                             <div class="flex items-center gap-3">
                                 {% if order.status == 'pending' %}

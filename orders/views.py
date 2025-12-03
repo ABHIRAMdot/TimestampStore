@@ -6,10 +6,11 @@ from django.db.models import Q
 from django.urls import reverse
 from django.db import transaction
 from decimal import Decimal, ROUND_HALF_UP
+from datetime import date, timedelta
 
 from .models import Order, OrderItem, OrderStatusHistory
 from .forms import CancelOrderForm, CancelOrderItemForm, ReturnOrderItemForm
-from .utils import cancel_order, search_orders
+from .utils import cancel_order, search_orders, check_and_update_order_status_after_item_change
 from .invoice import generate_invoice_pdf
 from accounts.models import Address
 from products.models import Product, Product_varients
@@ -33,7 +34,7 @@ def user_orders_list(request):
             Q(items__product_name__icontains=search_query)
         ).distinct()
     
-    paginator = Paginator(orders, 5)
+    paginator = Paginator(orders, 8)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
@@ -115,6 +116,8 @@ def cancel_order_item_view(request, item_id):
             success, message = item.cancel_item(reason=reason, cancelled_by=request.user)
             
             if success:
+                # Check and update order status if all items are cancelled
+                check_and_update_order_status_after_item_change(item.order)
                 messages.success(request, message)
             else:
                 messages.error(request, message)
@@ -174,10 +177,6 @@ def download_invoice(request, order_id):
         order_id=order_id,
         user=request.user
     )
-    
-    if order.status in ['pending', 'cancelled']:
-        messages.error(request, "Invoice not available for this order.")
-        return redirect('user_order_detail', order_id=order.order_id)
     
     return generate_invoice_pdf(order)
 
@@ -344,6 +343,8 @@ def checkout_view(request):
         {"label": "Cart", "url": reverse("cart_view")},
         {"label": "Checkout", "url": None},
     ]
+    estimated_delivery = date.today() + timedelta(days=7)
+
     context = {
         'addresses': addresses,
         'selected_address': selected_address,
@@ -354,7 +355,7 @@ def checkout_view(request):
         'discount_amount': discount_amount,
         'shipping_charge': shipping_charge,
         'total_amount': total_amount,
-        
+        'estimated_delivery': estimated_delivery,
         'breadcrumbs': breadcrumbs,
     }    
 
@@ -428,6 +429,8 @@ def place_order(request):
             status='pending',
             order_notes=request.POST.get('order_note', ''),
         )
+        order.estimated_delivery = date.today() + timedelta(days=7)
+        order.save()
 
         OrderItem.objects.create(
             order=order,
@@ -521,6 +524,8 @@ def place_order(request):
         status='pending',
         order_notes=request.POST.get('order_note', ''),
     )
+    order.estimated_delivery = date.today() + timedelta(days=7)
+    order.save()
 
     #Create order items
     for cart_item in cart_items:

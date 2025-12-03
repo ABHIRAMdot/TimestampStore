@@ -7,6 +7,7 @@ from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from io import BytesIO
 from django.http import HttpResponse
 from decimal import Decimal
+from datetime import date, timedelta
 
 
 def generate_invoice_pdf(order):
@@ -67,12 +68,14 @@ def generate_invoice_pdf(order):
     """
     elements.append(Paragraph(company_info, normal_style))
     elements.append(Spacer(1, 0.3*inch))
+
+    estimated_delivery = order.created_at.date() + timedelta(days=7)
     
     # Invoice Details and Customer Info Table
     info_data = [
         ['Invoice Details', 'Customer Details'],
         [
-            f"Invoice No: {order.order_id}\nDate: {order.created_at.strftime('%d %B %Y')}\nPayment: {order.get_payment_method_display()}",
+            f"Invoice No: {order.order_id}\nDate: {order.created_at.strftime('%d %B %Y')}\nPayment: {order.get_payment_method_display()}\nEstimated Delivery: {estimated_delivery.strftime('%d %B %Y')}",
             f"{order.full_name}\n{order.street_address}\n{order.city}, {order.state}\n{order.postal_code}\nPhone: {order.mobile}"
         ]
     ]
