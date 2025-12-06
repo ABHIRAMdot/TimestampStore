@@ -45,7 +45,7 @@ class Order(models.Model):
         ('wallet', 'Wallet'),
     ]
 
-    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='cod')
     payment_status = models.CharField(max_length=20, choices=[
             ('pending', 'Pending'),
             ('completed', 'Completed'),
@@ -73,6 +73,11 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     delivered_at = models.DateTimeField(null=True, blank=True)
     estimated_delivery = models.DateField(null=True, blank=True)
+
+    # Razorpay payment fields
+    razorpay_order_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True)
+    razorpay_signature = models.CharField(max_length=255, blank=True, null=True)
 
 
     class Meta:

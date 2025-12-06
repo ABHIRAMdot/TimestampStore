@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkout - Timestamp</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-50">
@@ -173,12 +176,27 @@
                             <i class="fas fa-check-circle mr-2"></i>
                             Place Order
                         </button>
+
+
+
                         {% else %}
                         <button type="button" disabled class="w-full bg-gray-300 text-gray-500 py-3 rounded-lg font-semibold cursor-not-allowed">
                             Select Address to Continue
                         </button>
                         {% endif %}
                     </form>
+
+                    <div class="mt-4 text-center">
+                        <button id="pay-btn"
+                        class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 shadow hover:from-blue-700 hover:to-blue-800 transition">
+                        <i class="fas fa-bolt text-yellow-300 text-lg"></i>
+                        Pay Securely with Razorpay
+                    </button>
+                    
+                    
+                    
+                </div>
+
                     
                     <div class="mt-4 text-center">
                         <a href="{% url 'cart_view' %}" class="text-blue-600 hover:text-blue-700 text-sm">
@@ -189,5 +207,87 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const payBtn = document.getElementById("pay-btn");
+    
+        if (payBtn) {
+            payBtn.addEventListener("click", function (e) {
+                e.preventDefault();
+    
+                // 1) Ask backend to prepare Razorpay order
+                fetch("{% url 'create_razorpay_order' %}")
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status !== "success") {
+                            alert(data.message || "Unable to start payment.");
+                            return;
+                        }
+    
+                        // 2) Configure Razorpay checkout
+                        var options = {
+                            "key": data.key,
+                            "amount": data.amount,
+                            "currency": "INR",
+                            "name": "Timestamp Store",
+                            "description": "Order Payment",
+                            "order_id": data.order_id,
+
+                        // ⭐⭐ FORCE OLD CHECKOUT UI ⭐⭐
+                        "config": {
+                            "display": {
+                                "checkout": {
+                                    "theme": "classic"   // disable the new UI
+                                }
+                            },
+                            "card": {
+                                "save": false  // ensure tokenization is OFF
+                            }
+                        },
+
+    
+                            "handler": function (response) {
+                                console.log("🔥 PAYMENT RESPONSE FROM RAZORPAY:", response);
+
+                                fetch("{% url 'verify_payment' %}", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(response),
+                                })
+                                .then(res => res.json())
+                                .then(result => {
+                                    console.log("🎯 VERIFY RESPONSE:", result);
+
+                                    if (result.status === "success") {
+                                        window.location.href = "{% url 'order_success' %}";
+                                    } else {
+                                        alert(result.message || "Payment verification failed.");
+                                    }
+                                })
+                                .catch(() => {
+                                    alert("Something went wrong while verifying payment.");
+                                });
+                            },
+
+    
+                            "prefill": {
+                                "name": "{{ request.user.get_full_name|default:request.user.email }}",
+                                "email": "{{ request.user.email }}",
+                            },
+                        };
+    
+                        var rzp = new Razorpay(options);
+                        rzp.open();
+                    })
+                    .catch(() => {
+                        alert("Could not initiate payment. Please try again.");
+                    });
+            });
+        }
+    </script>
+    
+        
+
+
 </body>
 </html>
