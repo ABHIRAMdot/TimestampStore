@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Wallet - Timestamp{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'home' %}"
+class="hover:text-blue-600 transition-colors flex items-center gap-1">
+ <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+     <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+ </svg>
+ Home
+</a>
+<div class="max-w-3xl mx-auto py-8 px-4">
+
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold dark:text-red">My Wallet</h1>
+        
+        <!-- 🔥 NEW: Add Money Button -->
+        <button 
+            id="add-money-btn"
+            class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
+            <i class="fas fa-plus-circle"></i>
+            Add Money
+        </button>
+    </div>
+
+    <!-- Wallet Balance Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6 transition-colors duration-200">
+        <p class="text-gray-600 dark:text-gray-400 text-sm">Current Balance</p>
+        <p class="text-3xl font-bold text-green-600 dark:text-green-400">₹{{ wallet.balance }}</p>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors duration-200">
+        <h2 class="text-lg font-semibold mb-3 dark:text-white">Recent Transactions</h2>
+    
+        {% if transactions %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-hidden">
+                <thead class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm uppercase tracking-wide">
+                    <tr>
+                        <th class="px-6 py-3 text-left">Type</th>
+                        <th class="px-6 py-3 text-left w-64">Description</th>
+                        <th class="px-6 py-3 text-left">Order ID</th>
+                        <th class="px-6 py-3 text-right">Amount</th>
+                        <th class="px-6 py-3 text-right">Balance After</th>
+                        <th class="px-6 py-3 text-left">Date</th>
+                    </tr>
+                </thead>
+        
+                <tbody class="text-sm text-gray-700 dark:text-gray-300">
+                    {% for tx in transactions %}
+                        <tr class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                            
+                            <!-- TYPE -->
+                            <td class="px-6 py-4 font-medium">
+                                {{ tx.get_tx_type_display }}
+                            </td>
+        
+                            <!-- DESCRIPTION -->
+                            <td class="px-6 py-4 whitespace-normal leading-snug">
+                                {% if tx.description %}
+                                    {{ tx.description }}
+                                {% else %}
+                                    <span class="text-gray-400 dark:text-gray-500">—</span>
+                                {% endif %}
+                            </td>
+        
+                            <!-- ORDER ID -->
+                            <td class="px-6 py-4">
+                                {% if tx.order %}
+                                    {{ tx.order.order_id }}
+                                {% else %}
+                                    <span class="text-gray-400 dark:text-gray-500">—</span>
+                                {% endif %}
+                            </td>
+        
+                            <!-- AMOUNT -->
+                            <td class="px-6 py-4 font-bold text-right 
+                                {% if tx.tx_type == 'credit' %}
+                                    text-green-600 dark:text-green-400
+                                {% else %}
+                                    text-red-600 dark:text-red-400
+                                {% endif %}
+                            ">
+                                {% if tx.tx_type == 'credit' %}+{% else %}-{% endif %}
+                                ₹{{ tx.amount }}
+                            </td>
+        
+                            <!-- BALANCE AFTER -->
+                            <td class="px-6 py-4 font-medium text-right dark:text-white">
+                                ₹{{ tx.new_balance }}
+                            </td>
+        
+                            <!-- DATE -->
+                            <td class="px-6 py-4 text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                {{ tx.created_at|date:"d M Y, H:i" }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        {% else %}
+            <p class="text-gray-500 dark:text-gray-400 text-sm">No transactions yet.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 🔥 NEW: Add Money Modal -->
+<div id="add-money-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 transition-colors duration-200">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold dark:text-white">Add Money to Wallet</h3>
+            <button id="close-modal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        
+        <div class="mb-4">
+            <label for="amount-input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Enter Amount (₹100 - ₹50,000)
+            </label>
+            <input 
+                type="number" 
+                id="amount-input" 
+                min="100" 
+                max="50000" 
+                step="1"
+                placeholder="Enter amount"
+                class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors duration-200">
+            
+            <!-- Quick Amount Buttons -->
+            <div class="flex gap-2 mt-3">
+                <button onclick="setAmount(500)" class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm">
+                    ₹500
+                </button>
+                <button onclick="setAmount(1000)" class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm">
+                    ₹1,000
+                </button>
+                <button onclick="setAmount(5000)" class="flex-1 px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600 text-sm">
+                    ₹5,000
+                </button>
+            </div>
+        </div>
+        
+        <div id="error-message" class="hidden mb-4 p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-300 rounded-lg text-sm"></div>
+        
+        <button 
+            id="proceed-payment-btn"
+            class="w-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white py-3 rounded-lg font-semibold hover:shadow-lg transition-all duration-200 flex items-center justify-center gap-2">
+            <i class="fas fa-bolt text-yellow-300"></i>
+            Add Money via Razorpay
+        </button>
+    </div>
+</div>
+
+
+<!-- SUCCESS MODAL -->
+<div id="success-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="success-box bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-sm w-full p-6 text-center 
+    transform scale-95 opacity-0 transition-all duration-300">
+
+        <div class="flex justify-center mb-3">
+            <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/40 flex items-center justify-center">
+                <i class="fas fa-check text-green-600 dark:text-green-400 text-3xl"></i>
+            </div>
+        </div>
+
+        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">Success!</h3>
+        <p id="success-message" class="text-gray-600 dark:text-gray-300 text-sm mb-5">
+            Money added to wallet successfully.
+        </p>
+
+        <button id="success-close-btn" 
+                class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg font-semibold transition shadow">
+            Okay
+        </button>
+    </div>
+</div>
+
+<script>
+function showSuccessModal(message) {
+    const modal = document.getElementById("success-modal");
+    const box = modal.querySelector(".success-box");  // FIXED SELECTOR
+    const messageBox = document.getElementById("success-message");
+
+    messageBox.textContent = message;
+
+    modal.classList.remove("hidden");
+
+    // animate in
+    setTimeout(() => {
+        box.classList.remove("opacity-0", "scale-95");
+        box.classList.add("opacity-100", "scale-100");
+    }, 20);
+}
+
+
+document.getElementById("success-close-btn").addEventListener("click", () => {
+    window.location.reload();
+});
+</script>
+
+
+
+<!-- 🔥 Razorpay Script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+// Quick amount setter
+function setAmount(amount) {
+    document.getElementById('amount-input').value = amount;
+}
+
+// Modal controls
+const modal = document.getElementById('add-money-modal');
+const addMoneyBtn = document.getElementById('add-money-btn');
+const closeModalBtn = document.getElementById('close-modal');
+const proceedPaymentBtn = document.getElementById('proceed-payment-btn');
+const amountInput = document.getElementById('amount-input');
+const errorMessage = document.getElementById('error-message');
+
+// Open modal
+addMoneyBtn.addEventListener('click', () => {
+    modal.classList.remove('hidden');
+    amountInput.focus();
+});
+
+// Close modal
+closeModalBtn.addEventListener('click', () => {
+    modal.classList.add('hidden');
+    amountInput.value = '';
+    errorMessage.classList.add('hidden');
+});
+
+// Close on outside click
+modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+        modal.classList.add('hidden');
+        amountInput.value = '';
+        errorMessage.classList.add('hidden');
+    }
+});
+
+// Show error message
+function showError(message) {
+    errorMessage.textContent = message;
+    errorMessage.classList.remove('hidden');
+}
+
+// Hide error message
+function hideError() {
+    errorMessage.classList.add('hidden');
+}
+
+// 🔥 MAIN PAYMENT FLOW
+proceedPaymentBtn.addEventListener('click', async () => {
+    const amount = parseFloat(amountInput.value);
+    
+    // Validate amount
+    if (!amount || amount < 100 || amount > 50000) {
+        showError('Please enter an amount between ₹100 and ₹50,000');
+        return;
+    }
+    
+    hideError();
+    
+    // Disable button and show loading
+    proceedPaymentBtn.disabled = true;
+    proceedPaymentBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+    
+    try {
+        // Step 1: Create Razorpay order
+        const response = await fetch("{% url 'add_money_create_order' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ amount: amount })
+        });
+        
+        const data = await response.json();
+        
+        if (data.status !== 'success') {
+            showError(data.message || 'Failed to create payment order');
+            proceedPaymentBtn.disabled = false;
+            proceedPaymentBtn.innerHTML = '<i class="fas fa-bolt text-yellow-300 mr-2"></i>Add Money via Razorpay';
+            return;
+        }
+        
+        // Step 2: Open Razorpay checkout
+        const options = {
+            key: data.key,
+            amount: data.amount,
+            currency: 'INR',
+            name: data.name,
+            description: data.description,
+            order_id: data.order_id,
+            
+            handler: async function(razorpayResponse) {
+                console.log('Payment successful:', razorpayResponse);
+                
+                // Step 3: Verify payment
+                try {
+                    const verifyResponse = await fetch("{% url 'add_money_verify_payment' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: JSON.stringify(razorpayResponse)
+                    });
+                    
+                    const verifyData = await verifyResponse.json();
+                    
+                    if (verifyData.status === 'success') {
+                        // Success! Reload page to show updated balance
+                        showSuccessModal(verifyData.message);
+
+                    } else {
+                        showError(verifyData.message || 'Payment verification failed');
+                    }
+                } catch (error) {
+                    console.error('Verification error:', error);
+                    showError('Failed to verify payment. Please contact support.');
+                }
+            },
+            
+            modal: {
+                ondismiss: function() {
+                    console.log('Payment cancelled by user');
+                    proceedPaymentBtn.disabled = false;
+                    proceedPaymentBtn.innerHTML = '<i class="fas fa-bolt text-yellow-300 mr-2"></i>Add Money via Razorpay';
+                }
+            },
+            
+            prefill: {
+                name: "{{ request.user.get_full_name|default:request.user.email }}",
+                email: "{{ request.user.email }}",
+            },
+            
+            theme: {
+                color: '#2563eb'  // Blue theme
+            }
+        };
+        
+        const rzp = new Razorpay(options);
+        rzp.open();
+        
+        // Reset button after Razorpay opens
+        proceedPaymentBtn.disabled = false;
+        proceedPaymentBtn.innerHTML = '<i class="fas fa-bolt text-yellow-300 mr-2"></i>Add Money via Razorpay';
+        
+    } catch (error) {
+        console.error('Payment error:', error);
+        showError('Failed to initiate payment. Please try again.');
+        proceedPaymentBtn.disabled = false;
+        proceedPaymentBtn.innerHTML = '<i class="fas fa-bolt text-yellow-300 mr-2"></i>Add Money via Razorpay';
+    }
+});
+</script>
+{% endblock %}

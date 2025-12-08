@@ -17,5 +17,9 @@ urlpatterns = [
     path('select-address/<int:address_id>/', views.select_address, name='select_address'),
     path('place-order/', views.place_order, name='place_order'),
     path('order-success/', views.order_success, name='order_success'),
+    path('payment-failed/', views.payment_failed, name='payment_failed'),
+    
+    path('toggle-wallet/', views.toggle_wallet_usage, name='toggle_wallet_usage'),
+    
 
 ]

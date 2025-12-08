@@ -3,23 +3,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport"="width=device-width, initial-scale=1.0">
     <title>Checkout - Timestamp</title>
     <script src="https://cdn.tailwindcss.com"></script>
-
+    <script>
+        // Configure Tailwind for dark mode
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-<body class="bg-gray-50">
     
+    <!-- Dark Mode Script - Load before body -->
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
+    
+    <!-- Dark Mode Toggle Button -->
+    <button 
+        id="theme-toggle" 
+        class="fixed bottom-6 right-6 z-50 bg-gray-200 dark:bg-gray-700 p-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110">
+        <svg id="theme-toggle-dark-icon" class="hidden w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"></path>
+        </svg>
+        <svg id="theme-toggle-light-icon" class="hidden w-6 h-6 text-gray-700" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
+        </svg>
+    </button>
+
     <div class="container mx-auto px-4 py-8 max-w-7xl">
-        <h1 class="text-3xl font-bold text-gray-900 mb-8">Checkout</h1>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-8">Checkout</h1>
 
         {% if messages %}
         <div class="mb-6 space-y-2">
             {% for message in messages %}
-            <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-800{% elif message.tags == 'error' %}bg-red-50 text-red-800{% else %}bg-blue-50 text-blue-800{% endif %}">
+            <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200{% elif message.tags == 'error' %}bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200{% else %}bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200{% endif %}">
                 {{ message }}
             </div>
             {% endfor %}
@@ -29,28 +54,28 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Address Selection -->
             <div class="lg:col-span-2 space-y-6">
-                <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 transition-colors duration-200">
                     <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-semibold text-gray-900">
-                            <i class="fas fa-map-marker-alt text-blue-600 mr-2"></i>
+                        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                            <i class="fas fa-map-marker-alt text-blue-600 dark:text-blue-400 mr-2"></i>
                             Delivery Address
                         </h2>
-                        <a href="{% url 'add_address' %}?next=checkout" class="text-blue-600 hover:text-blue-700 font-medium text-sm">
+                        <a href="{% url 'add_address' %}?next=checkout" class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium text-sm">
                             <i class="fas fa-plus mr-1"></i> Add New
                         </a>
                     </div>
 
                     {% if not addresses %}
-                    <div class="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                        <p class="text-gray-600 mb-4">No saved addresses</p>
-                        <a href="{% url 'add_address' %}?next=checkout" class="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                    <div class="text-center py-8 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg">
+                        <p class="text-gray-600 dark:text-gray-400 mb-4">No saved addresses</p>
+                        <a href="{% url 'add_address' %}?next=checkout" class="inline-block bg-blue-600 dark:bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600">
                             Add Address
                         </a>
                     </div>
                     {% else %}
                     <div class="space-y-3">
                         {% for address in addresses %}
-                        <div class="border-2 {% if selected_address.id == address.id %}border-blue-600 bg-blue-50{% else %}border-gray-200{% endif %} rounded-lg p-4">
+                        <div class="border-2 {% if selected_address.id == address.id %}border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20{% else %}border-gray-200 dark:border-gray-700{% endif %} rounded-lg p-4 transition-colors duration-200">
                             <div class="flex items-start justify-between">
                                 <div class="flex items-start flex-1">
                                     <input type="radio" name="delivery_address" value="{{ address.id }}"
@@ -58,15 +83,15 @@
                                            onchange="window.location.href='{% url 'select_address' address.id %}'"
                                            class="mt-1 mr-3">
                                     <div class="flex-1">
-                                        <h3 class="font-semibold text-gray-900">{{ address.full_name }}</h3>
-                                        <p class="text-gray-700 text-sm">{{ address.street_address }}</p>
-                                        <p class="text-gray-700 text-sm">{{ address.city }}, {{ address.state }} - {{ address.postal_code }}</p>
-                                        <p class="text-gray-600 text-sm mt-1">
+                                        <h3 class="font-semibold text-gray-900 dark:text-white">{{ address.full_name }}</h3>
+                                        <p class="text-gray-700 dark:text-gray-300 text-sm">{{ address.street_address }}</p>
+                                        <p class="text-gray-700 dark:text-gray-300 text-sm">{{ address.city }}, {{ address.state }} - {{ address.postal_code }}</p>
+                                        <p class="text-gray-600 dark:text-gray-400 text-sm mt-1">
                                             <i class="fas fa-phone"></i> {{ address.mobile }}
                                         </p>
                                     </div>
                                 </div>
-                                <a href="{% url 'edit_address' address.id %}?next=checkout" class="ml-4 text-blue-600 hover:text-blue-700 text-sm">
+                                <a href="{% url 'edit_address' address.id %}?next=checkout" class="ml-4 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm">
                                     <i class="fas fa-edit"></i>
                                 </a>
                             </div>
@@ -77,16 +102,16 @@
                 </div>
 
                 <!-- Cart Items -->
-                <div class="bg-white rounded-lg shadow-sm p-6">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                        <i class="fas fa-shopping-bag text-blue-600 mr-2"></i>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 transition-colors duration-200">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                        <i class="fas fa-shopping-bag text-blue-600 dark:text-blue-400 mr-2"></i>
                         Order Items ({{ cart_items|length }})
                     </h2>
                     
                     <div class="space-y-4">
                         {% for item in cart_items %}
-                        <div class="flex items-start border-b border-gray-200 pb-4 last:border-b-0">
-                            <div class="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                        <div class="flex items-start border-b border-gray-200 dark:border-gray-700 pb-4 last:border-b-0">
+                            <div class="w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
                                 {% if item.variant.images.all %}
                                     {% with item.variant.images.all|first as image %}
                                     <img src="{{ image.image.url }}" alt="{{ item.product.product_name }}" class="w-full h-full object-cover">
@@ -95,13 +120,13 @@
                             </div>
                             
                             <div class="ml-4 flex-1">
-                                <h3 class="font-semibold text-gray-900">{{ item.product.product_name }}</h3>
-                                <p class="text-sm text-gray-600 mt-1">Color: {{ item.variant.colour }}</p>
+                                <h3 class="font-semibold text-gray-900 dark:text-white">{{ item.product.product_name }}</h3>
+                                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1">Color: {{ item.variant.colour }}</p>
                                 <div class="flex items-center justify-between mt-2">
-                                    <span class="text-sm text-gray-600">Qty: {{ item.quantity }}</span>
+                                    <span class="text-sm text-gray-600 dark:text-gray-400">Qty: {{ item.quantity }}</span>
                                     <div class="text-right">
-                                        <p class="font-semibold text-gray-900">₹{{ item.price }} × {{ item.quantity }}</p>
-                                        <p class="text-sm font-bold text-gray-900">₹{{ item.get_subtotal }}</p>
+                                        <p class="font-semibold text-gray-900 dark:text-white">₹{{ item.price }} × {{ item.quantity }}</p>
+                                        <p class="text-sm font-bold text-gray-900 dark:text-white">₹{{ item.get_subtotal }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -113,93 +138,135 @@
 
             <!-- Order Summary -->
             <div class="lg:col-span-1">
-                <div class="bg-white rounded-lg shadow-sm p-6 sticky top-4">
-                    <h2 class="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 sticky top-4 transition-colors duration-200">
+                    <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">Order Summary</h2>
                     
-                    <div class="space-y-3 mb-4 pb-4 border-b border-gray-200">
-                        <div class="flex justify-between text-gray-700">
+                    <div class="space-y-3 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+                        <div class="flex justify-between text-gray-700 dark:text-gray-300">
                             <span>Subtotal</span>
                             <span>₹{{ subtotal }}</span>
                         </div>
                         
                         {% if discount_amount > 0 %}
-                        <div class="flex justify-between text-green-600">
+                        <div class="flex justify-between text-green-600 dark:text-green-400">
                             <span>Discount</span>
                             <span>-₹{{ discount_amount }}</span>
                         </div>
                         {% endif %}
                         
-                        <div class="flex justify-between text-gray-700">
+                        <div class="flex justify-between text-gray-700 dark:text-gray-300">
                             <span>Shipping</span>
                             <span>{% if shipping_charge == 0 %}FREE{% else %}₹{{ shipping_charge }}{% endif %}</span>
                         </div>
                     </div>
                     
-                    <div class="flex justify-between items-center text-lg font-bold text-gray-900 mb-6">
+                    <div class="flex justify-between items-center text-lg font-bold text-gray-900 dark:text-white mb-6">
                         <span>Total</span>
-                        <span>₹{{ total_amount }}.00</span>
+                        <span>₹{{ total_amount }}</span>
                     </div>
 
-                    <div class="flex justify-between mb-2 text-sm">
+                    <div class="flex justify-between mb-6 text-sm text-gray-600 dark:text-gray-400">
                         <span>Estimated Delivery</span>
-                        <span class="text-blue-600 font-medium">
+                        <span class="text-blue-600 dark:text-blue-400 font-medium">
                             {{ estimated_delivery|date:"d M Y" }}
                         </span>
-                    </div>          
+                    </div>
+
+                    <!-- Wallet Option -->
+                    {% if wallet.balance > 0 %}
+                    <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 p-4 rounded-lg mb-6 transition-colors duration-200">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                id="use-wallet" 
+                                class="h-4 w-4"
+                                {% if use_wallet %}checked{% endif %}>
+                            <span class="text-gray-900 dark:text-white font-medium">
+                                Use Wallet Balance (₹{{ wallet.balance }})
+                            </span>
+                        </label>
+
+                        {% if wallet_used > 0 %}
+                        <div class="mt-3 pt-3 border-t border-blue-200 dark:border-blue-700 space-y-1">
+                            <p class="text-sm text-gray-600 dark:text-gray-400 flex justify-between">
+                                <span>Wallet Used:</span>
+                                <span class="font-semibold text-green-600 dark:text-green-400">-₹{{ wallet_used }}</span>
+                            </p>
+                            <p class="text-base font-bold flex justify-between text-gray-900 dark:text-white">
+                                <span>Remaining to Pay:</span>
+                                <span class="text-blue-600 dark:text-blue-400">₹{{ remaining_amount }}</span>
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
                     
                     <!-- Payment Method -->
                     <div class="mb-6">
-                        <h3 class="font-semibold text-gray-900 mb-3">Payment</h3>
-                        <div class="border border-gray-200 rounded-lg p-3 bg-gray-50">
+                        <h3 class="font-semibold text-gray-900 dark:text-white mb-3">Payment Method</h3>
+                        
+                        <!-- COD Option -->
+                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-900/50 mb-3 transition-colors duration-200">
                             <div class="flex items-center">
-                                <i class="fas fa-money-bill-wave text-green-600 text-xl mr-3"></i>
-                                <div>
-                                    <p class="font-medium text-gray-900">Cash on Delivery</p>
-                                    <p class="text-xs text-gray-600">Pay when you receive</p>
+                                <i class="fas fa-money-bill-wave text-green-600 dark:text-green-400 text-xl mr-3"></i>
+                                <div class="flex-1">
+                                    <p class="font-medium text-gray-900 dark:text-white">Cash on Delivery</p>
+                                    <p class="text-xs text-gray-600 dark:text-gray-400">Pay when you receive</p>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Online Payment Button -->
+                        {% if selected_address %}
+                        <button 
+                            id="pay-btn"
+                            class="w-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 shadow hover:shadow-lg transition-all duration-200">
+                            <i class="fas fa-bolt text-yellow-300 text-lg"></i>
+                            Pay Securely with Razorpay
+                        </button>
+                        {% else %}
+                        <button 
+                            type="button" 
+                            disabled 
+                            class="w-full bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 py-3 rounded-lg font-semibold cursor-not-allowed flex items-center justify-center gap-2">
+                            <i class="fas fa-lock mr-2"></i>
+                            Select Address First
+                        </button>
+                        {% endif %}
                     </div>
                     
-                    <!-- Place Order -->
+                    <!-- COD Form -->
                     <form method="POST" action="{% url 'place_order' %}">
                         {% csrf_token %}
                         <input type="hidden" name="product_id" value="{{ product.id }}">
                         <input type="hidden" name="variant_id" value="{{ selected_variant.id }}">
                         <input type="hidden" name="slug" value="{{ selected_variant.product.slug }}">                                    
                         
-                        <textarea name="order_note" placeholder="Order notes (optional)" rows="2" 
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-4"></textarea>
+                        <textarea 
+                            name="order_note" 
+                            placeholder="Order notes (optional)" 
+                            rows="2" 
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg text-sm mb-4 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors duration-200"></textarea>
                         
                         {% if selected_address %}
-                        <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            Place Order
+                        <button 
+                            type="submit" 
+                            class="w-full bg-green-600 dark:bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-700 dark:hover:bg-green-600 flex items-center justify-center gap-2 transition-colors duration-200">
+                            <i class="fas fa-check-circle"></i>
+                            Place Order (COD)
                         </button>
-
-
-
                         {% else %}
-                        <button type="button" disabled class="w-full bg-gray-300 text-gray-500 py-3 rounded-lg font-semibold cursor-not-allowed">
+                        <button 
+                            type="button" 
+                            disabled 
+                            class="w-full bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 py-3 rounded-lg font-semibold cursor-not-allowed transition-colors duration-200">
                             Select Address to Continue
                         </button>
                         {% endif %}
                     </form>
-
-                    <div class="mt-4 text-center">
-                        <button id="pay-btn"
-                        class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 shadow hover:from-blue-700 hover:to-blue-800 transition">
-                        <i class="fas fa-bolt text-yellow-300 text-lg"></i>
-                        Pay Securely with Razorpay
-                    </button>
-                    
-                    
-                    
-                </div>
-
                     
                     <div class="mt-4 text-center">
-                        <a href="{% url 'cart_view' %}" class="text-blue-600 hover:text-blue-700 text-sm">
+                        <a href="{% url 'cart_view' %}" class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-sm">
                             <i class="fas fa-arrow-left mr-1"></i> Back to Cart
                         </a>
                     </div>
@@ -208,86 +275,156 @@
         </div>
     </div>
 
+    <!-- Dark Mode Toggle Script -->
     <script>
-        const payBtn = document.getElementById("pay-btn");
-    
-        if (payBtn) {
-            payBtn.addEventListener("click", function (e) {
-                e.preventDefault();
-    
-                // 1) Ask backend to prepare Razorpay order
-                fetch("{% url 'create_razorpay_order' %}")
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status !== "success") {
-                            alert(data.message || "Unable to start payment.");
-                            return;
-                        }
-    
-                        // 2) Configure Razorpay checkout
-                        var options = {
-                            "key": data.key,
-                            "amount": data.amount,
-                            "currency": "INR",
-                            "name": "Timestamp Store",
-                            "description": "Order Payment",
-                            "order_id": data.order_id,
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeToggleDarkIcon = document.getElementById('theme-toggle-dark-icon');
+        const themeToggleLightIcon = document.getElementById('theme-toggle-light-icon');
 
-                        // ⭐⭐ FORCE OLD CHECKOUT UI ⭐⭐
+        function updateIcon() {
+            if (document.documentElement.classList.contains('dark')) {
+                themeToggleLightIcon.classList.add('hidden');
+                themeToggleDarkIcon.classList.remove('hidden');
+            } else {
+                themeToggleDarkIcon.classList.add('hidden');
+                themeToggleLightIcon.classList.remove('hidden');
+            }
+        }
+
+        updateIcon();
+
+        themeToggleBtn.addEventListener('click', function() {
+            document.documentElement.classList.toggle('dark');
+            
+            if (document.documentElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+            
+            updateIcon();
+        });
+    </script>
+
+    <!-- Wallet Toggle Script -->
+    <script>
+    document.getElementById("use-wallet")?.addEventListener("change", function () {
+        fetch("{% url 'toggle_wallet_usage' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                use_wallet: this.checked
+            }),
+        })
+        .then(() => {
+            location.reload();
+        })
+        .catch(err => {
+            console.error("Failed to toggle wallet:", err);
+            alert("Failed to update wallet preference. Please try again.");
+        });
+    });
+    </script>
+
+    <!-- Razorpay Payment Script -->
+    <script>
+    const payBtn = document.getElementById("pay-btn");
+
+    if (payBtn) {
+        payBtn.addEventListener("click", function (e) {
+            e.preventDefault();
+
+            payBtn.disabled = true;
+            payBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+
+            fetch("{% url 'create_razorpay_order' %}?address_id={{ selected_address.id }}")
+                .then(response => response.json())
+                .then(data => {
+                    payBtn.disabled = false;
+                    payBtn.innerHTML = '<i class="fas fa-bolt text-yellow-300 text-lg mr-2"></i>Pay Securely with Razorpay';
+
+                    if (data.status !== "success") {
+                        alert(data.message || "Unable to start payment.");
+                        return;
+                    }
+
+                    var options = {
+                        "key": data.key,
+                        "amount": data.amount,
+                        "currency": "INR",
+                        "name": "Timestamp Store",
+                        "description": "Order Payment",
+                        "order_id": data.order_id,
+
                         "config": {
                             "display": {
                                 "checkout": {
-                                    "theme": "classic"   // disable the new UI
+                                    "theme": "classic"
                                 }
                             },
                             "card": {
-                                "save": false  // ensure tokenization is OFF
+                                "save": false
                             }
                         },
 
-    
-                            "handler": function (response) {
-                                console.log("🔥 PAYMENT RESPONSE FROM RAZORPAY:", response);
+                        "handler": function (response) {
+                            console.log("Payment Response:", response);
 
-                                fetch("{% url 'verify_payment' %}", {
-                                    method: "POST",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify(response),
-                                })
-                                .then(res => res.json())
-                                .then(result => {
-                                    console.log("🎯 VERIFY RESPONSE:", result);
+                            fetch("{% url 'verify_payment' %}", {
+                                method: "POST",
+                                headers: { 
+                                    "Content-Type": "application/json",
+                                    "X-CSRFToken": "{{ csrf_token }}"
+                                },
+                                body: JSON.stringify(response),
+                            })
+                            .then(res => res.json())
+                            .then(result => {
+                                console.log("Verify Response:", result);
 
-                                    if (result.status === "success") {
-                                        window.location.href = "{% url 'order_success' %}";
-                                    } else {
-                                        alert(result.message || "Payment verification failed.");
-                                    }
-                                })
-                                .catch(() => {
-                                    alert("Something went wrong while verifying payment.");
-                                });
-                            },
+                                if (result.status === "success") {
+                                    // SUCCESS → redirect to order success page
+                                    window.location.href = "{% url 'order_success' %}";
+                                } else {
+                                    // FAILURE → redirect to payment failed page
+                                    window.location.href = "{% url 'payment_failed' %}";
+                                }
+                            })
+                            .catch(err => {
+                                console.error("Verification error:", err);
+                                // NETWORK/ERROR → also redirect to failed page
+                                window.location.href = "{% url 'payment_failed' %}";
+                            });
+                        },
 
-    
-                            "prefill": {
-                                "name": "{{ request.user.get_full_name|default:request.user.email }}",
-                                "email": "{{ request.user.email }}",
-                            },
-                        };
-    
-                        var rzp = new Razorpay(options);
-                        rzp.open();
-                    })
-                    .catch(() => {
-                        alert("Could not initiate payment. Please try again.");
-                    });
-            });
-        }
+
+                        "modal": {
+                            "ondismiss": function() {
+                                window.location.href = "{% url 'payment_failed' %}";
+                            }
+                        },
+
+
+                        "prefill": {
+                            "name": "{{ request.user.get_full_name|default:request.user.email }}",
+                            "email": "{{ request.user.email }}",
+                        },
+                    };
+
+                    var rzp = new Razorpay(options);
+                    rzp.open();
+                })
+                .catch(err => {
+                    console.error("Payment initiation error:", err);
+                    payBtn.disabled = false;
+                    payBtn.innerHTML = '<i class="fas fa-bolt text-yellow-300 text-lg mr-2"></i>Pay Securely with Razorpay';
+                    alert("Could not initiate payment. Please try again.");
+                });
+        });
+    }
     </script>
-    
-        
-
-
 </body>
 </html>

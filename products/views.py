@@ -7,6 +7,7 @@ from django.db.models import Q
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
 from category.models import Category, Offer
+# from offers.models import Offer
 from products.models import Product, Product_varients,VariantImage
 from django.utils.text import slugify
 

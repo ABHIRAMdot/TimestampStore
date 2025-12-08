@@ -1,5 +1,6 @@
 from django.db import models
 from category.models import Category,Offer
+# from offers.models import Offer
 from django.db.models import Avg, Count
 
 # Create your models here.

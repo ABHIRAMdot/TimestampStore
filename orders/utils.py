@@ -2,6 +2,8 @@ from decimal import Decimal
 from django.db.models import Q
 from .models import Order, OrderItem, OrderStatusHistory
 from django.utils import timezone
+from wallet.utils import credit_wallet
+
 
 
 def create_order_form_cart(user, cart, shipping_address, payment_method):
@@ -102,7 +104,11 @@ def cancel_order(order, reason=None, cancelled_by=None):
     order.cancellation_reason = reason
     order.cancelled_by = cancelled_by
     order.cancelled_at = timezone.now()
-    order.payment_status = 'cancelled'
+    if refund_amount > 0:
+        order.payment_status = 'refunded'
+    else:
+        order.payment_status = 'pending'
+        
     order.save()
 
     # Record status change
@@ -113,6 +119,19 @@ def cancel_order(order, reason=None, cancelled_by=None):
         changed_by=cancelled_by,
         notes=reason
     )
+
+    refund_amount = order.total_refund_amount # property that already written in Orde model
+
+    #if the whole order is cancelled, refund everything
+    if refund_amount > 0:
+        description = f"Refund for cancelled order {order.order_id}"
+        credit_wallet(
+            user=order.user,
+            amount=refund_amount,
+            tx_type='credit',
+            description=description,
+            order=order,
+        )
 
     return True, "Order cancelled successfully"
 

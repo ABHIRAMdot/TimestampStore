@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Payment Failed - Timestamp{% endblock %}
+
+{% block content %}
+
+<div class="flex flex-col items-center justify-center py-20 px-4 text-center">
+
+    <!-- Illustration -->
+    <img src="{% static 'images/failed-icon-7.jpg' %}" 
+         alt="Payment Failed"
+         class="w-60 md:w-40 mb-6 opacity-95">
+
+    <!-- Title -->
+    <h1 class="text-3xl md:text-4xl font-bold text-red-600 dark:text-red-600 mb-3">
+        Payment Failed
+    </h1>
+
+    <!-- Subtext -->
+    <p class="text-gray-600 dark:text-dark-300 max-w-lg text-sm md:text-base mb-8 leading-relaxed">
+        Unfortunately, your payment could not be processed.  
+        This may happen due to network issues or interrupted transactions.  
+        You can try again or review your order details below.
+    </p>
+
+    <!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-4 mt-2">
+
+        <!-- Retry Payment Button -->
+        <a href="{% url 'checkout' %}"
+            class="px-6 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 
+                   dark:hover:bg-blue-600 text-white rounded-lg font-semibold 
+                   shadow transition-all duration-200">
+            <i class="fas fa-redo mr-2"></i>
+            Retry Payment
+        </a>
+
+        <!-- Go to Orders Button -->
+        <a href="{% url 'user_orders_list' %}"
+            class="px-6 py-3 bg-gray-200 dark:bg-gray-700 dark:text-gray-200 
+                   hover:bg-gray-300 dark:hover:bg-gray-600 rounded-lg font-semibold 
+                   transition-all duration-200 shadow">
+            <i class="fas fa-list mr-2"></i>
+            Go to My Orders
+        </a>
+
+    </div>
+
+</div>
+
+{% endblock %}

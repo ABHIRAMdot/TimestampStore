@@ -273,6 +273,24 @@ class OrderItem(models.Model):
         self.order.calculate_totals()
         self.order.update_status_based_on_items()
 
+        # wallet refund cancel
+        #refund = actual paid amount for this item (price already includes offer)
+        refund_amount = self.price * self.quantity
+        if refund_amount > 0:
+            # local import to avoid cercular import
+            from wallet.utils import credit_wallet
+
+            description = f"Refund for cancelled item {self.product_name}"
+            credit_wallet(
+                user=self.order.user,
+                amount=refund_amount,
+                tx_type='credit',
+                description=description,
+                order=self.order,
+                order_item=self
+
+            )
+
         return True, "Item cancelled successfully"
     
     def request_return(self, reason):
@@ -306,6 +324,23 @@ class OrderItem(models.Model):
         #Update order totals
         self.order.calculate_totals()
         self.order.update_status_based_on_items()
+
+        # wallet refund return
+        refund_amount = self.price * self.quantity
+
+        if refund_amount > 0:
+            from wallet.utils import credit_wallet
+
+            description = f"Refund for returned item {self.product_name}"
+            credit_wallet(
+                user=self.order.user,
+                amount=refund_amount,
+                tx_type='credit',
+                description=description,
+                order=self.order,
+                order_item=self
+            )
+
 
         return True, "Return approved and stock restored"
 

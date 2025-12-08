@@ -111,6 +111,13 @@
                                     </span>
                                     {% endif %}
                                 </a>
+
+                                <a href="{% url 'wallet_dashboard' %}" 
+                                class="block px-4 py-2 hover:bg-gray-100 transition">
+                                 <i class="fas fa-wallet"></i> Wallet
+                             </a>
+                             
+
                                 <a href="#" class="block px-4 py-2 hover:bg-gray-100 transition">
                                     <i class="fas fa-cog mr-2"></i>Settings
                                 </a>
@@ -231,6 +238,12 @@
                             </span>
                             {% endif %}
                         </a>
+
+                        <a href="{% url 'wallet_dashboard' %}" 
+                        class="block px-4 py-2 hover:bg-gray-100 transition">
+                         <i class="fas fa-wallet"></i> Wallet
+                     </a>
+
                         <a href="#" class="block py-2 hover:text-secondary transition">
                             <i class="fas fa-cog mr-2"></i>Settings
                         </a>

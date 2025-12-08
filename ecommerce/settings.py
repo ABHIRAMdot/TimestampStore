@@ -24,37 +24,47 @@ LOGGING = {
     'disable_existing_loggers': False,
 
     'handlers': {
-        # Your custom project logs
+
+        # Project logs (debug, info, warnings, errors)
         'project_file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'project.log'),
         },
 
-        # Django internal logs (kept separate)
+        # Django internal logs
         'django_file': {
             'level': 'INFO',
             'class': 'logging.FileHandler',
             'filename': os.path.join(BASE_DIR, 'django.log'),
         },
+
+        # ERROR-ONLY LOGS
+        'error_file': {
+            'level': 'ERROR',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'error.log'),
+        },
     },
 
     'loggers': {
-        # LOG ONLY DJANGO STUFF IN django.log
+
+        # Django framework logger → django.log
         'django': {
-            'handlers': ['django_file'],
+            'handlers': ['django_file', 'error_file'],
             'level': 'INFO',
             'propagate': False,
         },
 
-        # LOG ONLY YOUR PROJECT IN project.log
+        # Your project logger → project.log + error.log
         'project_logger': {
-            'handlers': ['project_file'],
+            'handlers': ['project_file', 'error_file'],
             'level': 'DEBUG',
-            'propagate': False,  # VERY IMPORTANT
+            'propagate': False,
         },
     }
 }
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
@@ -96,6 +106,7 @@ INSTALLED_APPS = [
     'orders',
     'reviews',
     'payments',
+    'wallet',
 
     'django.contrib.sites',
 
@@ -209,10 +220,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR,'ecommerce/static')  #actual path from folder
+    os.path.join(BASE_DIR,'static')  #actual path from folder
 ]
 
 STATIC_ROOT = BASE_DIR /'staticfiles' #for collectstatic

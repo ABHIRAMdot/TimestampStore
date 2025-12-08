@@ -9,5 +9,6 @@ static/
 project.log
 django.log
 debug.log
+error.log
 
 

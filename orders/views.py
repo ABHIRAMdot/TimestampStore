@@ -1,3 +1,4 @@
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -7,6 +8,9 @@ from django.urls import reverse
 from django.db import transaction
 from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
 
 from .models import Order, OrderItem, OrderStatusHistory
 from .forms import CancelOrderForm, CancelOrderItemForm, ReturnOrderItemForm
@@ -14,7 +18,8 @@ from .utils import cancel_order, search_orders, check_and_update_order_status_af
 from .invoice import generate_invoice_pdf
 from accounts.models import Address
 from products.models import Product, Product_varients
-from cart.models import Cart
+# from cart.models import Cart
+from wallet.models import Wallet
 from cart.utils import get_or_create_cart, validate_cart_for_checkout
 
 
@@ -295,6 +300,7 @@ def checkout_view(request):
     #Get user addresses
     addresses = Address.objects.filter(user=request.user).order_by('-created_at')
 
+
     #Get selected address from session
     selected_address_id = request.session.get('selected_address_id')
     selected_address = None
@@ -308,6 +314,7 @@ def checkout_view(request):
 
     #Calculate total discount
     discount_amount = Decimal('0.00')
+
     for item in cart_items:
         #buy now  item = dict
         if isinstance(item, dict):
@@ -322,9 +329,9 @@ def checkout_view(request):
             price = item.price
             quantity = item.quantity
 
-        if product.offer and item.product.offer.is_active:
-            original_price = item.variant.price
-            discount_per_item = (original_price - price) * item.quantity
+        if product.offer and product.offer.is_active:
+            original_price = variant.price
+            discount_per_item = (original_price - price) * quantity
             discount_amount += discount_per_item
 
     # Tax calculation (18% GST example)
@@ -336,7 +343,25 @@ def checkout_view(request):
 
     # Total amount
     total_amount = subtotal - discount_amount  + shipping_charge  # + tax_amount
+
+        #using wallet amount
+    use_wallet = request.session.get("use_wallet", False)
+    wallet, created = Wallet.objects.get_or_create(user=request.user)    
+
+    wallet_used = Decimal('0.00')
+
+    if use_wallet and wallet.balance > 0:
+        wallet_used = min(wallet.balance, total_amount)
+    
+    remaining_amount = total_amount - wallet_used
+
+    remaining_amount = remaining_amount.quantize(Decimal("0.01"))
+    wallet_used = wallet_used.quantize(Decimal("0.01"))
+    
     total_amount = total_amount.quantize(Decimal('0'), rounding=ROUND_HALF_UP)
+
+
+
     
     breadcrumbs = [
         {"label": "Home", "url": reverse("home")},
@@ -357,6 +382,12 @@ def checkout_view(request):
         'total_amount': total_amount,
         'estimated_delivery': estimated_delivery,
         'breadcrumbs': breadcrumbs,
+
+        'wallet':wallet,
+        'use_wallet': use_wallet,
+        'wallet_used': wallet_used,
+        'remaining_amount': remaining_amount,
+
     }    
 
     return render(request, 'orders/checkout.html', context)
@@ -595,3 +626,22 @@ def order_success(request):
 
     context = {'order': order}
     return render(request, 'orders/order_success.html', context)
+
+
+
+@login_required(login_url='login')
+def payment_failed(request):
+    return render(request, 'orders/payment_failed.html')
+
+
+
+@csrf_exempt
+@login_required
+def toggle_wallet_usage(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        request.session["use_wallet"] = data.get("use_wallet", False)
+        request.session.modified = True
+        return JsonResponse({"status": "ok"})
+    return JsonResponse({"status": "invalid"}, status=400)
+

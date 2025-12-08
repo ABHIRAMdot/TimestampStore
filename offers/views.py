@@ -5,6 +5,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils.text import slugify
 from category.models import Category, Offer
+# from offers.models import Offer
 # Create your views here.
 
 # Offer Management Views
