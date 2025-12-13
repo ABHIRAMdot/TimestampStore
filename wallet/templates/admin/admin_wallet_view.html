@@ -1,0 +1,130 @@
+{% extends 'admin_base.html' %}
+{% block title %}Wallet Management{% endblock %}
+
+{% block content %}
+
+<div class="p-6">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800">Wallet Management</h1>
+
+        <a href="?export=csv"
+           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow text-sm">
+           Export CSV
+        </a>
+    </div>
+        {% if messages %}
+        {% for m in messages %}
+        <h3>{{m}}</h3>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Search & Filter Row -->
+   <!-- SEARCH BAR -->
+<form method="get" class="flex items-center gap-3 mb-4">
+
+    <input type="text" name="search" value="{{ search_query }}"
+           placeholder="Search by name or email"
+           class="px-4 py-2 border rounded-lg w-64">
+
+    <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+        Search
+    </button>
+
+    {% if search_query %}
+    <a href="{% url 'admin_wallet_view' %}"
+       class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">
+        Clear Search
+    </a>
+    {% endif %}
+</form>
+
+
+<!-- FILTER / SORT (Separate Form) -->
+<form method="get" class="flex items-center gap-3 mb-6">
+
+    <!-- Keep search if active so filter + search work together -->
+    {% if search_query %}
+    <input type="hidden" name="search" value="{{ search_query }}">
+    {% endif %}
+
+    <select name="filter"
+            class="px-3 py-2 border rounded-lg focus:ring focus:ring-blue-300">
+        <option value="">Sort by Latest</option>
+        <option value="high_balance" {% if filter_value == 'high_balance' %}selected{% endif %}>High Balance</option>
+        <option value="low_balance" {% if filter_value == 'low_balance' %}selected{% endif %}>Low Balance</option>
+        <option value="oldest" {% if filter_value == 'oldest' %}selected{% endif %}>Oldest</option>
+        <option value="latest" {% if filter_value == 'latest' %}selected{% endif %}>Latest</option>
+    </select>
+
+    <button class="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-black">
+        Apply Sort
+    </button>
+
+</form>
+
+    <!-- Wallet Table -->
+    <div class="bg-white shadow-md rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">User</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Email</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Balance</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Updated</th>
+                    <th class="px-6 py-3"></th>
+                </tr>
+            </thead>
+
+            <tbody class="bg-white divide-y divide-gray-200">
+
+                {% for w in wallets %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 font-medium text-gray-800">{{ w.user.first_name }} {{ w.user.last_name }}</td>
+                    <td class="px-6 py-4 text-gray-600">{{ w.user.email }}</td>
+                    <td class="px-6 py-4 font-semibold text-green-600">₹{{ w.balance }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-500">{{ w.updated_at|date:"d M Y, h:i A" }}</td>
+
+                    <td class="px-6 py-4">
+                        <a href="{% url 'admin_wallet_history' w.id %}"
+                           class="text-blue-600 hover:text-blue-800 font-medium">
+                            View History →
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-6 text-center text-gray-500">No wallet records found.</td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center items-center mt-8">
+        <div class="inline-flex space-x-2">
+
+            {% if wallets.has_previous %}
+            <a href="?page={{ wallets.previous_page_number }}&search={{ search_query }}&filter={{ filter_value }}"
+               class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">Previous</a>
+            {% endif %}
+
+            <span class="px-4 py-2 bg-gray-100 rounded-lg">
+                Page {{ wallets.number }} of {{ wallets.paginator.num_pages }}
+            </span>
+
+            {% if wallets.has_next %}
+            <a href="?page={{ wallets.next_page_number }}&search={{ search_query }}&filter={{ filter_value }}"
+               class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">Next</a>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

@@ -255,12 +255,27 @@
       </h3>
       
       <div class="flex items-center justify-between">
-        {#  Show min_price #}
-        {% if product.min_price %}
-          <p class="text-blue-700 font-bold text-lg">₹{{ product.min_price }}</p>
+        {# --- PRICE WITH OFFER LOGIC --- #}
+        {% if product.pricing and product.pricing.has_offer %}
+            
+            <div>
+                <p class="text-blue-700 font-bold text-lg">
+                    ₹{{ product.pricing.final_price }}
+                </p>
+    
+                <p class="text-gray-500 line-through text-sm">
+                    ₹{{ product.pricing.original_price }}
+                </p>
+    
+                <span class="bg-green-600 text-white text-xs px-2 py-1 rounded-full inline-block mt-1">
+                    {{ product.pricing.discount_percentage }}% OFF
+                </span>
+            </div>
+    
         {% else %}
-          <p class="text-gray-400 text-sm">Price unavailable</p>
+            <p class="text-blue-700 font-bold text-lg">₹{{ product.min_price }}</p>
         {% endif %}
+        {# --- END PRICE BLOCK --- #}
         
         {# Show stock from min_variant #}
         <span class="text-xs text-gray-500">

@@ -9,6 +9,7 @@ from django.core.paginator import Paginator
 from category.models import Category
 import math
 from django.urls import reverse
+from offers.utils import apply_offer_to_variant
 
 
 
@@ -91,7 +92,13 @@ def user_product_list(request):
 
     #attach min price variant to each product for consistent display
     for product in products_page:
-        product.min_variant = product.varients.filter(is_listed=True, price=product.min_price).first()
+        product.min_variant = product.varients.filter(is_listed=True, price=product.min_price).first()  #This line creates a temporary attribute not a model filed and not save to db
+
+        if product.min_variant:
+            pricing_pl = apply_offer_to_variant(product.min_variant)
+            product.pricing = pricing_pl  #pass offer details to templates
+        else:
+            product.pricing = None
 
     categories = Category.objects.filter(parent__isnull=False, is_listed=True)
 
@@ -157,6 +164,10 @@ def user_product_detail(request, slug):
     if not variant_images:
         messages.error(request, "This product variant currently has no images available.")
 
+    #compute offer based pricing for seleted variant
+    selcted_pricing = apply_offer_to_variant(selected_variant)
+
+
     #related products (same category, exclude current)
     related = (
         Product.objects.filter(is_listed=True, category=product.category, varients__is_listed=True, varients__stock__gt=0)
@@ -205,6 +216,8 @@ def user_product_detail(request, slug):
         'related': related,
         'main_categories' : main_categories,
         'breadcrumbs': breadcrumbs,
+
+        'selected_pricing': selcted_pricing,
 
         'reviews': reviews,
         'review_count': review_count,

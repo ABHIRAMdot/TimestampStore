@@ -107,6 +107,7 @@ INSTALLED_APPS = [
     'reviews',
     'payments',
     'wallet',
+    'referral',
 
     'django.contrib.sites',
 

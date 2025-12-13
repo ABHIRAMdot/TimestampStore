@@ -248,24 +248,43 @@
             
       </div>
 
-      <!-- Price & Discount -->
-      <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
-        <div class="flex items-baseline gap-3 mb-2">
-          <span class="text-4xl font-bold text-gray-900">₹{{ selected_variant.price }}</span>
-          {% if product.offer %}
-            <span class="text-xl text-gray-500 line-through">₹{{ product.base_price }}</span>
-            <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-              {{ product.offer.discount_percentage }}% OFF
-            </span>
-          {% endif %}
-        </div>
-        <p class="text-sm text-gray-600">Inclusive of all taxes</p>
-        {% if product.offer %}
-          <p class="text-sm text-green-700 font-medium mt-2">
-            🎉 You save ₹{{ product.base_price|add:"-"|add:selected_variant.price }}!
-          </p>
-        {% endif %}
-      </div>
+<!-- Price & Discount -->
+<div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
+  <div class="flex items-baseline gap-3 mb-2">
+
+    {% if selected_pricing.has_offer %}
+        <!-- FINAL PRICE (after best offer) -->
+        <span class="text-4xl font-bold text-gray-900">
+            ₹{{ selected_pricing.final_price }}
+        </span>
+
+        <!-- ORIGINAL PRICE -->
+        <span class="text-xl text-gray-500 line-through">
+            ₹{{ selected_pricing.original_price }}
+        </span>
+
+        <!-- OFFER BADGE -->
+        <span class="bg-green-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+            {{ selected_pricing.discount_percentage }}% OFF
+        </span>
+
+    {% else %}
+        <!-- NO OFFER -->
+        <span class="text-4xl font-bold text-gray-900">
+            ₹{{ selected_variant.price }}
+        </span>
+    {% endif %}
+  </div>
+
+  <p class="text-sm text-gray-600">Inclusive of all taxes</p>
+
+  {% if selected_pricing.has_offer %}
+    <p class="text-sm text-green-700 font-medium mt-2">
+        🎉 You save ₹{{ selected_pricing.discount_amount }}!
+    </p>
+  {% endif %}
+</div>
+
 
       <!-- Stock Status -->
       <div class="flex items-center gap-2 p-4 rounded-lg {% if selected_variant.stock > 0 %}bg-green-50 border border-green-200{% else %}bg-red-50 border border-red-200{% endif %}" data-stock="{{ selected_variant.stock }}">
@@ -710,20 +729,6 @@
     }
   }
 
-  // Buy Now
-  function buyNow() {
-    const form = document.getElementById('add-to-cart-form');
-    if (form) {
-      // form.submit();
-      // // After submission, could redirect to checkout (server-side should handle)
-      // setTimeout(() => {
-      //   window.location.href = "{% url 'proceed_to_checkout' %}";
-      // }, 500);
-    showToast("Buy Now is not yet available — Checkout coming soon!", "success");
-
-
-    }
-  }
 
   // ============= NEW WISHLIST FUNCTIONALITY =============
   let currentVariantId = {{ selected_variant.id }};

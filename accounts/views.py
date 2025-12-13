@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate,login,logout
 from .forms import RegistrationForm, EmailOTPForm, ProfileEditForm, ChangeEmailForm, ChangePasswordForm, AddressForm
 from .models import Account,Address
 from django.utils import timezone
+from decimal import Decimal
 from django.db import IntegrityError
 from django.core.mail import send_mail
 from django.conf import settings
@@ -12,6 +13,7 @@ from datetime import timedelta
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
+from django.urls import reverse
 
 
 # Create your views here.
@@ -41,6 +43,8 @@ def register(request):
             password = form.cleaned_data['password']
             phone_number = form.cleaned_data['phone_number']
 
+            referral_code = request.POST.get('referral_code', '').strip()
+
             # Generate OTP (6-digit)
             otp = f"{random.randint(0, 999999):06d}"
             otp_created_at = timezone.now().isoformat()
@@ -52,7 +56,8 @@ def register(request):
                 'password' : password,
                 'phone_number' : phone_number,
                 'otp' : otp,
-                'otp_created_at': otp_created_at # stored as a string in the session
+                'otp_created_at': otp_created_at,  # stored as a string in the session
+                'referral_code': referral_code
             }
             request.session.set_expiry(600 ) #10 minutes
                         
@@ -169,6 +174,30 @@ def verify_otp(request):
                     user.phone_number = pending_data['phone_number']
                     user.is_active = True
                     user.is_verified = True
+
+                    #check if the user is referred by someone
+                    referred_by_code = pending_data.get('referral_code', '').strip()
+                    print(f"{referred_by_code}")
+                    if referred_by_code:
+                        try:
+                            #find the referrer
+                            referrer = Account.objects.filter(referral_code=referred_by_code).first()
+                            print(f"{referrer}")
+                            if referrer and referrer != user:
+                                user.referred_by = referrer
+                                user.save()
+
+                                from referral.utils import create_referral_reward 
+                                success, msg, reward = create_referral_reward(referrer=referrer, referred_user=user)   
+                            
+
+                        except Exception as e:
+                            #Don't fail registration if referral fails
+                            print(f"Referral error : {e}")
+
+
+
+
                     user.save()
 
                     #  Clean session
@@ -440,10 +469,16 @@ def profile(request):
 
     orders = request.user.orders.prefetch_related("items").order_by("-created_at")
 
+    breadcrumbs = [
+        {'label': 'Home', 'url': reverse('home')},
+        {'label': 'Profile'}
+    ]
+
     context = {
         'user': user,
         'addresses': addresses,
         'orders': orders,
+        'breadcrumbs': breadcrumbs,
     }    
     return render(request, 'accounts/profile.html',context)
 

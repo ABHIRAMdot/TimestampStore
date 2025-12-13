@@ -1,0 +1,107 @@
+{% extends 'admin_base.html' %}
+{% block title %}Wallet History{% endblock %}
+
+{% block content %}
+<div class="p-6">
+      <!-- Breadcrumb -->
+  <nav class="text-sm text-gray-800 mb-8 flex items-center gap-2">
+    {% for crumb in breadcrumbs %}
+        {% if crumb.url %}
+            <a href="{{ crumb.url }}" class="hover:text-blue-600 transition"> << {{ crumb.label }}</a>
+        {% else %}
+            <span class="text-gray-900 font-medium">{{ crumb.label }}</span>
+        {% endif %}
+
+        {% if not forloop.last %}
+            <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd"
+                      d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/>
+            </svg>
+        {% endif %}
+    {% endfor %}
+</nav>
+
+    <h1 class="text-3xl font-bold mb-4">Wallet History</h1>
+
+    <div class="bg-white p-5 rounded-lg shadow mb-6">
+        <p class="text-gray-600 text-sm">User</p>
+        <p class="font-bold text-xl">{{ wallet.user.first_name }} {{ wallet.user.last_name }}</p>
+
+        <p class="mt-3 text-gray-600 text-sm">Current Balance</p>
+        <p class="text-green-600 text-2xl font-semibold">₹{{ wallet.balance }}</p>
+    </div>
+
+    {% if messages %}
+        {% for m in messages %}
+        <h3>{{m}}</h3>
+        {% endfor %}
+    {% endif %}
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">#</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Amount</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Description</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold uppercase">Date</th>
+                </tr>
+            </thead>
+
+            <tbody class="bg-white divide-y divide-gray-200">
+
+                {% for tx in transactions %}
+                <tr class="hover:bg-gray-50">
+
+                    <!-- 🔥 NUMBERING -->
+                    <td class="px-6 py-4 text-gray-700">
+                        {{ forloop.counter0|add:start_index }}
+                    </td>
+
+                    <td class="px-6 py-4">{{ tx.tx_type }}</td>
+
+                    <td class="px-6 py-4 font-medium {% if tx.tx_type == 'credit' %}text-green-600{% else %}text-red-600{% endif %}">
+                        ₹{{ tx.amount }}
+                    </td>
+
+                    <td class="px-6 py-4 text-gray-600">{{ tx.description }}</td>
+
+                    <td class="px-6 py-4 text-gray-500 text-sm">{{ tx.created_at|date:"d M Y, h:i A" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-6 text-center text-gray-500">No transactions found.</td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center items-center mt-8">
+        <div class="inline-flex space-x-2">
+
+            {% if transactions.has_previous %}
+            <a href="?page={{ transactions.previous_page_number }}"
+               class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">
+               Previous
+            </a>
+            {% endif %}
+
+            <span class="px-4 py-2 bg-gray-100 rounded-lg">
+                Page {{ transactions.number }} of {{ transactions.paginator.num_pages }}
+            </span>
+
+            {% if transactions.has_next %}
+            <a href="?page={{ transactions.next_page_number }}"
+               class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg">
+               Next
+            </a>
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+{% endblock %}

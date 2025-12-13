@@ -14,6 +14,17 @@
                         </div>
                     {% endif %}
                 </div>
+
+                <div class="referral-section">
+                    <h3>Your Referral Code</h3>
+                    <div class="referral-code-box">
+                        <code>{{ user.referral_code }}</code>
+                        <button onclick="copyReferralCode()" class="bg-gray-400 w-15 h-9 text-white px-4 py-1  rounded-full hover:bg-indigo-700 transition">Copy</button>
+                    </div>
+                    <p>Share this code with friends and earn ₹500 when they register!</p>
+                </div>
+
+
                 <div class="flex-1">
                     <h1 class="text-3xl font-bold mb-2">{{ user.get_full_name }}</h1>
                     <p class="flex items-center text-indigo-100 mb-1">
@@ -28,6 +39,26 @@
             </div>
         </div>
     </div>
+
+
+        <!-- Breadcrumb -->
+        <nav class="text-sm text-gray-800 mb-8 flex  h-10 items-center gap-2">
+        {% for crumb in breadcrumbs %}
+            {% if crumb.url %}
+                <a href="{{ crumb.url }}" class="hover:text-blue-600 transition">{{ crumb.label }}</a>
+
+            {% else %}
+                <span class="text-gray-900 font-medium">{{ crumb.label }}</span>
+            {% endif %}
+    
+            {% if not forloop.last %}
+                <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                            d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/>
+                </svg>
+            {% endif %}
+        {% endfor %}
+        </nav>
 
     <!-- Main Content -->
     <div class="container mx-auto px-4 py-8">
@@ -61,6 +92,14 @@
                     class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 font-medium"
                     data-tab="orders">
                 <i class="fas fa-shopping-bag mr-2"></i>Orders
+            </button>
+
+            <button  
+                class="tab-button border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 py-4 px-1 font-medium"
+                data-tab="orders">
+                <a href="{% url 'wallet_dashboard' %}">
+                Wallet
+            </a>
             </button>
         
             </nav>
@@ -337,6 +376,15 @@
             activeButton.classList.remove('border-transparent', 'text-gray-500');
             activeButton.classList.add('border-indigo-600', 'text-indigo-600');
         }
+    </script>
+
+
+<script>
+    function copyReferralCode() {
+        const code = "{{ user.referral_code }}";
+        navigator.clipboard.writeText(code);
+        alert("Referral code copied!");
+    }
     </script>
 
     {% endblock %}

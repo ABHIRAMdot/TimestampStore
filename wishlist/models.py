@@ -1,6 +1,8 @@
 from django.db import models
+from decimal import Decimal
 from accounts.models import Account
 from products.models import Product, Product_varients
+from offers.utils import get_best_offer_for_product, calculate_discounted_price
 
 # Create your models here.
 
@@ -61,18 +63,19 @@ class WishlistItem(models.Model):
     
     def get_price(self):
         """Get current price (with discount if applicable)"""
-        if not self.variant:
-            return self.product.base_price
+        base_price = self.variant.price if self.variant else self.product.base_price
+
+        offer_info = get_best_offer_for_product(self.product)
+
+        if not offer_info:
+            return Decimal(str(base_price)).quantize(Decimal('0.01'))
         
-        base_price = self.variant.price
+
+        discount_percentage = offer_info.get('discount_percentage') or Decimal('0')
+        # use existing calculate_discounted_price to compute final price (keeps rounding consistent)
+        final_price = calculate_discounted_price(base_price, discount_percentage)
         
-        # Check if product has an active offer
-        if self.product.offer and self.product.offer.is_active:
-            discount_percentage = self.product.offer.discount
-            discount_amount = (base_price * discount_percentage) / 100
-            return base_price - discount_amount
-        
-        return base_price
+        return final_price
     
     def get_original_price(self):
         """Get original price without discount"""
@@ -80,6 +83,3 @@ class WishlistItem(models.Model):
             return self.variant.price
         return self.product.base_price
     
-    def has_discount(self):
-        """Check if product has active discount"""
-        return self.product.offer and self.product.offer.is_active

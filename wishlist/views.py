@@ -34,8 +34,8 @@ def wishlist_view(request):
     wishlist_items = wishlist.items.select_related(
         'product', 
         'variant', 
-        'product__category',
-        'product__offer'
+        'product__category'
+        
     ).prefetch_related(
         'variant__images'
     ).all()

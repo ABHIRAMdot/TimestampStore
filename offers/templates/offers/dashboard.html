@@ -1,0 +1,149 @@
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block title %}Offer Dashboard - Timestamp Admin{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div class="flex justify-between items-center mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 dark:text-Black">Offer Management</h1>
+            <p class="text-gray-600 dark:text-gray-400 mt-2">Manage all offers </p>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Category Offers -->  
+        <div class="bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-lg shadow-lg p-6 text-white">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-blue-100 text-sm font-medium">Category Offers</p>
+                    <h3 class="text-3xl font-bold mt-1">{{ stats.total_category_offers }}</h3>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-full p-3">
+                    <i class="fas fa-tags text-2xl"></i>
+                </div>
+            </div>
+            <p class="text-blue-100 text-sm">{{ stats.active_category_offers }} active</p>
+        </div>
+
+        <!-- Product Offers -->
+        <div class="bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 rounded-lg shadow-lg p-6 text-white">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <p class="text-green-100 text-sm font-medium">Product Offers</p>
+                    <h3 class="text-3xl font-bold mt-1">{{ stats.total_product_offers }}</h3>
+                </div>
+                <div class="bg-white bg-opacity-20 rounded-full p-3">
+                    <i class="fas fa-box text-2xl"></i>
+                </div>
+            </div>
+            <p class="text-green-100 text-sm">{{ stats.active_product_offers }} active</p>
+        </div>
+
+
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <!-- Category Offers -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-200">
+            <div class="flex items-center mb-4">
+                <div class="bg-blue-100 dark:bg-blue-900 rounded-full p-3 mr-4">
+                    <i class="fas fa-tags text-blue-600 dark:text-blue-400 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Category Offers</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Apply to entire category</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <a href="{% url 'add_category_offer' %}" class="flex-1 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-center transition-colors duration-200">
+                    <i class="fas fa-plus mr-2"></i>Add New
+                </a>
+                <a href="{% url 'category_offer_list' %}" class="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-center transition-colors duration-200">
+                    View All
+                </a>
+            </div>
+        </div>
+
+        <!-- Product Offers -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-200">
+            <div class="flex items-center mb-4">
+                <div class="bg-green-100 dark:bg-green-900 rounded-full p-3 mr-4">
+                    <i class="fas fa-box text-green-600 dark:text-green-400 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Product Offers</h3>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Apply to specific products</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <a href="{% url 'add_product_offer' %}" class="flex-1 bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 text-white px-4 py-2 rounded-lg text-center transition-colors duration-200">
+                    <i class="fas fa-plus mr-2"></i>Add New
+                </a>
+                <a href="{% url 'product_offer_list' %}" class="flex-1 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg text-center transition-colors duration-200">
+                    View All
+                </a>
+            </div>
+        </div>
+
+
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Category Offers -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-200">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Category Offers</h3>
+            {% if recent_category_offers %}
+                <div class="space-y-3">
+                    {% for offer in recent_category_offers %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900 dark:text-white">{{ offer.name }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ offer.category.category_name }} • {{ offer.discount }}% off</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium
+                            {% if offer.status == 'active' %}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200
+                            {% elif offer.status == 'inactive' %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300
+                            {% else %}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200{% endif %}">
+                            {{ offer.get_status_display }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-500 dark:text-gray-400 text-center py-8">No category offers yet</p>
+            {% endif %}
+        </div>
+
+        <!-- Recent Product Offers -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors duration-200">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Product Offers</h3>
+            {% if recent_product_offers %}
+                <div class="space-y-3">
+                    {% for offer in recent_product_offers %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                        <div class="flex-1">
+                            <p class="font-medium text-gray-900 dark:text-white">{{ offer.name }}</p>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">{{ offer.product.product_name }} • {{ offer.discount }}% off</p>
+                        </div>
+                        <span class="px-3 py-1 rounded-full text-xs font-medium
+                            {% if offer.status == 'active' %}bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200
+                            {% elif offer.status == 'inactive' %}bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300
+                            {% else %}bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200{% endif %}">
+                            {{ offer.get_status_display }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-500 dark:text-gray-400 text-center py-8">No product offers yet</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

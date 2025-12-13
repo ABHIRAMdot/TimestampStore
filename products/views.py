@@ -6,8 +6,7 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.db import transaction
 from django.contrib.auth.decorators import login_required
-from category.models import Category, Offer
-# from offers.models import Offer
+from category.models import Category
 from products.models import Product, Product_varients,VariantImage
 from django.utils.text import slugify
 
@@ -22,12 +21,12 @@ def product_list(request):
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('admin_login')
 
-    search_query = request.GET.get('search', '')
+    search_query = request.GET.get('search', '').strip()
     category_filter = request.GET.get('category', '')
     main_category_filter = request.GET.get('main_category', '')
 
 
-    products = Product.objects.select_related('category', 'offer').prefetch_related('varients__images').order_by('-created_at')
+    products = Product.objects.select_related('category').prefetch_related('varients__images').order_by('-created_at')
 #search filter
     if search_query:
         products = products.filter(
@@ -92,14 +91,11 @@ def add_product(request):
     
     #Get only subcategories(with parent)
     categories = Category.objects.filter(is_listed=True, parent__isnull=False).select_related('parent').order_by('parent__category_name', 'category_name')
-    offers = Offer.objects.filter(status='active').order_by('name')
 
     if request.method == 'POST':
-        print("add product post")
         product_name = request.POST.get('product_name', '').strip()
         description = request.POST.get('description', '').strip()
         category_id = request.POST.get('category')
-        offer_id = request.POST.get('offer', '').strip()
         slug = request.POST.get('slug', '').strip()
         base_price = request.POST.get('base_price', '').strip()
 
@@ -114,27 +110,23 @@ def add_product(request):
             messages.error(request, 'Product name is required.')
             return render(request, 'add_prouct.html', {
                 'categories' : categories,
-                'offers' : offers,
             })
         
         if not category_id:
             messages.error(request, 'Please select a category.')
             return render(request, 'add_product.html', {
                 'categories': categories,
-                'offers': offers,                
             })
         
         if not description:
             messages.error(request, 'Description is required.')
             return render(request, 'add_product.html', {
                 'categories': categories,
-                'offers': offers,                
             })
         if not base_price:
             messages.error(request,"Base price is required")
             return render(request, 'add_product.html', {
                 'categories': categories,
-                'offers': offers,                
             })
         try:
             base_price = float(base_price)
@@ -144,7 +136,6 @@ def add_product(request):
             messages.error(request, 'Please enter a valid base price')   
             return render(request, 'add_product.html', {
                 'categories': categories,
-                'offers': offers,                
             })        
 
         # auto-generate slug if not provided
@@ -163,13 +154,14 @@ def add_product(request):
 
         if not variant_images:
             messages.error(request, 'Please upload at least one variant with images.')
-            return render(request, 'add_product.html', {'categories': categories, 'offers': offers})
+            return render(request, 'add_product.html', {
+                'categories': categories,
+                })
 
         if not colours or len(colours) == 0:
             messages.error(request, 'Please add at least one product variant.')
             return render(request, 'add_product.html', {
                 'categories': categories,
-                'offers': offers,                
             })
         
         # validate that all varients have required filed
@@ -178,7 +170,6 @@ def add_product(request):
                 messages.error(request, f' Varient {i+1}: colour and price are required.')
                 return render(request, 'add_product.html', {
                 'categories': categories,
-                'offers': offers,                    
                 })
             try:
                 float(prices[i])
@@ -186,7 +177,6 @@ def add_product(request):
                 messages.error(request, f'Variant {i+1}: Invalid price format.')
                 return render(request, 'add_product.html', {
                     'categories': categories,
-                    'offers': offers,                    
                 })                
         
 
@@ -196,7 +186,6 @@ def add_product(request):
             messages.error(request, f'Product "{product_name}" already exists.')
             return render(request, 'add_product.html', {
                 'categories': categories,
-                'offers': offers,
             })
 
         # check if slug already exists
@@ -204,7 +193,6 @@ def add_product(request):
             messages.error(request, f'Slug "{slug}" already exists. Please use a different slug.')
             return render(request, 'add_product.html', {
                 'categories': categories,
-                'offers': offers,                
             })
         
         try:
@@ -216,7 +204,6 @@ def add_product(request):
                     description=description,
                     base_price=base_price,
                     category_id=category_id,
-                    offer_id=offer_id if offer_id else None,
                     is_listed=True
                 )
 
@@ -250,10 +237,9 @@ def add_product(request):
                 return redirect('product_list')
         except Exception as e:
             messages.error(request, f'Error adding product: {str(e)}')
-            return render(request, 'add_product.html', {'categories':categories,'offera':offers,})
+            return render(request, 'add_product.html', {'categories':categories})
     context = {
         'categories':categories,
-        'offers' : offers,
     }
     return render(request, 'add_product.html', context)
 
@@ -268,7 +254,6 @@ def edit_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     categories = Category.objects.filter(is_listed=True,parent__isnull=False).select_related('parent').order_by('parent__category_name','category_name')
     main_categories = Category.objects.filter(is_listed =True, parent=None).order_by('category_name')
-    offers = Offer.objects.filter(status='active').order_by('name')
 
 
     if request.method == 'POST':
@@ -276,7 +261,6 @@ def edit_product(request, product_id):
         product_name = request.POST.get('product_name', '').strip()
         description = request.POST.get('description', '').strip()
         category_id = request.POST.get('category', '')
-        offer_id = request.POST.get('offer', '').strip()
         slug = request.POST.get('slug', '').strip()
         base_price = request.POST.get('base_price', '').strip()
 
@@ -295,14 +279,12 @@ def edit_product(request, product_id):
             return render(request, 'edit_product.html', {
                 'product' : product,
                 'categories' : categories,
-                'offers' : offers,
             })
         if not description:
             messages.error(request, 'description is required.')
             return render(request, 'edit_product.html', {
                 'product' : product,
                 'categories' : categories,
-                'offers' : offers,
             })
         # auto generate slug
         if not slug:
@@ -315,7 +297,6 @@ def edit_product(request, product_id):
             return render(request, 'edit_product.html', {
                 'product': product,
                 'categories': categories,
-                'offers': offers,
             })
 
         try:
@@ -327,7 +308,6 @@ def edit_product(request, product_id):
             return render(request, 'edit_product.html', {
                 'product': product,
                 'categories': categories,
-                'offers': offers,
             })
         
         if Product.objects.filter(product_name__iexact=product_name).exclude(id=product_id).exists():
@@ -335,7 +315,6 @@ def edit_product(request, product_id):
             return render(request, 'edit_product.html', {
                 'product' : product,
                 'categories' : categories,
-                'offers' : offers,
             })
 
  
@@ -344,7 +323,6 @@ def edit_product(request, product_id):
             return render(request, 'edit_product.html', {
                 'product' :product,
                 'categories' : categories,
-                'offers' : offers,
             })
 
         try:
@@ -354,7 +332,6 @@ def edit_product(request, product_id):
                 product.description = description
                 product.base_price = base_price
                 product.category_id = category_id
-                product.offer_id = offer_id if offer_id else None
                 product.slug = slug
                 product.save()
 
@@ -434,7 +411,6 @@ def edit_product(request, product_id):
     context = {
         'product' : product,
         'categories' : categories,
-        'offers' : offers,
         'main_category' : main_categories,
     }
     return render(request, 'edit_product.html', context)

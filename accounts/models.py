@@ -67,6 +67,11 @@ class Account(AbstractBaseUser):  #account model
     is_verified = models.BooleanField(default=False)  # user must verify OTP once
 
 
+    referral_code = models.CharField(max_length=12, unique=True, blank=True, null=True, help_text="Unique referral code for this user")
+
+    referred_by = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='referrals', help_text="User who referred this account.")
+ 
+ 
     # Permissions
     is_admin  = models.BooleanField(default=False)
     is_staff  = models.BooleanField(default=False)
@@ -100,7 +105,43 @@ class Account(AbstractBaseUser):  #account model
         self.otp_created_at = timezone.now()
         self.save()
         return self.otp
-    
+
+    def generate_referral_code(self):
+        """
+        Generate unique referral code for user.
+        Format: FIRSTNAME + 6 random chars (e.g., JOHN-A7B9C2)
+        """
+
+        if self.referral_code:
+            return self.referral_code  #already has code
+        # firstname + random characters
+        base = self.first_name.upper()[:4].ljust(4, 'X')
+
+        #keep generarting until unique
+        while True:
+            random_part = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+            code = f"{base}{random_part}"
+
+            #check if code already exists
+            if not Account.objects.filter(referral_code=code).exists():
+                self.referral_code = code
+                self.save()
+                return code
+        
+    def save(self, *args, **kwargs):
+        """
+        Override save to auto-generate referral code.
+        
+        WHY OVERRIDE SAVE?
+        - Ensures every verified user has referral code
+        - No need to remember to call generate_referral_code()
+        - Automatic and consistent
+        """
+        # Generate referral code for verified users without one
+        if self.is_verified and not self.referral_code:
+            self.generate_referral_code()
+        
+        super().save(*args, **kwargs)
 
 
 class Address(models.Model):

@@ -1,12 +1,21 @@
 import json
 from decimal import Decimal
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from django.utils import timezone
 from django.db import transaction
+from django.contrib import messages
+from django.core.paginator import Paginator
+from django.db.models import Q
+from django.http import HttpResponse
+import csv
+from django.urls import reverse
+
+
+from wallet.models import Wallet
 
 from .utils import get_or_create_wallet, credit_wallet
 #imorting razorpay client
@@ -24,9 +33,16 @@ def wallet_dashboard(request):
     wallet = get_or_create_wallet(request.user)
     transactions = wallet.transactions.select_related('order', 'order_item') [:20]
 
+    breadcrumbs = [
+        {'label': 'Home', 'url': reverse('home')},
+        {'label': 'Profile', 'url': reverse('profile')}
+    ]
+
+
     context = {
         "wallet": wallet,
         "transactions":transactions,
+        "breadcrumbs": breadcrumbs,
     }
     return render(request, 'wallet/wallet_dashboard.html',context)
 
@@ -171,4 +187,99 @@ def add_money_verify_payment(request):
 
     
 
+@login_required(login_url='admin_login')
+def admin_wallet_view(request):
+    if not request.user.is_superuser:
+        messages.error(request, 'You do not have permission to access this page.')        
+        return redirect('admin_login')
+    
+    search_query = request.GET.get('search', "").strip()
+    filter_value = request.GET.get('filter', "").strip()
 
+    wallets = Wallet.objects.select_related('user').exclude(user__is_superuser=True).order_by('-created_at')
+
+    if search_query:
+        
+        wallets = wallets.filter(
+            Q(user__first_name__icontains=search_query) |
+            Q(user__last_name__icontains=search_query) |
+            Q(user__email__icontains=search_query)
+        )
+    
+    
+    #filter
+    if filter_value == "high_balance":
+        wallets = wallets.order_by("-balance")
+    elif filter_value == "low_balance":
+        wallets = wallets.order_by("balance")
+    else:
+        wallets = wallets.order_by("-created_at")
+
+
+    # #  EXPORT TO CSV
+    # if request.GET.get("export") == "csv":
+    #     return export_wallet_csv(wallets)
+
+
+
+    paginator = Paginator(wallets,10)
+    page_number = request.GET.get('page')
+    wallets = paginator.get_page(page_number)
+
+    context = {
+        'wallets': wallets,
+        'search_query': search_query,
+        'filter_value': filter_value,
+        
+        }
+
+    return render(request, 'admin/admin_wallet_view.html', context)
+
+
+# def export_wallet_csv(wallets):
+#     response = HttpResponse(content_type='text/csv')
+#     response['Content-Disposition'] = 'attachment; filename="wallets.csv"'
+
+#     writer = csv.writer(response)
+#     writer.writerow(["User", "Email", "Balance", "Updated At"])
+
+#     for w in wallets:
+#         writer.writerow([
+#             f"{w.user.first_name} {w.user.last_name}",
+#             w.user.email,
+#             w.balance,
+#             w.updated_at.strftime("%d-%m-%Y %H:%M")
+#         ])
+
+#     return response
+
+@login_required(login_url='admin_login')
+def admin_wallet_history(request, wallet_id):
+
+    if not request.user.is_superuser:
+        messages.error(request, 'You do not have permission to access this page' )
+        return redirect('admin_login')
+    
+    wallet = get_object_or_404(Wallet, id=wallet_id)
+    transactions = wallet.transactions.order_by('-created_at')
+
+    paginator = Paginator(transactions, 10)
+    page_number = request.GET.get('page')
+    transactions = paginator.get_page(page_number)
+
+    start_index = transactions.start_index()
+
+    breadcrumbs = [
+        {"label": "Wallet", "url": reverse("admin_wallet_view")},
+        
+    ]
+
+    context = {
+        'wallet': wallet,
+        'transactions': transactions,
+        'start_index': start_index,
+        'breadcrumbs': breadcrumbs,
+        
+    }
+    
+    return render(request, 'admin/admin_wallet_history.html', context)

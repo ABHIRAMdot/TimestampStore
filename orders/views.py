@@ -18,7 +18,7 @@ from .utils import cancel_order, search_orders, check_and_update_order_status_af
 from .invoice import generate_invoice_pdf
 from accounts.models import Address
 from products.models import Product, Product_varients
-# from cart.models import Cart
+from  offers.utils import apply_offer_to_variant
 from wallet.models import Wallet
 from cart.utils import get_or_create_cart, validate_cart_for_checkout
 
@@ -212,12 +212,22 @@ def buy_now(request):
     if not variant.product.is_listed:
         return render(request, "error/product_unavailable.html", status=404)
     
+    pricing = apply_offer_to_variant(variant)
+
+    
     #save butnow items into session
     request.session['buy_now'] = {
         "product_id":int(product_id),
         "variant_id": int(variant_id),
         'slug': slug,
         "quantity": quantity,
+
+        #store final price
+        'price': float(pricing['final_price']),
+        "original_price": float(pricing['original_price']),
+        "discount_amount": float(pricing['discount_amount']),
+        "discount_percentage": str(pricing['discount_percentage']),
+        "has_offer": bool(pricing['has_offer']),
     }
 
     return redirect('checkout')
@@ -248,12 +258,19 @@ def checkout_view(request):
         variant = Product_varients.objects.select_related('product').get(id=variant_id)
         product = variant.product
 
+        pricing = apply_offer_to_variant(variant)
+
         # store buynow items in session
         request.session['buy_now'] = {
             'product_id': product_id,
             'variant_id': variant_id,
             'quantity': quantity,
-            'price': float(variant.price)
+
+            'price': float(pricing['final_price']),       # final price after offer
+            'original_price': float(pricing['original_price']),
+            'discount_amount': float(pricing['discount_amount']),
+            'discount_percentage': str(pricing['discount_percentage']),
+            'has_offer': bool(pricing['has_offer']),
         }
         
         return redirect('checkout')
@@ -266,8 +283,10 @@ def checkout_view(request):
     if buy_now_item:
         variant = Product_varients.objects.select_related('product').get(id=buy_now_item['variant_id']) 
         product = variant.product
-        quantity = buy_now_item['quantity']
+        quantity = int(buy_now_item['quantity'])
         price = Decimal(str(buy_now_item['price'])) 
+        original_price = Decimal(str(buy_now_item.get('original_price', price)))
+        item_discount = Decimal(str(buy_now_item.get('discount_amount', 0)))
 
         #temp cart_items to list in the template loop
         cart_items = [{
@@ -277,10 +296,13 @@ def checkout_view(request):
             'variant_colour': variant.colour,
             'quantity': quantity,
             'price': price,
+            'original_price': original_price,
+            'discount_amount': item_discount,
             'total': price * quantity,
         }]
 
         subtotal = price * quantity
+        discount_amount = item_discount * quantity
 
     else:
 
@@ -294,8 +316,40 @@ def checkout_view(request):
             return redirect('cart_view')
 
         #Calculate total summary
-        cart_items = cart.items.select_related('product', 'variant').all()
-        subtotal = cart.total
+        cart_items_qs = cart.items.select_related('product', 'variant').all()
+        cart_items = []
+        subtotal = Decimal('0.00')
+        discount_amount = Decimal('0.00')
+
+
+        for item in cart_items_qs:
+            # Recompute pricing from offers utils for display (do not change cart DB)
+            pricing = apply_offer_to_variant(item.variant)
+            final_price = Decimal(str(pricing['final_price']))
+            original_price = Decimal(str(pricing['original_price']))
+            item_discount = Decimal(str(pricing['discount_amount']))
+
+            line_total = final_price * item.quantity
+
+            cart_items.append({
+                'product': item.product,
+                'variant': item.variant,
+                'product_name': item.product.product_name,
+                'variant_colour': item.variant.colour,
+                'quantity': item.quantity,
+                'price': final_price,
+                'original_price': original_price,
+                'discount_amount': item_discount,  # per single item
+                'total': line_total,
+                'has_offer': pricing['has_offer'],
+                'offer_name': pricing.get('offer_name'),
+                'discount_percentage': pricing.get('discount_percentage'),
+            })
+
+            subtotal += line_total
+            discount_amount += (item_discount * item.quantity)
+
+
     
     #Get user addresses
     addresses = Address.objects.filter(user=request.user).order_by('-created_at')
@@ -312,27 +366,8 @@ def checkout_view(request):
         selected_address = addresses.first()
         request.session['selected_address_id'] = selected_address.id 
 
-    #Calculate total discount
-    discount_amount = Decimal('0.00')
 
-    for item in cart_items:
-        #buy now  item = dict
-        if isinstance(item, dict):
-            product = item["product"]
-            variant = item["variant"]
-            price = item["price"]
-            quantity =item["quantity"]
-        # normal cart item
-        else:
-            product = item.product
-            variant = item.variant
-            price = item.price
-            quantity = item.quantity
 
-        if product.offer and product.offer.is_active:
-            original_price = variant.price
-            discount_per_item = (original_price - price) * quantity
-            discount_amount += discount_per_item
 
     # Tax calculation (18% GST example)
     tax_rate = Decimal('0.18')
@@ -421,7 +456,12 @@ def place_order(request):
             return render(request, "errors/product_unavailable.html", status=404)
         
         quantity = buy_now_item['quantity']
-        price = Decimal(str(buy_now_item['price'])) #float to decimal
+
+        #recomputing price  using offers (don't trust session completely)
+        pricing = apply_offer_to_variant(variant)
+        price = Decimal(str(pricing['final_price']))
+        original_price = Decimal(str(pricing['orginal_price']))
+        discount_per_item = Decimal(str(pricing['discount_amount']))
 
         if not product.is_listed or not variant.is_listed:
             return render(request, "errors/product_unavailable.html", status=404)
@@ -431,7 +471,7 @@ def place_order(request):
             return redirect('checkout')
 
         subtotal = price * quantity
-        discount_amount = Decimal('0.00')
+        discount_amount = discount_per_item * quantity
         shipping_charge = Decimal('0.00') if subtotal >= 2000 else Decimal('50.00')
         total_amount = subtotal + shipping_charge
 
@@ -470,8 +510,8 @@ def place_order(request):
             variant=variant,
             variant_colour=variant.colour,
             price=price,
-            original_price=variant.price,
-            discount_amount=Decimal('0.00'),
+            original_price=original_price,
+            discount_amount=discount_per_item,
             quantity=quantity,
             status='pending',
         )
@@ -514,9 +554,10 @@ def place_order(request):
     
     shipping_address = get_object_or_404(Address, id=selected_address_id, user=request.user)
 
-    #Calculate totals
+    #Calculate totals using offer per variant
     cart_items = cart.items.select_related('product', 'variant').all()
-    subtotal = cart.total
+    subtotal = Decimal('0.00')
+    total_discount = Decimal('0.00')
 
     for item in cart_items:
         if not item.product.is_listed or not item.variant.is_listed:
@@ -526,12 +567,23 @@ def place_order(request):
             messages.error(request, f"Not enough stock for {item.product.product_name}.")
             return redirect('checkout')
 
-    discount_amount =Decimal('0.00')
+    line_data =[]
     for item in cart_items:
-        if item.product.offer and item.product.offer.is_active:
-            original_price = item.variant.price
-            discount_per_item = (original_price - item.price) * item.quantity
-            discount_amount += discount_per_item
+        pricing = apply_offer_to_variant(item.variant)
+        final_price = Decimal(str(pricing['final_price']))
+        original_price = Decimal(str(pricing['orginal_price']))
+        item_discount = Decimal(str(pricing['discount_amount'])) #per single item
+
+        line_total = final_price * item.quantity
+        subtotal += line_total
+        total_discount += (item_discount * item.quantity)
+
+        line_data.append({
+            'item': item,
+            'final_price': final_price,
+            'original_price': original_price,
+            'item_discount': item_discount,
+        })
     
     shipping_charge = Decimal('0.00') if subtotal >= 1000 else Decimal('50.00')
     total_amount = subtotal + shipping_charge
@@ -559,28 +611,23 @@ def place_order(request):
     order.save()
 
     #Create order items
-    for cart_item in cart_items:
-        original_price = cart_item.variant.price
-        item_discount = Decimal('0.00')
-
-        if cart_item.product.offer and cart_item.product.offer.is_active:
-            item_discount = original_price - cart_item.price
-
+    for d in line_data:
+        cart_item = d['item']
         OrderItem.objects.create(
             order=order,
             product=cart_item.product,
             variant=cart_item.variant,
             product_name=cart_item.product.product_name,
             variant_colour=cart_item.variant.colour,
-            price=cart_item.price,
-            original_price=original_price,
-            discount_amount=item_discount,
+            price=d['final_price'],
+            original_price=d['original_price'],
+            discount_amount=d['item_discount'],
             quantity=cart_item.quantity,
             status='pending',
         )
 
         # Reduce stock
-        cart_item.variant.stock -=cart_item.quantity
+        cart_item.variant.stock -= cart_item.quantity
         cart_item.variant.save()
 
     # Create status history

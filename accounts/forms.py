@@ -24,6 +24,13 @@ class RegistrationForm(forms.ModelForm):
         error_messages={'required': 'Please confirm your password'}
     )
 
+    # referral_code = forms.CharField(max_length=12, required=False, 
+    #                                 widget=forms.TextInput(attrs={
+    #                                     'placeholder': 'Referral code (optional.)',
+    #                                     'class': 'w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent'
+
+    #                                 }))
+
     class Meta:
         model = Account
         fields = ['first_name', 'last_name', 'email', 'phone_number', 'password']
@@ -127,6 +134,16 @@ class RegistrationForm(forms.ModelForm):
             raise forms.ValidationError("This phone number is already registered.")
     
         return phone_number
+    
+    # def clean_referral_code(self):
+    #     code = self.cleaned_data.get('referral_code', '').strip()
+
+    #     if code:
+    #         if not Account.objects.filter(referral_code=code).exists():
+    #             raise forms.ValidationError("Invalid referral code.")
+        
+    #     return code
+    
 
     
 

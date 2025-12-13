@@ -1,0 +1,185 @@
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block title %}Edit Category Offer - Timestamp Admin{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-4xl">
+
+        <!-- Breadcrumb -->
+        <nav class="text-sm text-gray-800 mb-8 flex  h-10 items-center gap-2">
+            {% for crumb in breadcrumbs %}
+                {% if crumb.url %}
+                    <a href="{{ crumb.url }}" class="hover:text-blue-600 transition"><< {{ crumb.label }}</a>
+    
+                {% else %}
+                    <span class="text-gray-900 font-medium">{{ crumb.label }}</span>
+                {% endif %}
+        
+                {% if not forloop.last %}
+                    <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/>
+                    </svg>
+                {% endif %}
+            {% endfor %}
+            </nav>
+
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-Black">Edit Category Offer</h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-1">Edit offer for a product category</p>
+    </div>
+
+    <!-- Messages
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200{% elif message.tags == 'error' %}bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200{% else %}bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %} -->
+
+    <!-- Form -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-8 transition-colors duration-200">
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Offer Name -->
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Offer Name <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="name" id="name" required
+                    placeholder="e.g., Summer Sale - Shirts"
+                    value="{{offer.name}}"
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors duration-200">
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Give your offer a descriptive name</p>
+            </div>
+
+            <!-- Category -->
+            <div>
+                <label for="category" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Category <span class="text-red-500">*</span>
+                </label>
+                <select name="category" id="category" required
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors duration-200">
+                    <option value="">Select a category</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.category_name }}</option>
+                    {% endfor %}
+                </select>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Offer will apply to all products in this category</p>
+            </div>
+
+            <!-- Discount -->
+            <div>
+                <label for="discount" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Discount Percentage <span class="text-red-500">*</span>
+                </label>
+                <div class="relative">
+                    <input type="number" name="discount" id="discount" required min="0" max="100" step="0.01"
+                        placeholder="30"
+                        value="{{offer.discount}}"
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 pr-12 transition-colors duration-200">
+                    <span class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 font-medium">%</span>
+                </div>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Enter value between 0 and 90</p>
+            </div>
+
+            <!-- Date Range -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Start Date -->
+                <div>
+                    <label for="start_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Start Date <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" name="start_date" id="start_date" required 
+                    value="{{offer.start_date | date:'Y-m-d'}}"
+                    
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors duration-200">
+                </div>
+
+                <!-- End Date -->
+                <div>
+                    <label for="end_date" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        End Date <span class="text-red-500">*</span>
+                    </label>
+                    <input type="date" name="end_date" id="end_date" required
+                    value="{{offer.end_date| date:'Y-m-d'}}"
+                        class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors duration-200">
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Status <span class="text-red-500">*</span>
+                </label>
+                <select name="status" id="status" required
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors duration-200">
+                    <option value="active" {% if offer and offer.status == "active" %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if offer and offer.status == "inactive" %}selected{% endif %}>Inactive</option>
+                </select>
+                <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Set offer status (can be changed later)</p>
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Description (Optional)
+                </label>
+                <textarea name="description" id="description" rows="4"
+                    placeholder="Add any additional details about this offer..."
+                    class="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 transition-colors duration-200">{{ offer.description|default_if_none:"" }}</textarea>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-between pt-6 border-t border-gray-200 dark:border-gray-700">
+                <a href="{% url 'category_offer_list' %}" class="px-6 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold transition-colors duration-200">
+                    <i class="fas fa-arrow-left mr-2"></i>Cancel
+                </a>
+                <button type="submit" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors duration-200">
+                    <i class="fas fa-check mr-2"></i>Update Offer
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Info Box -->
+    <div class="mt-6 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg p-4 transition-colors duration-200">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-info-circle text-blue-600 dark:text-blue-400 text-xl"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-blue-800 text-blue-200">About Category Offers</h3>
+                <div class="mt-2 text-sm text-blue-700 text-blue-300">
+                    <ul class="list-disc list-inside space-y-1">
+                        <li>Applies to ALL products in the selected category</li>
+                        <li>If a product has both category and product offer, larger discount wins</li>
+                        <li>Offer automatically expires after end date</li>
+                        <li>Can be activated/deactivated anytime</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Set minimum date to today
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('start_date').setAttribute('min', today);
+    document.getElementById('end_date').setAttribute('min', today);
+    
+    // Ensure end date is after start date
+    document.getElementById('start_date').addEventListener('change', function() {
+        document.getElementById('end_date').setAttribute('min', this.value);
+    });
+});
+</script>
+{% endblock %}

@@ -1,6 +1,7 @@
 from decimal import Decimal
 from django.db.models import Q
 from .models import Cart, CartItem
+from offers.utils import get_best_offer_for_product, calculate_discounted_price
 
 
 def get_or_create_cart(user):
@@ -44,13 +45,17 @@ def get_discounted_price(product, variant):
     """
     base_price = variant.price if variant else product.base_price
 
-    #check if product has an active offer
-    if product.offer and product.offer.is_active:
-        discount_percentage = product.offer.discount
-        discount_amount = (base_price * discount_percentage) / 100
-        return base_price - discount_amount
+    offer_info = get_best_offer_for_product(product)
+
+    if not offer_info:
+        return Decimal(str(base_price)).quantize(Decimal('0.01'))
     
-    return base_price
+
+    discount_percentage = offer_info.get('discount_percentage') or Decimal('0')
+    # use existing calculate_discounted_price to compute final price (keeps rounding consistent)
+    final_price = calculate_discounted_price(base_price, discount_percentage)
+    
+    return final_price
 
 
 def remove_from_wishlist_if_exists(user, product, variant=None):
