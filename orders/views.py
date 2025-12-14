@@ -376,10 +376,12 @@ def checkout_view(request):
     #Shipping free above 1000
     shipping_charge = Decimal('0.00') if subtotal >= 1000 else Decimal('50.00')
 
-    # Total amount
-    total_amount = subtotal - discount_amount  + shipping_charge  # + tax_amount
+    original_price = original_price * item.quantity
 
-        #using wallet amount
+    # Total amount
+    total_amount = subtotal + shipping_charge  # + tax_amount
+
+    #using wallet amount
     use_wallet = request.session.get("use_wallet", False)
     wallet, created = Wallet.objects.get_or_create(user=request.user)    
 
@@ -393,7 +395,7 @@ def checkout_view(request):
     remaining_amount = remaining_amount.quantize(Decimal("0.01"))
     wallet_used = wallet_used.quantize(Decimal("0.01"))
     
-    total_amount = total_amount.quantize(Decimal('0'), rounding=ROUND_HALF_UP)
+    total_amount = total_amount.quantize(Decimal('0.01'))
 
 
 
@@ -409,7 +411,7 @@ def checkout_view(request):
         'addresses': addresses,
         'selected_address': selected_address,
         'cart_items': cart_items,
-        'subtotal': subtotal,
+        'subtotal': original_price,
         # 'tax_amount': tax_amount,
         # 'tax_rate': tax_rate * 100,
         'discount_amount': discount_amount,
@@ -460,7 +462,7 @@ def place_order(request):
         #recomputing price  using offers (don't trust session completely)
         pricing = apply_offer_to_variant(variant)
         price = Decimal(str(pricing['final_price']))
-        original_price = Decimal(str(pricing['orginal_price']))
+        original_price = Decimal(str(pricing['original_price']))
         discount_per_item = Decimal(str(pricing['discount_amount']))
 
         if not product.is_listed or not variant.is_listed:
