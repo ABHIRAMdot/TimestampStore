@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Coupon Usage History - Timestamp{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 text-white flex items-center gap-3">
+                    <i class="fas fa-history text-blue-600 text-blue-400"></i>
+                    Coupon Usage History
+                </h1>
+                <p class="text-gray-600 text-gray-400 mt-2">Track all the savings you've made</p>
+            </div>
+            <a href="{% url 'user_available_coupons' %}" 
+               class="text-blue-600 text-blue-400 hover:text-blue-700 hover:text-blue-300 flex items-center gap-2">
+                <i class="fas fa-ticket-alt"></i>
+                <span>View Available Coupons</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Total Savings Card -->
+    {% if total_savings > 0 %}
+    <div class="bg-gradient-to-br   from-gray-300 to-blue-400 border-2 border-green-300 border-green-700 rounded-xl p-8 mb-8 text-center">
+        <div class="flex items-center justify-center gap-4 flex-wrap">
+            <i class="fas fa-piggy-bank text-5xl text-yellow-600 text-green-400"></i>
+            <div>
+                <p class="text-gray-700 text-gray-800 text-lg mb-2">Total Savings with Coupons</p>
+                <p class="text-5xl font-bold text-black-300 text-black-400">₹{{ total_savings }}</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Usage History -->
+    {% if usages %}
+    <div class="bg-white bg-blue-100    rounded-lg shadow-sm border border-gray-200 border-gray-700">
+        <div class="p-6 border-b border-gray-200 border-gray-700">
+            <h2 class="text-xl font-semibold text-gray-900 text-white">Your Coupon History</h2>
+        </div>
+        
+        <div class="divide-y divide-gray-200 divide-gray-700">
+            {% for usage in usages %}
+            <div class="p-6  transition-colors">
+                <div class="flex items-start justify-between gap-4 flex-wrap">
+                    <!-- Left: Coupon Info -->
+                    <div class="flex-1 min-w-[250px]">
+                        <div class="flex items-center gap-3 mb-2 flex-wrap">
+                            <span class="inline-flex items-center gap-2 bg-orange-100 bg-orange-900/20 text-orange-800 text-orange-200 px-3 py-1 rounded-full font-semibold text-sm">
+                                <i class="fas fa-ticket-alt"></i>
+                                {{ usage.coupon.code }}
+                            </span>
+                            <span class="inline-flex items-center gap-2 bg-green-100 bg-green-900/30 text-green-800 text-green-200 px-3 py-1 rounded-full font-semibold text-sm">
+                                <i class="fas fa-tag"></i>
+                                Saved ₹{{ usage.discount_amount }}
+                            </span>
+                        </div>
+                        
+                        <p class="text-gray-700 text-gray-300 mb-2">{{ usage.coupon.description }}</p>
+                        
+                        <div class="flex items-center gap-4 text-sm text-gray-600 text-gray-400 flex-wrap">
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-calendar"></i>
+                                {{ usage.used_at|date:"d M Y, h:i A" }}
+                            </span>
+                            <span class="flex items-center gap-1">
+                                <i class="fas fa-receipt"></i>
+                                Order: <a href="{% url 'user_order_detail' usage.order.order_id %}" 
+                                          class="text-blue-600 text-blue-400 hover:underline font-medium">
+                                    {{ usage.order.order_id }}
+                                </a>
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Discount Details -->
+                    <div class="text-right">
+                        <p class="text-sm text-gray-600 text-gray-400 mb-1">Cart Total</p>
+                        <p class="text-lg line-through text-gray-400 text-gray-500">₹{{ usage.cart_total_before_discount }}</p>
+                        <p class="text-sm text-green-600 text-green-400 font-semibold">-₹{{ usage.discount_amount }}</p>
+                        <p class="text-xl font-bold text-gray-900 text-white">₹{{ usage.cart_total_before_discount|add:"-"|add:usage.discount_amount }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-16 bg-white bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 border-gray-700">
+        <i class="fas fa-receipt text-6xl text-gray-400 text-gray-600 mb-4"></i>
+        <h3 class="text-xl font-semibold text-gray-900 text-white mb-2">No Coupon Usage Yet</h3>
+        <p class="text-gray-600 text-gray-400 mb-6">Start saving money by using available coupons on your orders!</p>
+        <a href="{% url 'user_available_coupons' %}" 
+           class="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition">
+            <i class="fas fa-ticket-alt"></i>
+            View Available Coupons
+        </a>
+    </div>
+    {% endif %}
+
+    <!-- Back Button -->
+    <div class="mt-8 text-center">
+        <a href="{% url 'checkout' %}" 
+           class="inline-flex items-center gap-2 text-blue-600 text-blue-400 hover:text-blue-700 hover:text-blue-300">
+            <i class="fas fa-arrow-left"></i>
+            Back to Checkout
+        </a>
+    </div>
+</div>
+{% endblock %}

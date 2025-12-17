@@ -21,7 +21,8 @@ from products.models import Product, Product_varients
 from  offers.utils import apply_offer_to_variant
 from wallet.models import Wallet
 from cart.utils import get_or_create_cart, validate_cart_for_checkout
-
+from coupons.utils import validate_and_apply_coupon, record_coupon_usage
+from coupons.models import Coupon
 
 
 
@@ -238,6 +239,67 @@ def buy_now(request):
 def checkout_view(request):
     """Display checkout page with addresses and order summery"""
 
+    if request.method == 'POST' and 'from_cart_checkout' in request.POST:
+        request.session.pop('buy_now', None)
+
+
+    discount_from_coupon = Decimal('0.00')
+    applied_coupon = None
+
+    if request.method == 'POST':
+        #user clicked apply coupon
+        if 'apply_coupon' in request.POST:
+            coupon_code = request.POST.get('coupon_code', '').strip()
+
+            #calculate cart total before coupon
+            buy_now_item = request.session.get('buy_now')
+            if buy_now_item:
+                # for buy now
+                cart_total = Decimal(str(buy_now_item['price'])) * buy_now_item['quantity']
+            else:
+                #for cart
+                cart = get_or_create_cart(request.user)
+                cart_total = cart.total
+            
+            #validate and apply coupon
+            success, message, discount, coupon  = validate_and_apply_coupon(
+                coupon_code, request.user, cart_total
+            )
+
+            if success:
+                request.session['applied_coupon_id'] = coupon.id
+                request.session['coupon_discount'] = str(discount)
+                request.session['cart_total_before_coupon'] = str(cart_total)
+                messages.success(request, message)
+                discount_from_coupon = discount
+                applied_coupon = coupon
+            else:
+                messages.error(request, message)
+                
+        
+        #use clicked remove coupon
+        elif 'remove_coupon' in request.POST:
+            if'applied_coupon_id' in request.session:
+                del request.session['applied_coupon_id']
+                del request.session['coupon_discount']
+                del request.session['cart_total_before_coupon']
+                messages.info(request, "Coupon removed")
+
+    #Get coupon from session if exists (When page loads normally)
+    elif 'applied_coupon_id' in request.session:
+        try:
+            applied_coupon = Coupon.objects.get(id=request.session['applied_coupon_id'])
+            discount_from_coupon = Decimal(request.session['coupon_discount'])
+
+        except Coupon.DoesNotExist:
+            #coupon was deleted, clean session
+            del request.session['applied_coupon_id']
+            del request.session['coupon_discount']
+            if 'cart_total_before_coupon' in request.session:
+                del request.session['cart_total_before_coupon']
+
+
+
     if  request.method == 'POST' and request.POST.get('buy_now_product_id'):
         product_id = int(request.POST['buy_now_product_id'])
         variant_id = int(request.POST['buy_now_variant_id'])
@@ -275,10 +337,6 @@ def checkout_view(request):
         
         return redirect('checkout')
     
-    if request.method == 'POST' and not request.POST.get('buy_now_product_id'):
-        if 'buy_now' in request.session:
-            del request.session['buy_now']
-    
     buy_now_item = request.session.get('buy_now')
     if buy_now_item:
         variant = Product_varients.objects.select_related('product').get(id=buy_now_item['variant_id']) 
@@ -301,6 +359,7 @@ def checkout_view(request):
             'total': price * quantity,
         }]
 
+        mrp_total = original_price * quantity
         subtotal = price * quantity
         discount_amount = item_discount * quantity
 
@@ -318,6 +377,8 @@ def checkout_view(request):
         #Calculate total summary
         cart_items_qs = cart.items.select_related('product', 'variant').all()
         cart_items = []
+
+        mrp_total = Decimal('0.00')
         subtotal = Decimal('0.00')
         discount_amount = Decimal('0.00')
 
@@ -345,7 +406,7 @@ def checkout_view(request):
                 'offer_name': pricing.get('offer_name'),
                 'discount_percentage': pricing.get('discount_percentage'),
             })
-
+            mrp_total += original_price * item.quantity
             subtotal += line_total
             discount_amount += (item_discount * item.quantity)
 
@@ -376,10 +437,10 @@ def checkout_view(request):
     #Shipping free above 1000
     shipping_charge = Decimal('0.00') if subtotal >= 1000 else Decimal('50.00')
 
-    original_price = original_price * item.quantity
+    # original_price = original_price * quantity
 
     # Total amount
-    total_amount = subtotal + shipping_charge  # + tax_amount
+    total_amount = subtotal - discount_from_coupon + shipping_charge  # + tax_amount
 
     #using wallet amount
     use_wallet = request.session.get("use_wallet", False)
@@ -411,7 +472,7 @@ def checkout_view(request):
         'addresses': addresses,
         'selected_address': selected_address,
         'cart_items': cart_items,
-        'subtotal': original_price,
+        'subtotal': subtotal,
         # 'tax_amount': tax_amount,
         # 'tax_rate': tax_rate * 100,
         'discount_amount': discount_amount,
@@ -420,10 +481,15 @@ def checkout_view(request):
         'estimated_delivery': estimated_delivery,
         'breadcrumbs': breadcrumbs,
 
+        'mrp_total': mrp_total.quantize(Decimal('0.01')),
+
         'wallet':wallet,
         'use_wallet': use_wallet,
         'wallet_used': wallet_used,
         'remaining_amount': remaining_amount,
+
+        'applied_coupon': applied_coupon,
+        'coupon_discount': discount_from_coupon,
 
     }    
 
@@ -474,8 +540,14 @@ def place_order(request):
 
         subtotal = price * quantity
         discount_amount = discount_per_item * quantity
+
+        coupon_discount = Decimal('0.00')
+        if 'coupon_discount' in request.session:
+            coupon_discount  = Decimal(request.session['coupon_discount'])
+
+
         shipping_charge = Decimal('0.00') if subtotal >= 2000 else Decimal('50.00')
-        total_amount = subtotal + shipping_charge
+        total_amount = subtotal - coupon_discount + shipping_charge
 
         selected_address_id= request.session.get('selected_address_id')
         if not selected_address_id:
@@ -483,6 +555,8 @@ def place_order(request):
             return redirect('checkout')
         
         shipping_address = get_object_or_404(Address, id=selected_address_id, user=request.user)
+
+        mrp_total = original_price * quantity
 
         order = Order.objects.create(
             user=request.user,
@@ -494,7 +568,8 @@ def place_order(request):
             state=shipping_address.state,
             postal_code=shipping_address.postal_code,
             subtotal=subtotal,
-            discount_amount=discount_amount,
+            discount_amount=discount_amount,  #offer discount
+            coupon_discount=coupon_discount, #coupon discount
             shipping_charge=shipping_charge,
             total_amount=total_amount,
             payment_method='cod',
@@ -529,6 +604,28 @@ def place_order(request):
             changed_by=request.user,
             notes='Order placed via Buy Now' 
         )
+
+        #recorde coupon usage
+        if 'applied_coupon_id' in request.session:
+            try:
+                coupon = Coupon.objects.get(id=request.session['applied_coupon_id'])
+                discount = Decimal(request.session['coupon_discount'])
+                cart_total_before = Decimal(request.session['cart_total_before_coupon'])
+
+                record_coupon_usage(
+                    coupon=coupon,
+                    uesr=request.user,
+                    order=order,
+                    discount_amount=discount,
+                    cart_total_before_discount=cart_total_before
+                )
+
+                del request.session['applied_coupon_id']
+                del request.session['coupon_discount']
+                del request.session['cart_total_before_coupon']
+            except Exception as e:
+                print(f"Coupon recording erro: {e}")
+
 
         del request.session['buy_now']
         if 'selected_address_id' in request.session:
@@ -573,7 +670,7 @@ def place_order(request):
     for item in cart_items:
         pricing = apply_offer_to_variant(item.variant)
         final_price = Decimal(str(pricing['final_price']))
-        original_price = Decimal(str(pricing['orginal_price']))
+        original_price = Decimal(str(pricing['original_price']))
         item_discount = Decimal(str(pricing['discount_amount'])) #per single item
 
         line_total = final_price * item.quantity
@@ -587,8 +684,22 @@ def place_order(request):
             'item_discount': item_discount,
         })
     
+    coupon_discount = Decimal('0.00')
+    if 'coupon_discount' in request.session:
+        coupon_discount = Decimal(request.session['coupon_discount'])
+    
     shipping_charge = Decimal('0.00') if subtotal >= 1000 else Decimal('50.00')
-    total_amount = subtotal + shipping_charge
+    total_amount = subtotal - coupon_discount + shipping_charge
+
+
+    mrp_total = Decimal('0.00')
+
+    for item in cart_items:
+        pricing = apply_offer_to_variant(item.variant)
+        original_price = Decimal(str(pricing['original_price']))
+        mrp_total += original_price * item.quantity
+
+
 
     #Create order
     order = Order.objects.create(
@@ -601,7 +712,8 @@ def place_order(request):
         state=shipping_address.state,
         postal_code=shipping_address.postal_code,
         subtotal=subtotal,
-        discount_amount=discount_amount,
+        discount_amount=total_discount,   #offer discount
+        coupon_discount=coupon_discount,
         shipping_charge=shipping_charge,
         total_amount=total_amount,
         payment_method='cod',
@@ -640,6 +752,27 @@ def place_order(request):
         changed_by=request.user,
         notes='Order placed successfully.',
     )
+    
+    if 'applied_coupon_id' in request.session:
+        try:
+            coupon = Coupon.objects.get(id=request.session['applied_coupon_id'])
+            discount = Decimal(request.session['coupon_discount'])
+            cart_total_before = Decimal(request.session['cart_total_before_coupon'])
+
+            record_coupon_usage(
+                coupon=coupon,
+                user=request.user,
+                order=order,
+                discount_amount=discount,
+                cart_total_before_discount=cart_total_before
+            )
+
+            del request.session['applied_coupon_id']
+            del request.session['coupon_discount']
+            del request.session['cart_total_before_coupon']
+        except Exception as e:
+            print(f"Coupon recording error: {e}")
+
 
     # Clear cart
     cart.items.all().delete()

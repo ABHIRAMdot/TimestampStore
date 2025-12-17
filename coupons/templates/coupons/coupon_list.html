@@ -1,0 +1,290 @@
+{% extends 'admin_base.html' %}
+{% load static %}
+
+{% block title %}Manage Coupons{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Coupon Management</h1>
+                    <p class="mt-2 text-sm text-gray-600">Create and manage discount coupons</p>
+                </div>
+                <a href="{% url 'add_coupon' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Add New Coupon
+                </a>
+            </div>
+        </div>
+
+        <!-- Filters & Search -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+            <form method="GET" action="{% url 'coupon_list' %}" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    
+                    <!-- Search -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search Coupons</label>
+                        <input 
+                            type="text" 
+                            name="search" 
+                            value="{{ search_query }}"
+                            placeholder="Search by code or description..."
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                    </div>
+
+                    <!-- Status Filter -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select 
+                            name="status"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">All Status</option>
+                            <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
+                            <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+
+                    <!-- Discount Type Filter - REMOVED -->
+                    <!-- Not needed for fixed discount only -->
+                </div>
+
+                <div class="flex gap-3">
+                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                        Apply Filters
+                    </button>
+                    <a href="{% url 'coupon_list' %}" class="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition">
+                        Clear Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Coupons Table -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            {% if coupons %}
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Min Purchase</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Period</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usage</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            {% for coupon in coupons %}
+                            <tr class="hover:bg-gray-50 transition">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-bold text-gray-900">{{ coupon.code }}</span>
+                                        <span class="text-xs text-gray-500">{{ coupon.description|truncatewords:5 }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-semibold text-green-600">₹{{ coupon.discount_amount }} OFF</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    ₹{{ coupon.min_purchase_amount }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-col text-xs text-gray-600">
+                                        <span>{{ coupon.start_date }}</span>
+                                        <span>to {{ coupon.end_date }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-col text-sm">
+                                        <span class="font-medium text-gray-900">{{ coupon.times_used }} used</span>
+                                        {% if coupon.usage_limit %}
+                                            <span class="text-xs text-gray-500">Limit: {{ coupon.usage_limit }}</span>
+                                        {% else %}
+                                            <span class="text-xs text-gray-500">Unlimited</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if coupon.is_active %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Active</span>
+                                    {% else %}
+                                        <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <div class="flex gap-2">
+                                        <!-- View Usage -->
+                                        <a href="{% url 'coupon_usage_history' coupon.id %}" 
+                                           class="text-blue-600 hover:text-blue-800" 
+                                           title="View Usage History">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                            </svg>
+                                        </a>
+                                        
+                                        <!-- Edit -->
+                                        <a href="{% url 'edit_coupon' coupon.id %}" 
+                                           class="text-yellow-600 hover:text-yellow-800" 
+                                           title="Edit">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                            </svg>
+                                        </a>
+                                        
+                                        <!-- Toggle Status -->
+                                        <button
+                                        type="button"
+                                        onclick="openConfirmModal({
+                                            title: 'Toggle Coupon Status',
+                                            message: 'Do you want to activate or deactivate this coupon?',
+                                            actionUrl: '{% url "toggle_coupon_status" coupon.id %}',
+                                            confirmColor: 'purple'
+                                        })"
+                                        class="text-purple-600 hover:text-purple-800"
+                                        title="Toggle Status">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
+                                        </svg>
+                                    </button>
+                                    
+                                        
+                                        <!-- Delete -->
+                                        <button
+                                        type="button"
+                                        onclick="openConfirmModal({
+                                            title: 'Delete Coupon',
+                                            message: 'This action cannot be undone. Are you sure?',
+                                            actionUrl: '{% url "delete_coupon" coupon.id %}'
+                                        })"
+                                        class="text-red-600 hover:text-red-800"
+                                        title="Delete">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </button>
+                                    
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                {% if coupons.has_other_pages %}
+                <div class="px-6 py-4 bg-gray-50 border-t">
+                    <div class="flex items-center justify-between">
+                        <div class="text-sm text-gray-600">
+                            Showing page {{ coupons.number }} of {{ coupons.paginator.num_pages }}
+                        </div>
+                        <div class="flex gap-2">
+                            {% if coupons.has_previous %}
+                                <a href="?page={{ coupons.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if discount_type_filter %}&discount_type={{ discount_type_filter }}{% endif %}" 
+                                   class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Previous</a>
+                            {% endif %}
+                            
+                            {% if coupons.has_next %}
+                                <a href="?page={{ coupons.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if discount_type_filter %}&discount_type={{ discount_type_filter }}{% endif %}" 
+                                   class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Next</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            
+            {% else %}
+                <div class="text-center py-12">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2z"/>
+                    </svg>
+                    <h3 class="mt-2 text-sm font-medium text-gray-900">No coupons found</h3>
+                    <p class="mt-1 text-sm text-gray-500">Get started by creating a new coupon.</p>
+                    <div class="mt-6">
+                        <a href="{% url 'add_coupon' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            Add New Coupon
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+
+<!-- Confirmation Modal -->
+<div id="confirmModal"
+     class="fixed inset-0 z-50 hidden items-center justify-center bg-black bg-opacity-50">
+
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <h2 id="confirmTitle" class="text-lg font-semibold text-gray-900 mb-2">
+            Confirm Action
+        </h2>
+
+        <p id="confirmMessage" class="text-sm text-gray-600 mb-6">
+            Are you sure you want to continue?
+        </p>
+
+        <div class="flex justify-end gap-3">
+            <button
+                onclick="closeConfirmModal()"
+                class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                Cancel
+            </button>
+
+            <a id="confirmActionBtn"
+               href="#"
+               class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                Confirm
+            </a>
+        </div>
+    </div>
+</div>
+
+
+
+<script>
+    function openConfirmModal({ title, message, actionUrl, confirmColor = 'red' }) {
+        document.getElementById('confirmTitle').innerText = title;
+        document.getElementById('confirmMessage').innerText = message;
+
+        const btn = document.getElementById('confirmActionBtn');
+        btn.href = actionUrl;
+
+        // reset colors
+        btn.className = "px-4 py-2 text-white rounded-lg";
+
+        if (confirmColor === 'purple') {
+            btn.classList.add('bg-purple-600', 'hover:bg-purple-700');
+        } else {
+            btn.classList.add('bg-red-600', 'hover:bg-red-700');
+        }
+
+        document.getElementById('confirmModal').classList.remove('hidden');
+        document.getElementById('confirmModal').classList.add('flex');
+    }
+
+    function closeConfirmModal() {
+        document.getElementById('confirmModal').classList.add('hidden');
+        document.getElementById('confirmModal').classList.remove('flex');
+    }
+</script>
+
+
+{% endblock %}

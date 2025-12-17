@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Available Coupons - Timestamp{% endblock %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8 max-w-6xl">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 text-black flex items-center gap-3">
+                    <i class="fas fa-ticket-alt text-orange-600 dark:text-orange-400"></i>
+                    Available Coupons
+                </h1>
+                <p class="text-gray-600 dark:text-gray-400 mt-2">Save more on your purchases with these exclusive offers</p>
+            </div>
+            <a href="{% url 'user_coupon_usage_history' %}" 
+               class="text-blue-600  hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-2">
+                <i class="fas fa-history"></i>
+                <span>My Usage History</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+        {% for message in messages %}
+        <div class="p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800{% elif message.tags == 'error' %}bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-200 dark:border-red-800{% else %}bg-blue-50 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-800{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Available Coupons Section -->
+    <div class="mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 text-black mb-6 flex items-center gap-2">
+            <i class="fas fa-tags text-green-600 dark:text-green-400"></i>
+            Available for You
+        </h2>
+
+        {% if available_coupons %}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% for coupon in available_coupons %}
+            <div class="relative bg-gradient-to-br from-orange-10 to-orange-10  border-2 border-orange-300  rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                <!-- Coupon Header -->
+                <div class="bg-orange-500 bg-orange-100 text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-2xl font-bold">{{ coupon.code }}</h3>
+                            <p class="text-orange-100 text-sm mt-1">
+                                <i class="fas fa-clock"></i>
+                                Valid till {{ coupon.end_date|date:"d M Y" }}
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-3xl font-bold">₹{{ coupon.discount_amount }}</div>
+                            <div class="text-orange-100 text-sm">OFF</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coupon Body -->
+                <div class="p-6">
+                    <p class="text-gray-700 text-gray-300    mb-4">{{ coupon.description }}</p>
+                    
+                    <!-- Coupon Details -->
+                    <div class="space-y-2 mb-4">
+                        {% if coupon.min_purchase_amount > 0 %}
+                        <div class="flex items-start gap-2 text-sm text-black-600 ">
+                            <i class="fas fa-shopping-cart text-blue-600 dark:text-blue-400 mt-0.5"></i>
+                            <span>Minimum purchase: <span class="font-semibold text-black-900 ">₹{{ coupon.min_purchase_amount }}</span></span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if coupon.usage_limit %}
+                        <div class="flex items-start gap-2 text-sm text-black-600">
+                            <i class="fas fa-users text-purple-600 dark:text-purple-400 mt-0.5"></i>
+                            <span>{{ coupon.usage_limit|add:"-"|add:coupon.times_used }} uses remaining</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if coupon.one_time_use %}
+                        <div class="flex items-start gap-2 text-sm text-amber-800 ">
+                            <i class="fas fa-info-circle mt-0.5"></i>
+                            <span class="font-medium">One-time use per user</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Copy Button -->
+                    <button onclick="copyCouponCode('{{ coupon.code }}')" 
+                            class="w-full bg-orange-600 hover:bg-orange-700 text-white font-semibold py-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2">
+                        <i class="fas fa-copy"></i>
+                        Copy Code
+                    </button>
+                    
+                    <p class="text-xs text-gray-500 dark:text-gray-400 text-center mt-3">
+                        Copy code and apply at checkout
+                    </p>
+                </div>
+
+                <!-- Decorative Corner -->
+                <div class="absolute top-0 right-0 w-20 h-20 bg-orange-400/20 dark:bg-orange-600/20 rounded-bl-full"></div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-16 bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700">
+            <i class="fas fa-ticket-alt text-6xl text-gray-400 dark:text-gray-600 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">No Active Coupons Available</h3>
+            <p class="text-gray-600 dark:text-gray-400">Check back later for exciting offers!</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Used Coupons Section -->
+    {% if used_coupons %}
+    <div>
+        <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+            <i class="fas fa-check-circle text-gray-600 dark:text-gray-400"></i>
+            Already Used
+        </h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {% for coupon in used_coupons %}
+            <div class="bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 rounded-xl overflow-hidden opacity-75">
+                <!-- Coupon Header -->
+                <div class="bg-gray-400 dark:bg-gray-700 text-white px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-2xl font-bold">{{ coupon.code }}</h3>
+                            <p class="text-gray-200 text-sm mt-1">
+                                <i class="fas fa-check"></i>
+                                Already Used
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-3xl font-bold">₹{{ coupon.discount_amount }}</div>
+                            <div class="text-gray-200 text-sm">OFF</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coupon Body -->
+                <div class="p-6">
+                    <p class="text-gray-600 dark:text-gray-400 mb-4">{{ coupon.description }}</p>
+                    
+                    <div class="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-semibold py-3 rounded-lg text-center flex items-center justify-center gap-2">
+                        <i class="fas fa-ban"></i>
+                        Cannot Use Again
+                    </div>
+                    
+                    <p class="text-xs text-gray-500 dark:text-gray-400 text-center mt-3">
+                        You've already used this coupon
+                    </p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Back Button -->
+    <div class="mt-8 text-center">
+        <a href="{% url 'checkout' %}" 
+           class="inline-flex items-center gap-2 text-blue-600  hover:text-blue-700 dark:hover:text-blue-300">
+            <i class="fas fa-arrow-left"></i>
+            Back to Checkout
+        </a>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-20 right-6 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg transform translate-x-full transition-transform duration-300 flex items-center gap-3 z-50">
+    <i class="fas fa-check-circle"></i>
+    <span id="toast-message">Coupon code copied!</span>
+</div>
+
+<script>
+    // Copy Coupon Code
+    function copyCouponCode(code) {
+        navigator.clipboard.writeText(code).then(() => {
+            showToast(`Coupon code "${code}" copied!`);
+        }).catch(() => {
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = code;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast(`Coupon code "${code}" copied!`);
+        });
+    }
+
+    function showToast(message) {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+        
+        toastMessage.textContent = message;
+        toast.classList.remove('translate-x-full');
+        
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+        }, 3000);
+    }
+</script>
+{% endblock %}

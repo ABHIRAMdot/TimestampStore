@@ -10,6 +10,8 @@ urlpatterns = [
     path('users-list',views.user_list,name='user_list'),
     path('users-list/toggle-user-status/<int:user_id>/',views.toggle_user_status,name='toggle_user_status'),
     path('admin-logout',views.admin_logout,name='admin_logout',),
+    path('sales_report/',views.admin_sales_report, name='admin_sales_report'),
+
 
 
     path('products/toggle-product-status/<int:product_id>/',toggle_product_status, name='toggle_product_status'),

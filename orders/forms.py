@@ -91,28 +91,28 @@ class AdminOrderStatusForm(forms.ModelForm):
                 'pending': [
                     ('pending', 'Pending'),
                     ('confirmed', 'Confirmed'),
-                    ('cancelled', 'Cancelled')
+                    # ('cancelled', 'Cancelled')
                     
                 ],
                 'confirmed': [
                     ('confirmed', 'Confirmed'),
                     ('processing', 'Processing'),
-                    ('cancelled', 'Cancelled')
+                    # ('cancelled', 'Cancelled')
                 ],
                 'processing': [
                     ('processing', 'Processing'),
                     ('shipped', 'Shipped'),
-                    ('cancelled', 'Cancelled')
+                    # ('cancelled', 'Cancelled')
                 ],
                 'shipped': [
                     ('shipped', 'Shipped'),
                     ('out_for_delivery', 'Out for Delivery'),
-                    ('cancelled', 'Cancelled')
+                    # ('cancelled', 'Cancelled')
                 ],
                 'out_for_delivery': [
                     ('out_for_delivery', 'Out for Delivery'),
                     ('delivered', 'Delivered'),
-                    ('cancelled', 'Cancelled')
+                    # ('cancelled', 'Cancelled')
                 ],
                 'delivered': [
                     ('delivered', 'Delivered'),

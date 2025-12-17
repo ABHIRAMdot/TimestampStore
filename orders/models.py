@@ -58,6 +58,7 @@ class Order(models.Model):
     discount_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     shipping_charge = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    coupon_discount = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
 
     #tracking
     tracking_number = models.CharField(max_length=100, blank=True, null=True)
@@ -129,6 +130,14 @@ class Order(models.Model):
     @property
     def has_return_request(self):
         return self.items.filter(status='return_requested').exists()
+    
+
+    @property
+    def mrp_total(self):
+        return sum(
+            item.original_price * item.quantity
+            for item in self.items.all()
+        )
 
 
     def get_cancellable_items(self):
@@ -188,6 +197,8 @@ class Order(models.Model):
             if not self.delivered_at:
                 self.delivered_at = timezone.now()
             self.save()              
+
+
 
 
 class OrderItem(models.Model):

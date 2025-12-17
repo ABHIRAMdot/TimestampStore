@@ -379,6 +379,15 @@
                         <span>- ₹{{ order.discount_amount }}</span>
                     </div>
                     {% endif %}
+
+                    {% if order.coupon_discount > 0 %}
+                    <div class="flex justify-between text-green-600">
+                        <span>Coupon Discount</span>
+                        <span>- ₹{{ order.coupon_discount|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}                    
+
+
                     <div class="flex justify-between">
                         <span class="text-gray-600">Shipping</span>
                         <span class="text-gray-900">

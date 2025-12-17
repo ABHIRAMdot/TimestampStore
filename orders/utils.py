@@ -3,6 +3,7 @@ from django.db.models import Q
 from .models import Order, OrderItem, OrderStatusHistory
 from django.utils import timezone
 from wallet.utils import credit_wallet
+from coupons.models import CouponUsage
 
 
 
@@ -340,3 +341,21 @@ def  get_out_of_stock_products():
         product__is_listed=True
     ).select_related('product')
 
+
+def get_order_total_discount(order):
+    """returns total discount for an orer"""
+
+    #product/offer discount
+    item_discount = Decimal("0.00")
+    for item in order.items.all():
+        item_discount += item.discount_amount * item.quantity
+
+    coupon_discount = Decimal("0.00")
+    try:
+        usage = CouponUsage.objects.filter(order=order).first()
+        if usage:
+            coupon_discount = usage.discount_amount
+    except Exception:
+        pass
+
+    return item_discount + coupon_discount

@@ -1,0 +1,133 @@
+{% extends "admin_base.html" %}
+{% block content %}
+
+<div class="p-6 space-y-6">
+
+    <!-- HEADER -->
+    <h1 class="text-3xl font-bold text-gray-800">Sales Report</h1>
+
+    <!-- FILTER FORM -->
+    <form method="get" class="flex flex-wrap gap-3 items-end">
+
+        <!-- FILTER TYPE -->
+        <select name="filter" class="border px-3 py-2 rounded-lg">
+            <option value="day" {% if filter == "day" %}selected{% endif %}>
+                Today
+            </option>
+            <option value="week" {% if filter == "week" %}selected{% endif %}>
+                This Week
+            </option>
+            <option value="month" {% if filter == "month" %}selected{% endif %}>
+                This Month
+            </option>
+            <option value="custom" {% if filter == "custom" %}selected{% endif %}>
+                Custom
+            </option>
+        </select>
+
+        <!-- START DATE -->
+        <input
+            type="date"
+            name="start_date"
+            value="{{ start_date|date:'Y-m-d' }}"
+            class="border px-3 py-2 rounded-lg
+                   {% if filter != 'custom' %}opacity-50 pointer-events-none{% endif %}"
+        >
+
+        <!-- END DATE -->
+        <input
+            type="date"
+            name="end_date"
+            value="{{ end_date|date:'Y-m-d' }}"
+            class="border px-3 py-2 rounded-lg
+                   {% if filter != 'custom' %}opacity-50 pointer-events-none{% endif %}"
+        >
+
+        <!-- APPLY -->
+        <button class="bg-blue-600 text-white px-5 py-2 rounded-lg">
+            Apply
+        </button>
+
+        <!-- DOWNLOAD PDF -->
+        <a href="?{{ request.GET.urlencode }}&download=pdf"
+           class="bg-green-600 text-white px-4 py-2 rounded-lg">
+           Download PDF
+        </a>
+
+        <a href="?{{ request.GET.urlencode }}&download=excel"
+        class="bg-emerald-600 text-white px-4 py-2 rounded-lg">
+        Download Excel
+     </a>
+     
+
+
+    </form>
+
+    <!-- SUMMARY CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+        <div class="bg-white p-5 rounded-xl shadow">
+            <p class="text-gray-500 text-sm">Total Orders</p>
+            <p class="text-3xl font-bold">
+                {{ summary.total_orders|default:0 }}
+            </p>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow">
+            <p class="text-gray-500 text-sm">Total Sales</p>
+            <p class="text-3xl font-bold">
+                ₹{{ summary.total_sales|default:"0.00" }}
+            </p>
+        </div>
+
+        <div class="bg-white p-5 rounded-xl shadow">
+            <p class="text-gray-500 text-sm">Total Discount</p>
+            <p class="text-3xl font-bold text-red-600">
+                ₹{{ summary.total_discount|default:"0.00" }}
+            </p>
+        </div>
+
+    </div>
+
+    <!-- TABLE -->
+    <div class="bg-white rounded-xl shadow overflow-x-auto">
+        <table class="min-w-full text-sm">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-4 py-3 text-left">Order ID</th>
+                    <th class="px-4 py-3">User</th>
+                    <th class="px-4 py-3">Status</th>
+                    <th class="px-4 py-3">Discount</th>
+                    <th class="px-4 py-3">Total</th>
+                    <th class="px-4 py-3">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr class="border-t">
+                    <td class="px-4 py-2">{{ order.order_id }}</td>
+                    <td class="px-4 py-2">{{ order.user.email }}</td>
+                    <td class="px-4 py-2">{{ order.status }}</td>
+                    <td class="px-4 py-2">₹{{ order.calculated_discount }}</td>
+                    <td class="px-4 py-2 font-semibold">
+                        ₹{{ order.total_amount }}
+                    </td>
+                    <td class="px-4 py-2">
+                        {{ order.created_at|date:"d M Y" }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6"
+                        class="text-center py-6 text-gray-500">
+                        No sales found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

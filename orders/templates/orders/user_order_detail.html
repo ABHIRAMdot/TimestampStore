@@ -185,17 +185,11 @@
                 <h2 class="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
                 
                 <div class="space-y-3 mb-4 pb-4 border-b border-gray-200">
+                    <!--  MRP TOTAL (NEW) -->
                     <div class="flex justify-between text-gray-700">
-                        <span>Subtotal</span>
-                        <span>₹{{ order.subtotal|floatformat:2 }}</span>
+                        <span>Subtotal (MRP)</span>
+                        <span>₹{{ order.mrp_total|floatformat:2 }}</span>
                     </div>
-                    
-                    {% if order.total_refund_amount > 0 %}
-<div class="flex justify-between text-gray-700">
-    <span>Refunds Processed</span>
-    <span>-₹{{ order.total_refund_amount|floatformat:2 }}</span>
-</div>
-{% endif %}
 
 
                     {% if order.discount_amount > 0 %}
@@ -204,6 +198,23 @@
                         <span>-₹{{ order.discount_amount|floatformat:2 }}</span>
                     </div>
                     {% endif %}
+
+
+                    {% if order.coupon_discount > 0 %}
+                        <div class="flex justify-between text-green-600">
+                            <span>Coupon Discount</span>
+                            <span>-₹{{ order.coupon_discount|floatformat:2 }}</span>
+                        </div>
+                    {% endif %}
+
+                    
+                    {% if order.total_refund_amount > 0 %}
+                        <div class="flex justify-between text-gray-700">
+                            <span>Refunds Processed</span>
+                            <span>-₹{{ order.total_refund_amount|floatformat:2 }}</span>
+                        </div>
+                        {% endif %}
+
                     
                     <div class="flex justify-between text-gray-700">
                         <span>Shipping</span>
@@ -211,6 +222,7 @@
                     </div>
                 </div>
                 
+
                 <div class="flex justify-between items-center text-lg font-bold text-gray-900 mb-6">
                     <span>Total Amount</span>
                     <span>₹{{ order.total_amount|floatformat:2 }}</span>

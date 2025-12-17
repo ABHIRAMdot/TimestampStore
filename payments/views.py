@@ -1,6 +1,7 @@
 import json
 from decimal import Decimal
 from datetime import date, timedelta
+from django.urls import reverse
 
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
@@ -17,6 +18,9 @@ from products.models import Product_varients
 from cart.utils import get_or_create_cart, validate_cart_for_checkout
 from orders.models import Order, OrderItem, OrderStatusHistory
 from wallet.utils import get_or_create_wallet, debit_wallet
+
+from coupons.utils import record_coupon_usage
+from coupons.models import Coupon
 
 
 import logging
@@ -59,6 +63,9 @@ def create_razorpay_order(request):
     use_wallet = request.session.get('use_wallet', False)
     wallet = get_or_create_wallet(user)
 
+    #get coupon discount from session or 0.00
+    coupon_discount = Decimal(request.session.get('coupon_discount', '0.00'))
+
     #buy now flow
     if buy_now_item:
         try:
@@ -80,7 +87,8 @@ def create_razorpay_order(request):
         subtotal = price * quantity
         discount_amount = Decimal('0.00') # Implement any discount logic if needed
         shipping_charge = Decimal('0.00') if subtotal >= 2000 else Decimal('50.00')
-        total_amount = subtotal - discount_amount + shipping_charge
+
+        total_amount = subtotal - coupon_discount + shipping_charge
 
         if use_wallet and wallet.balance > 0:
             wallet_used = min(wallet.balance, total_amount)
@@ -108,7 +116,8 @@ def create_razorpay_order(request):
             
         discount_amount = Decimal('0.00') # Implement any discount logic if needed
         shipping_charge = Decimal('0.00') if subtotal >= 2000 else Decimal('50.00')
-        total_amount = subtotal - discount_amount + shipping_charge
+
+        total_amount = subtotal - coupon_discount + shipping_charge
 
 
         wallet_used = Decimal('0.00')
@@ -120,7 +129,8 @@ def create_razorpay_order(request):
         
         #if wallet covers full amount , don't razorpay
         if online_amount <= 0:
-            return JsonResponse({"status": "error", "message": "Your wallet balance covers the fulll amount. Please normal place order"}, status=400)
+            request.session['wallet_only_checkout'] = True
+            return JsonResponse({"status": "wallet_only", "redirect_url": reverse("place_order")})
 
     amount_paise = int(online_amount * 100) # Convert to paise
 
@@ -144,14 +154,15 @@ def create_razorpay_order(request):
 
         "wallet_used": str(wallet_used),
         "online_amount": str(online_amount),
-        "use_wallet": bool(use_wallet)
+        "use_wallet": bool(use_wallet),
+        "coupon_discount": str(coupon_discount)
     }
 
     request.session.modified = True
 
-    print("DEBUG: address_id from JS =", request.GET.get("address_id"))
-    print("SESSION selected_address_id =", request.session.get("selected_address_id"))
-    print("ALL SESSION KEYS NOW:", dict(request.session))
+    # print("DEBUG: address_id from JS =", request.GET.get("address_id"))
+    # print("SESSION selected_address_id =", request.session.get("selected_address_id"))
+    # print("ALL SESSION KEYS NOW:", dict(request.session))
 
 
 
@@ -167,7 +178,6 @@ def create_razorpay_order(request):
     })
 
 @csrf_exempt
-@login_required(login_url='login')
 @transaction.atomic
 def verify_payment(request):
     """
@@ -212,15 +222,15 @@ def verify_payment(request):
 
     logger.debug("VERIFY FLOW CONTINUES: passed session check")
 
-    print("DEBUG: mode =", pending.get("mode"))
-    print("DEBUG: selected_address_id from session =", request.session.get("selected_address_id"))
-    print("DEBUG: subtotal =", pending.get("subtotal"))
-    print("DEBUG: discount_amount =", pending.get("discount_amount"))
-    print("DEBUG: shipping_charge =", pending.get("shipping_charge"))
-    print("DEBUG: total_amount =", pending.get("total_amount"))
-    print("DEBUG: wallet_used =", pending.get("wallet_used"))
-    print("DEBUG: online_amount =", pending.get("online_amount"))
-    print("DEBUG: Going to fetch address now...")
+    # print("DEBUG: mode =", pending.get("mode"))
+    # print("DEBUG: selected_address_id from session =", request.session.get("selected_address_id"))
+    # print("DEBUG: subtotal =", pending.get("subtotal"))
+    # print("DEBUG: discount_amount =", pending.get("discount_amount"))
+    # print("DEBUG: shipping_charge =", pending.get("shipping_charge"))
+    # print("DEBUG: total_amount =", pending.get("total_amount"))
+    # print("DEBUG: wallet_used =", pending.get("wallet_used"))
+    # print("DEBUG: online_amount =", pending.get("online_amount"))
+    # print("DEBUG: Going to fetch address now...")
 
 
     user = request.user
@@ -241,10 +251,12 @@ def verify_payment(request):
     wallet_used = Decimal(pending.get('wallet_used', '0.00'))
     online_amount = Decimal(str(pending.get('online_amount', total_amount)))
 
+    coupon_discount = Decimal(pending.get('coupon_discount', '0.00'))
+
     # We must check that Razorpay amount == online_amount
     try:
         rp_order = razorpay_client.order.fetch(razorpay_order_id)
-        rp_amount = Decimal(rp_order['amount'] / 100) # convert paise to INR 
+        rp_amount = Decimal(rp_order['amount'] / 100).quantize(Decimal('0.01')) # convert paise to INR  and prevent floating by quantize
     except:
         return JsonResponse({"status": "error", "message": "Failed to verify Razorpay order amount."}, status=400)   
     
@@ -374,6 +386,28 @@ def verify_payment(request):
         if not success:
             logger.error(f"Wallet debit failed for user {user.id}: {msg}")
             raise Exception("Wallet debit failed")
+        
+    #record coupon usage
+    if  'applied_coupon_id' in request.session:
+        try:
+            coupon = Coupon.objects.get(id=request.session['applied_coupon_id'])
+            discount = Decimal(request.session['coupon_discount'])
+            cart_total_before = Decimal(request.session['cart_total_before_coupon'])
+
+            record_coupon_usage(
+                coupon=coupon,
+                user=user,
+                order=order,
+                discount_amount=discount,
+                cart_total_before_discount=cart_total_before
+            )
+
+            del request.session['applied_coupon_id']
+            del request.session['coupon_discount']
+            del request.session['cart_total_before_coupon']
+        except Exception as e:
+            logger.error(f"Coupon recording error: {e}")
+
 
 
     # status history

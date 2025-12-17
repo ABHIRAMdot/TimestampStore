@@ -190,6 +190,7 @@
                     {% csrf_token %}
                     <button type="submit"
                         class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+                        <input type="hidden" name="from_cart_checkout" value="1">
                         Proceed to Checkout
                     </button>
                 </form>
