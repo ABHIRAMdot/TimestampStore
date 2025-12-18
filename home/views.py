@@ -186,11 +186,7 @@ def user_product_detail(request, slug):
     avg_rating =product.avg_rating
     review_count = product.review_count
 
-    # #average rating
-    # avg_rating = reviews.aggregate(Avg('rating'))['rating__avg'] or 0
 
-    #Review count
-    # reviews_count = reviews.count()
 
     #has the logged-in user purchased this product?
     user_can_review = False

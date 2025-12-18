@@ -78,6 +78,8 @@
             {{ item.product.product_name }}
         </a>
         <p class="text-gray-500 text-sm">Color: {{ item.variant.colour }}</p>
+        <div class="text-black-500 text-xs"> ₹{{ item.final_price }} each</div>
+
 
         {% if item.unavailable %}
     <span class="inline-block mt-2 px-2 py-1 bg-red-600 text-white rounded text-xs">
@@ -124,9 +126,33 @@
 
     <!-- Pricing -->
     <div class="text-right w-36">
-        <div id="item-subtotal-{{ item.id }}" class="font-semibold">₹{{ item.get_subtotal }}</div>
-        <div class="text-gray-500 text-sm">₹{{ item.price }} each</div>
+
+        <!-- MRP Subtotal -->
+        <div id="mrp-{{ item.id }}" class="text-gray-500 text-sm line-through">
+            ₹{{ item.original_price|floatformat:2 }}
+        </div>
+
+        <!-- Final subtotal -->
+        <div  class="font-semibold">
+            <span class="text-gray-500 text-sm ">   each</span>
+            ₹{{ item.final_price }}
+        </div>
+
+        <div id="item-subtotal-{{ item.id }}" class="hidden"></div>   <!-- ADD THIS LINE -->
+
+        
+        <!-- Discount -->
+        {% if item.discount_amount > 0 %}
+        <div id="discount-{{ item.id }}" class="text-green-600 text-xs font-semibold">
+            Save ₹{{ item.discount_amount|floatformat:2 }}
+        </div>
+    {% endif %}
+    
+    
+
+    
     </div>
+    
 
     <!-- Remove -->
     <div>
@@ -158,8 +184,17 @@
 
                 <div class="flex justify-between mb-2 text-sm">
                     <span>Subtotal ({{ cart_count }} items)</span>
-                    <span data-cart-total>₹{{ cart.total }}</span>
+                    <span id="summary-subtotal">₹{{ subtotal_before_discount }}</span>
                 </div>
+
+                <div class="flex justify-between mb-2 text-sm">
+                    <span class="text-green-700 font-medium">Savings</span>
+                    <span id="summary-savings" class="text-green-700 font-medium">
+                        ₹{{ total_savings }}
+                    </span>
+                </div>
+                
+                
 
                 <div class="flex justify-between mb-2 text-sm">
                     <span>Shipping</span>
@@ -177,7 +212,7 @@
 
                 <div class="flex justify-between text-lg font-semibold mb-4">
                     <span>Total</span>
-                    <span>₹{{ cart.total }}</span>
+                    <span data-cart-total>₹{{ cart.total }}</span>
                 </div>
 
                 {% if any_unavailable %}

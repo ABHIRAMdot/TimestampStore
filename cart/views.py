@@ -20,6 +20,8 @@ from .utils import(
     validate_cart_for_checkout
 )
 
+from offers.utils import apply_offer_to_variant
+
 
 logger = logging.getLogger('project_logger')
 
@@ -70,14 +72,45 @@ def update_cart_quantity_ajax(request):
             cart_item.save()
             cart_item.cart.calculate_total()
 
+            offer_data = apply_offer_to_variant(cart_item.variant)
+
+            total_savings = Decimal('0')
+            subtotal_before_discount = Decimal('0')
+            for it in cart_item.cart.items.all():
+                offer = apply_offer_to_variant(it.variant)
+                total_savings += (offer['original_price'] - offer['final_price']) * it.quantity
+                subtotal_before_discount += offer['original_price'] * it.quantity
+
+
+            # subtotal_before_discount = sum(
+            #     item.original_price * item.quantity
+            #     for item in cart_item.cart.items.all()
+            # )
+
             return JsonResponse({
                 'success': True,
                 'message': f"Quantity updated to {cart_item.quantity}.",
                 'cart_item_id': cart_item_id,
                 'new_quantity': cart_item.quantity,
+                
+                'original_price': str(offer_data['original_price']),
+                'discount_amount': str(offer_data['discount_amount']),
+                'final_price': str(offer_data['final_price']),
+                'discount_percentage': str(offer_data['discount_percentage']),
+
                 'item_subtotal': str(cart_item.get_subtotal()),
                 'cart_total': str(cart_item.cart.total),
                 'cart_count': cart_item.cart.get_item_count(),
+
+                'line_discount': str(offer_data['original_price'] - offer_data['final_price']),
+                'item_savings': str(
+                    (offer_data['original_price'] - offer_data['final_price']) * cart_item.quantity
+                ),
+
+                'cart_savings': str(total_savings),
+
+                'subtotal_before_discount': str(subtotal_before_discount),
+
             })
 
         elif action == 'decrease':
@@ -86,14 +119,45 @@ def update_cart_quantity_ajax(request):
                 cart_item.save()
                 cart_item.cart.calculate_total()
 
+
+                offer_data = apply_offer_to_variant(cart_item.variant)
+
+                total_savings = Decimal('0')
+                subtotal_before_discount = Decimal('0')
+                for it in cart_item.cart.items.all():
+                    offer = apply_offer_to_variant(it.variant)
+                    total_savings += (offer['original_price'] - offer['final_price']) * it.quantity
+                    subtotal_before_discount += offer['original_price'] * it.quantity
+
+
+                # subtotal_before_discount = sum(
+                #     item.original_price * item.quantity
+                #     for item in cart_item.cart.items.all()
+                # )                
+
                 return JsonResponse({
                     'success': True,
                     'message': f"Quantity updated to {cart_item.quantity}.",
                     'cart_item_id': cart_item_id,
                     'new_quantity': cart_item.quantity,
+
+                    'original_price': str(offer_data['original_price']),
+                    'discount_amount': str(offer_data['discount_amount']),
+                    'final_price': str(offer_data['final_price']),
+                    'discount_percentage': str(offer_data['discount_percentage']),  
+
                     'item_subtotal': str(cart_item.get_subtotal()),
                     'cart_total': str(cart_item.cart.total),
                     'cart_count': cart_item.cart.get_item_count(),
+
+                    'line_discount': str(offer_data['original_price'] - offer_data['final_price']),
+                    'item_savings': str(
+                        (offer_data['original_price'] - offer_data['final_price']) * cart_item.quantity
+                    ),
+
+                    'cart_savings': str(total_savings),
+
+                    'subtotal_before_discount': str(subtotal_before_discount),
                 })
             else:
                 # If qty==1 and user requested decrease -> remove item
@@ -155,12 +219,36 @@ def cart_view(request):
     cart = get_or_create_cart(request.user)
     
     cart_items = cart.items.select_related('product', 'variant', 'product__category').all()
-
+    
+    
     for item in cart_items:
         if not item.variant.product.is_listed or not item.variant.is_listed or item.variant.stock <= 0:
             item.unavailable = True
+            item.original_price = item.price
+            item.discount_amount = Decimal('0.00')
         else:
             item.unavailable = False
+
+            offer_data = apply_offer_to_variant(item.variant)
+
+            item.original_price = offer_data['original_price']
+            item.discount_amount = offer_data['discount_amount']
+            item.final_price = offer_data['final_price']
+            item.discount_percentage = offer_data.get('discount_percentage', 0)
+
+    
+    subtotal_before_discount = sum(
+            item.original_price * item.quantity
+            for item in cart_items
+        )
+
+
+    total_savings = sum(
+        (item.original_price - item.final_price) * item.quantity
+        for item in cart_items
+        )
+
+
 
     breadcrumbs = [
         {"label": "Home", "url": reverse("home")},
@@ -177,7 +265,10 @@ def cart_view(request):
         'breadcrumbs': breadcrumbs,
         'any_unavailable': any(item.unavailable for item in cart_items),
         'estimated_delivery': estimated_delivery,
-    }
+        'total_savings': total_savings,     
+        'subtotal_before_discount': subtotal_before_discount,
+
+        }
     return render(request, 'cart/cart.html', context)
 
 

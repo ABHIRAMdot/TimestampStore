@@ -2,6 +2,7 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from accounts.models import Account
 from products.models import Product, Product_varients
+from offers.utils import apply_offer_to_variant
 
 # Create your models here.
 
@@ -47,9 +48,16 @@ class CartItem(models.Model):
         return f"{self.quantity} × {self.product.product_name}"
     
 
+    # def get_subtotal(self):
+    #     """Calculate subtotal for this cart item"""
+    #     return self.price * self.quantity
+
     def get_subtotal(self):
-        """Calculate subtotal for this cart item"""
-        return self.price * self.quantity
+        """Always compute subtotal using the highest offer (product/category)."""
+        offer_data = apply_offer_to_variant(self.variant)
+        final_price = offer_data['final_price']
+        return final_price * self.quantity
+
     
     def get_available_stock(self):
         """Get available stock for the variant"""

@@ -435,16 +435,27 @@ def checkout_view(request):
     # tax_amount = (subtotal - discount_amount) * tax_rate
 
     #Shipping free above 1000
-    shipping_charge = Decimal('0.00') if subtotal >= 1000 else Decimal('50.00')
+    shipping_charge = Decimal('0.00') if subtotal >= 2000 else Decimal('50.00')
 
     # original_price = original_price * quantity
 
     # Total amount
     total_amount = subtotal - discount_from_coupon + shipping_charge  # + tax_amount
 
+    # total_amount = (subtotal - discount_from_coupon + shipping_charge).quantize(Decimal("0.01"))
+
+
     #using wallet amount
-    use_wallet = request.session.get("use_wallet", False)
+    # use_wallet = request.session.get("use_wallet", False)
+
+    use_wallet = False
+    wallet_used = Decimal('0.00')
+    remaining_amount = total_amount
+
+
+
     wallet, created = Wallet.objects.get_or_create(user=request.user)    
+
 
     wallet_used = Decimal('0.00')
 
@@ -457,6 +468,9 @@ def checkout_view(request):
     wallet_used = wallet_used.quantize(Decimal("0.01"))
     
     total_amount = total_amount.quantize(Decimal('0.01'))
+
+    can_pay_with_wallet = wallet.balance >= total_amount
+
 
 
 
@@ -480,6 +494,9 @@ def checkout_view(request):
         'total_amount': total_amount,
         'estimated_delivery': estimated_delivery,
         'breadcrumbs': breadcrumbs,
+
+        'can_pay_with_wallet': can_pay_with_wallet,
+
 
         'mrp_total': mrp_total.quantize(Decimal('0.01')),
 
@@ -509,6 +526,11 @@ def select_address(request, address_id):
 @transaction.atomic
 def place_order(request):
     """Place order with COD"""
+
+
+    wallet_only = request.POST.get("wallet_only") == "1"
+    wallet = Wallet.objects.select_for_update().get(user=request.user)
+
     if request.method != 'POST':
         return redirect('checkout')
     
@@ -549,6 +571,17 @@ def place_order(request):
         shipping_charge = Decimal('0.00') if subtotal >= 2000 else Decimal('50.00')
         total_amount = subtotal - coupon_discount + shipping_charge
 
+
+        if wallet_only:
+            if wallet.balance < total_amount:
+                messages.error(request, "Insufficient wallet balance.")
+                return redirect("checkout")
+
+            wallet.balance -= total_amount
+            wallet.save()
+
+
+
         selected_address_id= request.session.get('selected_address_id')
         if not selected_address_id:
             messages.error(request, "Please select a delivery address.")
@@ -572,8 +605,8 @@ def place_order(request):
             coupon_discount=coupon_discount, #coupon discount
             shipping_charge=shipping_charge,
             total_amount=total_amount,
-            payment_method='cod',
-            payment_status='pending',
+            payment_method='wallet' if wallet_only else 'cod',
+            payment_status= 'paid' if wallet_only else 'pending',
             status='pending',
             order_notes=request.POST.get('order_note', ''),
         )
@@ -614,7 +647,7 @@ def place_order(request):
 
                 record_coupon_usage(
                     coupon=coupon,
-                    uesr=request.user,
+                    user=request.user,
                     order=order,
                     discount_amount=discount,
                     cart_total_before_discount=cart_total_before
@@ -688,8 +721,16 @@ def place_order(request):
     if 'coupon_discount' in request.session:
         coupon_discount = Decimal(request.session['coupon_discount'])
     
-    shipping_charge = Decimal('0.00') if subtotal >= 1000 else Decimal('50.00')
+    shipping_charge = Decimal('0.00') if subtotal >= 2000 else Decimal('50.00')
     total_amount = subtotal - coupon_discount + shipping_charge
+
+    if wallet_only:
+        if wallet.balance < total_amount:
+            messages.error(request, "Insufficient wallet balance.")
+            return redirect("checkout")
+
+        wallet.balance -= total_amount
+        wallet.save()
 
 
     mrp_total = Decimal('0.00')
@@ -716,8 +757,8 @@ def place_order(request):
         coupon_discount=coupon_discount,
         shipping_charge=shipping_charge,
         total_amount=total_amount,
-        payment_method='cod',
-        payment_status='pending',
+        payment_method='wallet' if wallet_only else 'cod',
+        payment_status='paid' if wallet_only else 'pending',
         status='pending',
         order_notes=request.POST.get('order_note', ''),
     )

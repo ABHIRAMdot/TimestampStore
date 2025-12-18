@@ -281,19 +281,28 @@
                         </div>
 
                         <!-- Wallet Option -->
-                        {% if wallet.balance > 0 %}
-                        <div class="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-6">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="checkbox" id="use-wallet" class="w-4 h-4 text-purple-600 focus:ring-purple-500 rounded" {% if use_wallet %}checked{% endif %}>
-                                <span class="text-sm font-medium text-gray-900 dark:text-white">
-                                    Use Wallet Balance: <span class="text-purple-600 dark:text-purple-400">₹{{ wallet.balance }}</span>
-                                </span>
-                            </label>
-                        </div>
+                        {% if can_pay_with_wallet %}
+                        <form method="POST" action="{% url 'place_order' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="wallet_only" value="1">
+                            <button type="submit"
+                                    class="w-full bg-blue-800 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 transition flex items-center justify-center gap-2">
+                                <i class="fas fa-wallet"></i>
+                                Pay with Wallet
+                            </button>
+                        </form>
+                        {% else %}
+                            <p class="flex justify-between text-md font-medium text-yellow-500 dark:text-yellow my-4"> 
+                                <i>
+                                Insufficient balance in wallet.
+                           
+                                </i>
+                            </p>
                         {% endif %}
                         
+                        
                         <!-- Payment Buttons -->
-                        <div class="space-y-3">
+                        <div class="space-y-3 py-5">
                             {% if selected_address %}
                             <!-- Razorpay Button -->
                             <button id="pay-btn" class="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition flex items-center justify-center gap-2 shadow-lg">
@@ -358,20 +367,20 @@
         });
 
         // Wallet Toggle
-        document.getElementById("use-wallet")?.addEventListener("change", function () {
-            fetch("{% url 'toggle_wallet_usage' %}", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": "{{ csrf_token }}",
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({ use_wallet: this.checked }),
-            }).then(() => location.reload())
-            .catch(err => {
-                console.error("Wallet toggle error:", err);
-                alert("Failed to update wallet. Please try again.");
-            });
-        });
+        // document.getElementById("use-wallet")?.addEventListener("change", function () {
+        //     fetch("{% url 'toggle_wallet_usage' %}", {
+        //         method: "POST",
+        //         headers: {
+        //             "X-CSRFToken": "{{ csrf_token }}",
+        //             "Content-Type": "application/json"
+        //         },
+        //         body: JSON.stringify({ use_wallet: this.checked }),
+        //     }).then(() => location.reload())
+        //     .catch(err => {
+        //         console.error("Wallet toggle error:", err);
+        //         alert("Failed to update wallet. Please try again.");
+        //     });
+        // });
 
         // Razorpay Payment
         const payBtn = document.getElementById("pay-btn");
@@ -388,12 +397,7 @@
                         payBtn.innerHTML = '<i class="fas fa-bolt text-yellow-300 mr-2"></i>Pay Securely Online';
                         
 
-                        // ✅ WALLET-ONLY FLOW (NO RAZORPAY)
-                        if (data.status === "wallet_only") {
-                            window.location.href = data.redirect_url;
-                            return;
-                        }
-
+                        
 
                         if (data.status !== "success") {
                             alert(data.message || "Unable to start payment.");

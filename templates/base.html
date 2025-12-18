@@ -340,13 +340,51 @@ class="hidden fixed top-5 right-5 px-4 py-3 rounded-lg shadow-lg text-white text
             if (resp.new_quantity !== undefined) {
                 const qEl = document.getElementById('qty-display-' + resp.cart_item_id);
                 if (qEl) qEl.textContent = resp.new_quantity;
+
+                // Update item count in summary
+            // const countEl = document.getElementById('summary-item-count');
+            // if (countEl) countEl.textContent = `Subtotal (${resp.cart_count} items)`;
+
+                if (resp.subtotal_before_discount !== undefined) {
+                    const subEl = document.getElementById('summary-subtotal');
+                    if (subEl) subEl.textContent = formatCurrency(resp.subtotal_before_discount);
+                }
+
+
             }
             if (resp.item_subtotal !== undefined) {
                 const sEl = document.getElementById('item-subtotal-' + resp.cart_item_id);
-                if (sEl) sEl.textContent = formatCurrency(resp.item_subtotal);
+                if (sEl){
+
+                 sEl.textContent = formatCurrency(resp.item_subtotal);
+                }
             }
+
+            if (resp.cart_savings !== undefined) {
+                const saveEl = document.getElementById('summary-savings');
+                if (saveEl) saveEl.textContent = formatCurrency(resp.cart_savings);
+            }
+
+
+            // Update MRP subtotal UI
+            if (resp.original_price !== undefined) {
+                const mrpEl = document.getElementById('mrp-' + resp.cart_item_id);
+                if (mrpEl) mrpEl.textContent =
+                    `₹${resp.original_price}`;
+            }
+
+
+            // Update discount amount UI
+            if (resp.discount_amount !== undefined && resp.discount_percentage !== undefined) {
+                const disEl = document.getElementById('discount-' + resp.cart_item_id);
+                if (disEl) disEl.textContent =
+                    `saved ₹${resp.discount_amount} (${resp.discount_percentage}% Off)`;
+            }
+
+
         }
-    
+
+
         // Update cart total displayed on summary
         const totalEls = document.querySelectorAll('[data-cart-total]');
         totalEls.forEach(e => e.textContent = formatCurrency(resp.cart_total));
