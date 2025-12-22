@@ -59,8 +59,10 @@ def add_coupon(request):
         code = request.POST.get('code','').strip().upper()
         description = request.POST.get('description', '').strip()
 
-        discount_amount = request.POST.get('discount_amount', '').strip()
+        discount_type = request.POST.get('discount_type', 'fixed')
 
+        discount_amount = request.POST.get('discount_amount', '').strip()
+        discount_percentage = request.POST.get('discount_percentage', '').strip()
         min_purchase_amount = request.POST.get('min_purchase_amount', '0').strip()
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
@@ -69,23 +71,46 @@ def add_coupon(request):
         is_active = request.POST.get('is_active') == 'on'
 
 
-        if not all([code, discount_amount, start_date, end_date]):
+        if not all([code, start_date, end_date]):
             messages.error(request, "Please fill all required fileds.")
-            return render(request, 'coupns/add_coupon.html')
+            return render(request, 'coupons/add_coupon.html')
         
         if Coupon.objects.filter(code=code).exists():
             messages.error(request, f"Coupon code'{code}' already exists.")
             return render(request, 'coupons/add_coupon.html')
         
-        #discount amount validation
-        try:
-            discount_amount = Decimal(discount_amount)
-            if discount_amount <= 0:
-                raise ValueError
-        except (ValueError, InvalidOperation):
-            messages.error(request, "Please enter a valid discount amount.")
-            return render(request, 'coupons/add_coupon.html')
+        #validate based on type
+        if discount_type == 'fixed':
+            if not discount_amount:
+                messages.error(request, "Discount amount is required for FIXED coupons.")
+                return render(request, 'coupons/add_coupon.html')
         
+            #discount amount validation
+            try:
+                discount_amount = Decimal(discount_amount)
+                if discount_amount <= 0:
+                    raise ValueError
+            except (ValueError, InvalidOperation):
+                messages.error(request, "Please enter a valid discount amount.")
+                return render(request, 'coupons/add_coupon.html')
+            
+            discount_percentage_value = None # not used
+        else:
+
+            if not discount_percentage:
+                messages.error(request, "Discount percentage is required.")
+                return render(request, 'coupons/add_coupon.html')
+            
+            try:
+                discount_percentage_value = Decimal(discount_percentage)
+                if not (1 <= discount_percentage_value <= 90):
+                    raise ValueError
+            except (ValueError, InvalidOperation):
+                messages.error(request, "Invalid percentage (must be between 1 and 90).")
+                return render(request, 'coupons/add_coupon.html')
+            
+            discount_amount = Decimal('0.00') #not user only percentage
+            
         # minimum purchase
         try:
             min_purchase = Decimal(min_purchase_amount)
@@ -122,7 +147,11 @@ def add_coupon(request):
             coupon = Coupon.objects.create(
                 code=code,
                 description=description,
+
+                discount_type=discount_type,
                 discount_amount=discount_amount,
+                discount_percentage=discount_percentage_value,
+
                 min_purchase_amount=min_purchase,
                 start_date=start_date,
                 end_date=end_date,
@@ -154,7 +183,11 @@ def edit_coupon(request, coupon_id):
     if request.method == 'POST':
         code = request.POST.get('code', '').strip().upper()
         description = request.POST.get('description', '').strip()
+
+        discount_type=request.POST.get('discount_type', coupon.discount_type)
         discount_amount =request.POST.get('discount_amount', '').strip()
+        discount_percentage = request.POST.get('discount_percentage', '').strip()
+
         min_purchase_amount = request.POST.get('min_purchase_amount', '0').strip()
         start_date = request.POST.get('start_date')
         end_date = request.POST.get('end_date')
@@ -163,7 +196,7 @@ def edit_coupon(request, coupon_id):
         is_active = request.POST.get('is_active') == 'on'
 
 
-        if not all([code, discount_amount, start_date, end_date]):
+        if not all([code, start_date, end_date]):
             messages.error(request, "Please fill all required fileds.")
             return render(request, 'coupons/edit_coupon.html', {'coupon': coupon})
         
@@ -171,14 +204,37 @@ def edit_coupon(request, coupon_id):
             messages.error(request, f"Coupon code'{code}' already exists.")
             return render(request, 'coupons/edit_coupon.html', {'coupon': coupon})
         
-        #discount amount validation
-        try:
-            discount_amount = Decimal(discount_amount)
-            if discount_amount <= 0:
-                raise ValueError
-        except (ValueError, InvalidOperation):
-            messages.error(request, "Please enter a valid discount amount.")
-            return render(request, 'coupons/edit_coupon.html', {'coupon': coupon})
+        if discount_type == 'fixed':
+            if not discount_amount:
+                messages.error(request,'Discount amount is required for  fixed coupons.')
+                return render(request, 'coupons/edit_coupon.html', {'coupon': coupon})
+        
+            #discount amount validation
+            try:
+                discount_amount_value = Decimal(discount_amount)
+                if discount_amount_value <= 0:
+                    raise ValueError
+            except (ValueError, InvalidOperation):
+                messages.error(request, "Please enter a valid discount amount.")
+                return render(request, 'coupons/edit_coupon.html', {'coupon': coupon})
+            
+            discount_percentage_value = None
+            
+        else:
+            # VALIDATE PERCENTAGE
+            if not discount_percentage:
+                messages.error(request, "Discount percentage is required.")
+                return render(request, 'coupons/edit_coupon.html', {'coupon': coupon})
+
+            try:
+                discount_percentage_value = Decimal(discount_percentage)
+                if not (1 <= discount_percentage_value <= 90):
+                    raise ValueError
+            except (ValueError, InvalidOperation):
+                messages.error(request, "Percentage must be between 1 and 90.")
+                return render(request, 'coupons/edit_coupon.html', {'coupon': coupon})
+
+            discount_amount_value = Decimal('0.00')  # unused
         
         # minimum purchase
         try:
@@ -215,10 +271,14 @@ def edit_coupon(request, coupon_id):
         try:
             coupon.code = code
             coupon.description = description
-            coupon.discount_amount = discount_amount
+
+            coupon.discount_type = discount_type
+            coupon.discount_amount = discount_amount_value
+            coupon.discount_percentage = discount_percentage_value
+            
             coupon.min_purchase_amount = min_purchase
-            coupon.start_date = start_date
-            coupon.end_date = end_date
+            coupon.start_date = start
+            coupon.end_date = end
             coupon.usage_limit = usage_limit_value
             coupon.one_time_use =one_time_use
             coupon.is_active = is_active

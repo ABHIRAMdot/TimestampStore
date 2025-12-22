@@ -141,7 +141,17 @@ def create_razorpay_order(request):
         'payment_capture': 1   #1 = true / auto-capture the payment as soon as user pays
     }
 
-    razorpay_order = razorpay_client.order.create(data)
+    try:
+        razorpay_order = razorpay_client.order.create(data)
+    except Exception as e:
+            logger.error("RAZORPAY ERROR: %s", str(e))
+            print("RAZORPAY ERROR:", str(e))  # will print too
+            return JsonResponse({
+                "status": "error",
+                "message": "razorpay_limit_exceeded"
+            })
+    print("RESPONSE:", razorpay_order)
+
 
     # Save info in session so verify_payment can create DB Order correctly
     request.session['pending_payment'] = {
@@ -221,16 +231,6 @@ def verify_payment(request):
         return JsonResponse({"status":"error","message":"No matching pending payment found."}, status=400)
 
     logger.debug("VERIFY FLOW CONTINUES: passed session check")
-
-    # print("DEBUG: mode =", pending.get("mode"))
-    # print("DEBUG: selected_address_id from session =", request.session.get("selected_address_id"))
-    # print("DEBUG: subtotal =", pending.get("subtotal"))
-    # print("DEBUG: discount_amount =", pending.get("discount_amount"))
-    # print("DEBUG: shipping_charge =", pending.get("shipping_charge"))
-    # print("DEBUG: total_amount =", pending.get("total_amount"))
-    # print("DEBUG: wallet_used =", pending.get("wallet_used"))
-    # print("DEBUG: online_amount =", pending.get("online_amount"))
-    # print("DEBUG: Going to fetch address now...")
 
 
     user = request.user

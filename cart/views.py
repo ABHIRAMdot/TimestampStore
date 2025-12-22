@@ -165,13 +165,24 @@ def update_cart_quantity_ajax(request):
                 cart = cart_item.cart
                 cart_item.delete()
                 cart.calculate_total()
+
+                total_savings = Decimal('0')
+                subtotal_before_discount = Decimal('0')
+                for it in cart.items.all():
+                    offer = apply_offer_to_variant(it.variant)
+                    total_savings += (offer['original_price'] - offer['final_price']) * it.quantity
+                    subtotal_before_discount += offer['original_price'] * it.quantity
+
                 return JsonResponse({
                     'success': True,
                     'message': f"{product_name} removed from cart.",
                     'removed': True,
                     'cart_total': str(cart.total),
                     'cart_count': cart.get_item_count(),
-                    'cart_item_id': cart_item_id
+                    'cart_item_id': cart_item_id,
+
+                    'cart_savings': str(total_savings),
+                    'subtotal_before_discount': str(subtotal_before_discount),
                 })
 
     return JsonResponse({'success': False, 'message': 'Invalid action.'})
@@ -187,12 +198,23 @@ def remove_from_cart_ajax(request):
     cart = cart_item.cart
     cart_item.delete()
     cart.calculate_total()
+
+    total_savings = Decimal('0')
+    subtotal_before_discount = Decimal('0')
+    for it in cart.items.all():
+        offer = apply_offer_to_variant(it.variant)
+        total_savings += (offer['original_price'] - offer['final_price']) * it.quantity
+        subtotal_before_discount += offer['original_price'] * it.quantity
+
     return JsonResponse({
         'success': True,
         'message': f"{product_name} removed from your cart.",
         'cart_total': str(cart.total),
         'cart_count': cart.get_item_count(),
-        'cart_item_id': cart_item_id
+        'cart_item_id': cart_item_id,
+
+        'cart_savings': str(total_savings),
+        'subtotal_before_discount': str(subtotal_before_discount),
     })
 
 
@@ -208,7 +230,9 @@ def clear_cart_ajax(request):
         'success': True,
         'message': 'Your cart has been cleared.',
         'cart_total': str(cart.total),
-        'cart_count': cart.get_item_count()
+        'cart_count': cart.get_item_count(),
+        'cart_savings': "0",
+        'subtotal_before_discount': "0",
     })
 
 
@@ -217,6 +241,7 @@ def clear_cart_ajax(request):
 def cart_view(request):
     """Display cart items"""
     cart = get_or_create_cart(request.user)
+    cart.calculate_total()
     
     cart_items = cart.items.select_related('product', 'variant', 'product__category').all()
     

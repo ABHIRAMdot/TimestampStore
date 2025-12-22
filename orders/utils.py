@@ -87,6 +87,8 @@ def cancel_order(order, reason=None, cancelled_by=None):
     if not order.can_be_cancelled:
         return False, "This order cannot be cancelled"
     
+    # refund_amount = order.total_refund_amount # property that already written in Orde model
+
     #cancel all items
     for item in order.items.all():
         if item.can_be_cancelled:
@@ -98,6 +100,8 @@ def cancel_order(order, reason=None, cancelled_by=None):
             item.cancellation_reason = reason
             item.cancelled_at = timezone.now()
             item.save()
+
+    refund_amount = order.total_refund_amount
 
     # Upadate order
     old_status = order.status
@@ -121,7 +125,6 @@ def cancel_order(order, reason=None, cancelled_by=None):
         notes=reason
     )
 
-    refund_amount = order.total_refund_amount # property that already written in Orde model
 
     #if the whole order is cancelled, refund everything
     if refund_amount > 0:

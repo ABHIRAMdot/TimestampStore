@@ -20,6 +20,7 @@ from accounts.models import Address
 from products.models import Product, Product_varients
 from  offers.utils import apply_offer_to_variant
 from wallet.models import Wallet
+from wallet.utils import debit_wallet
 from cart.utils import get_or_create_cart, validate_cart_for_checkout
 from coupons.utils import validate_and_apply_coupon, record_coupon_usage
 from coupons.models import Coupon
@@ -261,10 +262,14 @@ def checkout_view(request):
                 cart = get_or_create_cart(request.user)
                 cart_total = cart.total
             
-            #validate and apply coupon
-            success, message, discount, coupon  = validate_and_apply_coupon(
-                coupon_code, request.user, cart_total
-            )
+            try:
+                #validate and apply coupon
+                success, message, discount, coupon  = validate_and_apply_coupon(
+                    coupon_code, request.user, cart_total
+                )
+                print(success, message,discount, coupon)
+            except Exception as e:
+                print(f"Erorr in {e},  {success},{message},{discount},{ coupon}")
 
             if success:
                 request.session['applied_coupon_id'] = coupon.id
@@ -366,6 +371,7 @@ def checkout_view(request):
     else:
 
         cart = get_or_create_cart(request.user)
+        cart.calculate_total()
 
         #validate cart
         is_valid, errors = validate_cart_for_checkout(cart)
@@ -571,14 +577,18 @@ def place_order(request):
         shipping_charge = Decimal('0.00') if subtotal >= 2000 else Decimal('50.00')
         total_amount = subtotal - coupon_discount + shipping_charge
 
-
+        #wallet payments
         if wallet_only:
             if wallet.balance < total_amount:
                 messages.error(request, "Insufficient wallet balance.")
                 return redirect("checkout")
+            debit_wallet(
+                user=request.user,
+                amount=total_amount,
+                tx_type='debit',
+                description="Order payment(Buy Now)",
+            )
 
-            wallet.balance -= total_amount
-            wallet.save()
 
 
 
@@ -606,7 +616,7 @@ def place_order(request):
             shipping_charge=shipping_charge,
             total_amount=total_amount,
             payment_method='wallet' if wallet_only else 'cod',
-            payment_status= 'paid' if wallet_only else 'pending',
+            payment_status= 'completed' if wallet_only else 'pending',
             status='pending',
             order_notes=request.POST.get('order_note', ''),
         )
@@ -729,8 +739,12 @@ def place_order(request):
             messages.error(request, "Insufficient wallet balance.")
             return redirect("checkout")
 
-        wallet.balance -= total_amount
-        wallet.save()
+        debit_wallet(
+            user=request.user,
+            amount=total_amount,
+            tx_type='debit',
+            description="Order payment",
+        )
 
 
     mrp_total = Decimal('0.00')
@@ -758,7 +772,7 @@ def place_order(request):
         shipping_charge=shipping_charge,
         total_amount=total_amount,
         payment_method='wallet' if wallet_only else 'cod',
-        payment_status='paid' if wallet_only else 'pending',
+        payment_status='completed' if wallet_only else 'pending',
         status='pending',
         order_notes=request.POST.get('order_note', ''),
     )

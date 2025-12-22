@@ -378,7 +378,7 @@ class="hidden fixed top-5 right-5 px-4 py-3 rounded-lg shadow-lg text-white text
             if (resp.discount_amount !== undefined && resp.discount_percentage !== undefined) {
                 const disEl = document.getElementById('discount-' + resp.cart_item_id);
                 if (disEl) disEl.textContent =
-                    `saved ₹${resp.discount_amount} (${resp.discount_percentage}% Off)`;
+                    `Save ₹${resp.discount_amount}`;
             }
 
 
@@ -480,6 +480,16 @@ class="hidden fixed top-5 right-5 px-4 py-3 rounded-lg shadow-lg text-white text
                 // update totals
                 document.querySelectorAll('[data-cart-total]').forEach(e => e.textContent = formatCurrency(data.cart_total));
                 updateCartCountUI(data.cart_count);
+
+
+                // 🔥 Add summary subtotal update
+                const subEl = document.getElementById('summary-subtotal');
+                if (subEl) subEl.textContent = formatCurrency(data.subtotal_before_discount);
+
+                // 🔥 Add savings update
+                const saveEl = document.getElementById('summary-savings');
+                if (saveEl) saveEl.textContent = formatCurrency(data.cart_savings);
+
     
                 showToast(data.message, "success");
             } else {
@@ -521,8 +531,21 @@ class="hidden fixed top-5 right-5 px-4 py-3 rounded-lg shadow-lg text-white text
                 document.querySelectorAll("[id^='cart-item-']").forEach(n => n.remove());
                 document.querySelectorAll('[data-cart-total]').forEach(e => e.textContent = formatCurrency(data.cart_total));
                 updateCartCountUI(data.cart_count);
-    
+
+                //  Add summary subtotal update
+                const subEl = document.getElementById('summary-subtotal');
+                if (subEl) subEl.textContent = formatCurrency(data.subtotal_before_discount);
+
+                //  Add savings update
+                const saveEl = document.getElementById('summary-savings');
+                if (saveEl) saveEl.textContent = formatCurrency(data.cart_savings);
+
+                    // Refresh page after clear(time 300 ms for toast to appear)
+                setTimeout(() => location.reload(), 500);
+
                 showToast(data.message, "success");
+
+
             } else {
                 showToast(data.message || "Could not clear cart", "error");
             }

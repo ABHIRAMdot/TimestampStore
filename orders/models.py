@@ -161,11 +161,9 @@ class Order(models.Model):
             for item in active_items 
         )
         
-        # Shipping charge (free for orders above 1000)
-        if self.subtotal >= 2000:
-            self.shipping_charge = Decimal('0.00')
-        else:
-            self.shipping_charge = Decimal('50.00')
+        # # Shipping charge (free for orders above 1000)
+        # self.shipping_charge = self.shipping_charge
+
         
         self.total_amount = self.subtotal + self.shipping_charge
         self.save()
@@ -184,19 +182,40 @@ class Order(models.Model):
         # If all items cancelled
         if item_statuses == {'cancelled'}:
             self.status = 'cancelled'
-            self.save()
+
+            # Refund shipping for FULL cancellation
+            if self.shipping_charge > 0:
+                self.shipping_charge = Decimal('0.00')
+        
+        # all returned
+        elif item_statuses == {'returned'}:
+            self.status = 'returned'
+
+            # FULL RETURN → refund shipping
+            if self.shipping_charge > 0:
+                self.shipping_charge = Decimal('0.00')
+
+        elif item_statuses.issubset({'cancelled', 'returned'}):
+            self.status = 'returned'
+
         # If all items delivered
         elif item_statuses == {'delivered'}:
             self.status = 'delivered'
             if not self.delivered_at:
                 self.delivered_at = timezone.now()
-            self.save()
+
+        #mix of delivered + returned
+        elif item_statuses.issubset({'delivered', 'returned'}):
+            self.status = 'returned'
+
+
         # If mix of delivered and cancelled
         elif item_statuses.issubset({'delivered', 'cancelled'}):
             self.status = 'delivered'
             if not self.delivered_at:
                 self.delivered_at = timezone.now()
-            self.save()              
+            
+        self.save()              
 
 
 
@@ -264,6 +283,21 @@ class OrderItem(models.Model):
         
         days_since_delivery = (timezone.now() - self.delivered_at).days
         return days_since_delivery <= 7
+
+    @property
+    def refund_amount(self):
+        """Amount refunded for this cancelled/returned item."""
+        from coupons.utils import calculate_return_refund_with_coupon
+
+        #refund only for cancelled or returned items
+        if self.status not in ['cancelled', 'returned']:
+            return Decimal('0.00')
+        
+        #for single item refund, reuse existing util
+        result = calculate_return_refund_with_coupon(self.order, [self])
+        return result['items_refund_details'][0]['refund_amount']
+        
+    
     
     def cancel_item(self, reason=None, cancelled_by=None):
         """Cancel this item and restore stock"""
@@ -286,7 +320,7 @@ class OrderItem(models.Model):
 
         # wallet refund cancel
         #refund = actual paid amount for this item (price already includes offer)
-        refund_amount = self.price * self.quantity
+        refund_amount = self.refund_amount
         if refund_amount > 0:
             # local import to avoid cercular import
             from wallet.utils import credit_wallet
@@ -337,7 +371,7 @@ class OrderItem(models.Model):
         self.order.update_status_based_on_items()
 
         # wallet refund return
-        refund_amount = self.price * self.quantity
+        refund_amount = self.refund_amount
 
         if refund_amount > 0:
             from wallet.utils import credit_wallet
@@ -355,12 +389,7 @@ class OrderItem(models.Model):
 
         return True, "Return approved and stock restored"
 
-    @property
-    def refund_amount(self):
-        """Amount refunded for this cancelled/returned item."""
-        if self.status in ['cancelled', 'returned']:
-            return self.price * self.quantity
-        return Decimal('0.00')
+
 
 
     

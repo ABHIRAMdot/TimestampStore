@@ -29,7 +29,8 @@ def validate_and_apply_coupon(coupon_code, user, cart_total):
     
     #check min purchase req
     if cart_total < coupon.min_purchase_amount:
-        return False, f"Minimum Purchase of ₹{coupon.min_purchase_amount} required to use this coupon.", Decimal('0.00', None)
+        print("hey")
+        return False, f"Minimum Purchase of ₹{coupon.min_purchase_amount} required to use this coupon.", Decimal('0.00'), None
     
 
     #calculate discount
@@ -82,11 +83,11 @@ def calculate_return_refund_with_coupon(order, items_to_return):
 
         for item in items_to_return:
             item_refund = item.price * item.quantity # just return what they paid
-            total_refund = item_refund
+            total_refund += item_refund
 
             refund_details.append({
                 'item': item,
-                'original_price':item_refund,
+                'item_price_paid':item_refund,
                 'coupon_share': Decimal('0.00'),  #no coupon
                 'refund_amount': item_refund
             })
@@ -104,19 +105,19 @@ def calculate_return_refund_with_coupon(order, items_to_return):
     total_refund =Decimal('0.00')
 
     for item in  items_to_return:
-        item_original_total = item.original_price * item.quantity #from OrderItem model
+        item_paid_total = item.price * item.quantity #from OrderItem model
         #calculate percentage of order( if 1000 is returning from 1500 and offer was 300 then 1000/1500 = 0.6667 (66.67% of the order is returning))
-        item_percentage = item_original_total / original_order_total
+        item_percentage = item_paid_total / original_order_total
 
         #calculate this item's share of coupon discount(300 * 0.6667 = 200)
         item_coupon_share = coupon_discount * item_percentage
          
         #refund actually paid (original_price - coupon_share 1000 - 200)
-        item_paid_price = item_original_total - item_coupon_share
+        item_paid_price = item_paid_total - item_coupon_share
 
         refund_details.append({
             'item': item,
-            'original_price': item_original_total,
+            'item_price_paid': item_paid_total,
             'coupon_share': item_coupon_share,
             'refund_amount': item_paid_price
         })
@@ -125,7 +126,7 @@ def calculate_return_refund_with_coupon(order, items_to_return):
     
     return {
         'total_refund': total_refund,
-        'item_refund_details': refund_details,
+        'items_refund_details': refund_details,
         'coupon_used': True,
         'coupon_code': coupon_code
     }

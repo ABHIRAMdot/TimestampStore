@@ -398,12 +398,19 @@
                         
 
                         
-
-                        if (data.status !== "success") {
-                            alert(data.message || "Unable to start payment.");
+                        // Razorpay backend limit error (BEFORE creating popup)
+                        if (data.status === "error" && data.message === "razorpay_limit_exceeded") {
+                            window.location.href = "{% url 'payment_failed' %}";
                             return;
                         }
 
+                        // Generic failure
+                        if (data.status !== "success") {
+                            window.location.href = "{% url 'payment_failed' %}";
+                            return;
+                        }
+                                
+                        // ONLY NOW create Razorpay popup
                         var options = {
                             "key": data.key,
                             "amount": data.amount,
@@ -411,6 +418,10 @@
                             "name": "Timestamp Store",
                             "description": "Order Payment",
                             "order_id": data.order_id,
+
+                            "redirect": false,   // ← THIS DISABLES RAZORPAY’S FAILURE PAGE COMPLETELY
+                            "callback_url": "",    // disables their server-side redirection
+
                             "handler": function (response) {
                                 fetch("{% url 'verify_payment' %}", {
                                     method: "POST",
@@ -430,11 +441,13 @@
                                 })
                                 .catch(() => window.location.href = "{% url 'payment_failed' %}");
                             },
+
                             "modal": {
                                 "ondismiss": function() {
                                     window.location.href = "{% url 'payment_failed' %}";
                                 }
                             },
+
                             "prefill": {
                                 "name": "{{ request.user.get_full_name|default:request.user.email }}",
                                 "email": "{{ request.user.email }}",
@@ -443,6 +456,7 @@
 
                         var rzp = new Razorpay(options);
                         rzp.open();
+
                     })
                     .catch(err => {
                         console.error(err);

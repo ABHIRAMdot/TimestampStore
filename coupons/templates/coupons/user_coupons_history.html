@@ -56,8 +56,14 @@
                             </span>
                             <span class="inline-flex items-center gap-2 bg-green-100 bg-green-900/30 text-green-800 text-green-200 px-3 py-1 rounded-full font-semibold text-sm">
                                 <i class="fas fa-tag"></i>
-                                Saved ₹{{ usage.discount_amount }}
+                            
+                                {% if usage.coupon.discount_type == 'percentage' %}
+                                    Saved ₹{{ usage.discount_amount }} ({{ usage.coupon.discount_percentage }}% off)
+                                {% else %}
+                                    Saved ₹{{ usage.discount_amount }}
+                                {% endif %}
                             </span>
+                            
                         </div>
                         
                         <p class="text-gray-700 text-gray-300 mb-2">{{ usage.coupon.description }}</p>

@@ -95,9 +95,30 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex flex-col">
-                                        <span class="text-sm font-semibold text-green-600">₹{{ coupon.discount_amount }} OFF</span>
+                                
+                                        {% if coupon.discount_type == "fixed" %}
+                                            <span class="text-sm font-semibold text-green-600">
+                                                ₹{{ coupon.discount_amount }} OFF
+                                            </span>
+                                
+                                        {% elif coupon.discount_type == "percentage" %}
+                                            <span class="text-sm font-semibold text-blue-600">
+                                                {{ coupon.discount_percentage }}% OFF
+                                            </span>
+                                        {% endif %}
+                                
+                                        <!-- Optional subtext -->
+                                        <span class="text-xs text-gray-500">
+                                            {% if coupon.discount_type == "fixed" %}
+                                                Fixed Discount
+                                            {% else %}
+                                                Percentage Discount
+                                            {% endif %}
+                                        </span>
+                                
                                     </div>
                                 </td>
+                                
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     ₹{{ coupon.min_purchase_amount }}
                                 </td>
