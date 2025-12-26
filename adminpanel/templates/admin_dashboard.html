@@ -1,122 +1,337 @@
 {% extends 'admin_base.html' %}
 
 {% block content %}
-
-        <!-- Main Content -->
-        <div class="flex-1 overflow-auto">
-            <div class="p-8">
-                <!-- Header -->
-                <div class="flex justify-between items-center mb-8">
-                    <h1 class="text-2xl font-bold text-gray-800">{% block page_title %}Dashboard{% endblock %}</h1>
+<!-- Main Content -->
+<div class="flex-1 overflow-auto bg-gray-50">
+    <div class="p-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Dashboard Analytics</h1>
+        </div>
+        
+        <!-- Single Filter Section -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <form method="GET" class="flex flex-wrap gap-4 items-end">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Time Period</label>
+                    <select name="filter" id="filterType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="today" {% if filter_type == 'today' %}selected{% endif %}>Today</option>
+                        <option value="week" {% if filter_type == 'week' %}selected{% endif %}>This Week</option>
+                        <option value="month" {% if filter_type == 'month' %}selected{% endif %}>This Month</option>
+                        <option value="year" {% if filter_type == 'year' %}selected{% endif %}>This Year</option>
+                        <option value="custom" {% if filter_type == 'custom' %}selected{% endif %}>Custom Range</option>
+                    </select>
                 </div>
-
-                <!-- Display Messages -->
-                <!-- {% if messages %}
-                    {% for message in messages %}
-                        <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-100 text-green-800{% elif message.tags == 'error' %}bg-red-100 text-red-800{% else %}bg-blue-100 text-blue-800{% endif %}">
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                {% endif %} -->
-
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <!-- Total Users Card -->
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-gray-500 text-sm">Total Users</p>
-                                <h3 class="text-2xl font-bold text-gray-800 mt-1">{{ total_users }}</h3>
-                            </div>
-                            <div class="bg-blue-100 p-3 rounded-lg">
-                                <i class="fas fa-users text-blue-600 text-xl"></i>
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <a href="{% url 'user_list' %}" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                View All Users →
-                            </a>
-                        </div>
+                
+                <div id="customDateRange" class="flex gap-4 {% if filter_type != 'custom' %}hidden{% endif %}">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                        <input type="date" name="start_date" value="{{ start_date|date:'Y-m-d' }}" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                     </div>
-
-                    <!-- Active Users Card -->
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-gray-500 text-sm">Active Users</p>
-                                <h3 class="text-2xl font-bold text-gray-800 mt-1">{{ active_users }}</h3>
-                            </div>
-                            <div class="bg-green-100 p-3 rounded-lg">
-                                <i class="fas fa-user-check text-green-600 text-xl"></i>
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <p class="text-gray-500 text-sm">Currently Active</p>
-                        </div>
-                    </div>
-
-                    <!-- Blocked Users Card -->
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-gray-500 text-sm">Blocked Users</p>
-                                <h3 class="text-2xl font-bold text-gray-800 mt-1">{{ blocked_users }}</h3>
-                            </div>
-                            <div class="bg-red-100 p-3 rounded-lg">
-                                <i class="fas fa-user-lock text-red-600 text-xl"></i>
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <p class="text-gray-500 text-sm">Inactive Accounts</p>
-                        </div>
-                    </div>
-
-                    <!-- Total Orders Card (Placeholder) -->
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <p class="text-gray-500 text-sm">Total Orders</p>
-                                <h3 class="text-2xl font-bold text-gray-800 mt-1">0</h3>
-                            </div>
-                            <div class="bg-purple-100 p-3 rounded-lg">
-                                <i class="fas fa-shopping-cart text-purple-600 text-xl"></i>
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <p class="text-gray-500 text-sm">Coming Soon</p>
-                        </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                        <input type="date" name="end_date" value="{{ end_date|date:'Y-m-d' }}" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
+                
+                <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition">
+                    Apply Filter
+                </button>
+            </form>
+        </div>
 
-                <!-- Quick Actions -->
-                <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
-                    <h2 class="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <a href="{% url 'user_list' %}" class="flex items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition">
-                            <i class="fas fa-users text-blue-600 text-2xl mr-4"></i>
-                            <div>
-                                <h3 class="font-semibold text-gray-800">Manage Users</h3>
-                                <p class="text-sm text-gray-600">View and manage all users</p>
-                            </div>
-                        </a>
-                        <a href="#" class="flex items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition">
-                            <i class="fas fa-shopping-cart text-green-600 text-2xl mr-4"></i>
-                            <div>
-                                <h3 class="font-semibold text-gray-800">View Orders</h3>
-                                <p class="text-sm text-gray-600">Check recent orders</p>
-                            </div>
-                        </a>
-                        <a href="#" class="flex items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition">
-                            <i class="fas fa-chart-bar text-purple-600 text-2xl mr-4"></i>
-                            <div>
-                                <h3 class="font-semibold text-gray-800">Sales Report</h3>
-                                <p class="text-sm text-gray-600">View sales analytics</p>
-                            </div>
-                        </a>
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Total Orders -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Total Orders</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2">{{ total_orders }}</h3>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-lg">
+                        <i class="fas fa-shopping-cart text-blue-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Revenue -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Total Revenue</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2">₹{{ total_revenue|floatformat:0 }}</h3>
+                    </div>
+                    <div class="bg-green-100 p-3 rounded-lg">
+                        <i class="fas fa-rupee-sign text-green-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Products Sold -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-purple-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Products Sold</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2">{{ total_products_sold }}</h3>
+                    </div>
+                    <div class="bg-purple-100 p-3 rounded-lg">
+                        <i class="fas fa-box text-purple-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Average Order Value -->
+            <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-orange-500">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-500 text-sm font-medium">Avg Order Value</p>
+                        <h3 class="text-3xl font-bold text-gray-800 mt-2">₹{{ average_order_value|floatformat:0 }}</h3>
+                    </div>
+                    <div class="bg-orange-100 p-3 rounded-lg">
+                        <i class="fas fa-chart-line text-orange-600 text-xl"></i>
                     </div>
                 </div>
             </div>
         </div>
-    
 
-    {% endblock %}
+        <!-- Sales Chart -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">Sales Overview</h2>
+            <div class="h-96">
+                <canvas id="salesChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Best Selling Products & Categories -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Best Selling Products -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6">Top 10 Products</h2>
+                <div class="space-y-4">
+                    {% for item in best_products %}
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <div class="flex items-center space-x-4 flex-1">
+                            <div class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                <span class="text-blue-600 font-bold">{{ forloop.counter }}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-semibold text-gray-800 truncate">{{ item.product.product_name }}</p>
+                                <p class="text-sm text-gray-500">{{ item.total_quantity }} units sold</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-green-600">₹{{ item.total_revenue|floatformat:0 }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 text-center py-8">No sales data available</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Best Selling Categories -->
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-6">Top 10 Categories</h2>
+                <div class="space-y-4">
+                    {% for item in best_categories %}
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                        <div class="flex items-center space-x-4 flex-1">
+                            <div class="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                <span class="text-purple-600 font-bold">{{ forloop.counter }}</span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <p class="font-semibold text-gray-800 truncate">{{ item.category.category_name }}</p>
+                                <p class="text-sm text-gray-500">{{ item.total_quantity }} units • {{ item.product_count }} products</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-green-600">₹{{ item.total_revenue|floatformat:0 }}</p>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-gray-500 text-center py-8">No sales data available</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- User Statistics - Single Row at Bottom -->
+        <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-6">User Statistics (All Time)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="flex items-center space-x-4 p-4 bg-blue-50 rounded-lg">
+                    <div class="bg-blue-100 p-4 rounded-lg">
+                        <i class="fas fa-users text-blue-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 text-sm">Total Users</p>
+                        <h3 class="text-2xl font-bold text-gray-800">{{ total_users }}</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4 p-4 bg-green-50 rounded-lg">
+                    <div class="bg-green-100 p-4 rounded-lg">
+                        <i class="fas fa-user-check text-green-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 text-sm">Active Users</p>
+                        <h3 class="text-2xl font-bold text-gray-800">{{ active_users }}</h3>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4 p-4 bg-red-50 rounded-lg">
+                    <div class="bg-red-100 p-4 rounded-lg">
+                        <i class="fas fa-user-lock text-red-600 text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-gray-600 text-sm">Blocked Users</p>
+                        <h3 class="text-2xl font-bold text-gray-800">{{ blocked_users }}</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Script -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script>
+    // Show/hide custom date range
+    document.getElementById('filterType').addEventListener('change', function() {
+        const customRange = document.getElementById('customDateRange');
+        if (this.value === 'custom') {
+            customRange.classList.remove('hidden');
+        } else {
+            customRange.classList.add('hidden');
+        }
+    });
+
+    // Sales Chart
+    const ctx = document.getElementById('salesChart').getContext('2d');
+    const salesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [
+                {
+                    label: 'Sales (₹)',
+                    data: {{ chart_sales|safe }},
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Orders',
+                    data: {{ chart_orders|safe }},
+                    borderColor: 'rgb(16, 185, 129)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false,
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    padding: 12,
+                    titleFont: {
+                        size: 14,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.dataset.yAxisID === 'y') {
+                                label += '₹' + context.parsed.y.toLocaleString('en-IN');
+                            } else {
+                                label += context.parsed.y;
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Sales (₹)',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '₹' + value.toLocaleString('en-IN');
+                        }
+                    },
+                    grid: {
+                        drawOnChartArea: true,
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Orders',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

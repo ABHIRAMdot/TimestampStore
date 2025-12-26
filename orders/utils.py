@@ -16,6 +16,13 @@ def create_order_form_cart(user, cart, shipping_address, payment_method):
         if not cart.items.exists():
             return None, "Cart is empty"
         
+        #restrict cod above 10,000
+        if payment_method == 'cod':
+            payable_amount = cart.get_total_amount()
+
+            if payable_amount > Decimal('10000'):
+                return None, "Cash on Delivery is not available for orders above ₹10,000"
+        
         #create order
         order = Order.objects.create(
             user=user,

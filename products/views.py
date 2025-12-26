@@ -222,7 +222,6 @@ def add_product(request):
                     images = request.FILES.getlist(f'variant_images_{i}[]') or []
 
                     if not images or len(images) < 3:
-                        print("add atleast 3 images")
                         raise ValueError(f'Variant {i+1} must have at least 3 images.')
                     #save imge
                     for index, img in enumerate(images):
@@ -257,7 +256,6 @@ def edit_product(request, product_id):
 
 
     if request.method == 'POST':
-        print("edit post")
         product_name = request.POST.get('product_name', '').strip()
         description = request.POST.get('description', '').strip()
         category_id = request.POST.get('category', '')
@@ -365,7 +363,6 @@ def edit_product(request, product_id):
                         #handle primary image changes
                         primary_image_key = f'set_primary_{variant_ids[i]}'
                         if primary_image_key in request.POST:
-                            print("changing primary image")
                             new_primary_id = request.POST.get(primary_image_key)
                             if new_primary_id:
                                 #remove primary from all images in this vaiant

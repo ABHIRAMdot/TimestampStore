@@ -58,6 +58,13 @@ class CartItem(models.Model):
         final_price = offer_data['final_price']
         return final_price * self.quantity
 
+    def get_total_amount(self):
+        """
+        Always returns the latest payable cart total
+        (used for payments, COD checks, wallet checks)
+        """
+        return sum(item.get_subtotal() for item in self.items.all())
+
     
     def get_available_stock(self):
         """Get available stock for the variant"""

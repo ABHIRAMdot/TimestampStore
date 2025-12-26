@@ -545,7 +545,6 @@ def place_order(request):
 
     if buy_now_item:
         try:
-
             variant = Product_varients.objects.select_related('product').get(id=buy_now_item['variant_id'])
             product = variant.product
         except Product_varients.DoesNotExist:
@@ -577,6 +576,12 @@ def place_order(request):
         shipping_charge = Decimal('0.00') if subtotal >= 2000 else Decimal('50.00')
         total_amount = subtotal - coupon_discount + shipping_charge
 
+        #resrict cod above 10,000
+        if not wallet_only and total_amount > Decimal('10000'):
+            messages.error(request, "Cash on Delivery is not available for orders  above ₹10,000. Please pay online or use wallet.")
+            return redirect('checkout')
+
+
         #wallet payments
         if wallet_only:
             if wallet.balance < total_amount:
@@ -588,9 +593,6 @@ def place_order(request):
                 tx_type='debit',
                 description="Order payment(Buy Now)",
             )
-
-
-
 
         selected_address_id= request.session.get('selected_address_id')
         if not selected_address_id:
@@ -733,6 +735,10 @@ def place_order(request):
     
     shipping_charge = Decimal('0.00') if subtotal >= 2000 else Decimal('50.00')
     total_amount = subtotal - coupon_discount + shipping_charge
+
+    if not wallet_only and total_amount > Decimal('10000'):
+        messages.error(request, "Cash on Delivery is not available for orders above ₹10,000. Please select pay online or use wallet")
+        return redirect('checkout')
 
     if wallet_only:
         if wallet.balance < total_amount:

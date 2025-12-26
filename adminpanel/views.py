@@ -1,5 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
+from django.utils import timezone
+
 from datetime import datetime
 from django.contrib.auth import authenticate, login, logout
 from django.core.paginator import Paginator
@@ -9,9 +11,16 @@ from django.utils.text import slugify
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 
-from .utils import get_date_range
+from .utils import (
+    get_date_range,
+    get_chart_data,
+    get_statistics,
+    get_best_products,
+    get_best_categories
+)
+
 from accounts.models import Account
-from orders.models import Order
+from orders.models import Order,OrderItem
 from decimal import Decimal
 from orders.utils import get_order_total_discount
 
@@ -79,14 +88,60 @@ def admin_dashboard(request):
         messages.error(request, 'You do not have permission to access this page.')
         return redirect('admin_login')
     
+    #get filter from url
+    filter_type = request.GET.get('filter', 'week')
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+
+    # contverts dates if custom filter
+    if start_date and end_date:
+        try:
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        except ValueError:
+            start_date = None
+            end_date = None
+            filter_type = 'week'
+    
+    #get date range based on filter
+    date_start, date_end = get_date_range(filter_type, start_date, end_date)
+
+    # get all data range based on filter
+    chart_data = get_chart_data(filter_type, date_start, date_end)
+    stats = get_statistics(date_start, date_end)
+    best_products = get_best_products(date_start, date_end, limit=10)
+    best_categories = get_best_categories(date_start, date_end, limit=10)
+
+    
     total_users =  Account.objects.filter(is_superuser=False).count()
     active_users = Account.objects.filter(is_superuser=False, is_active = True).count()
     blocked_users = Account.objects.filter(is_superuser=False, is_active=False).count()
+
 
     context = {
         'total_users' : total_users,
         'active_users' : active_users,
         'blocked_users' : blocked_users,
+
+        #chart data
+        'chart_labels': chart_data['labels'],
+        'chart_sales': chart_data['sales'],
+        'chart_orders': chart_data['orders'],
+
+        #statistics
+        'total_orders': stats['total_orders'],
+        'total_revenue': stats['total_revenue'],
+        'total_products_sold': stats['total_products_sold'],
+        'average_order_value': stats['average_order_value'],
+
+        #best selling product, categories
+        'best_products': best_products,
+        'best_categories': best_categories,
+
+        #filter info
+        'filter_type': filter_type,
+        'start_date': date_start,
+        'end_date': date_end,
     }
     return render(request, 'admin_dashboard.html',context)
 
@@ -165,8 +220,8 @@ def admin_sales_report(request):
 
     #convert custom dates
     if start_date and end_date:
-        start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
-        end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+        start_date = timezone.datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_date = timezone.datetime.strptime(end_date, "%Y-%m-%d").date()
 
     start, end = get_date_range(filter_type, start_date, end_date)
 

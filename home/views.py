@@ -57,9 +57,9 @@ def user_product_list(request):
     max_price = request.GET.get('max_price')
 
     if min_price:
-        products = products.filter(varients__price__gte=min_price)
+        products = products.filter(min_price__gte=min_price)
     if max_price:
-        products = products.filter(varients__price__lte=max_price)
+        products = products.filter(min_price__lte=max_price)
     
     #remove duplicate product from price filtering
     products = products.distinct()
@@ -79,8 +79,8 @@ def user_product_list(request):
 
 
     highest_variant_price = products.aggregate(
-        Max('varients__price')
-    )['varients__price__max'] or 10000
+        Max('min_price')
+    )['min_price__max'] or 10000
 
     #  Round up to nearest 5000 
     rounded_max_price = math.ceil(int(highest_variant_price) / 5000) * 5000
