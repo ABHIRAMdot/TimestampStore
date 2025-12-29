@@ -35,12 +35,12 @@ def coupon_list(request):
     elif status_filter == 'inactive':
         coupons = coupons.filter(is_active=False)
 
-    paginator = Paginator(coupons, 10)
+    paginator = Paginator(coupons, 5)
     page_number = request.GET.get('page')
     coupons_page = paginator.get_page(page_number)
 
     context = {
-        'coupons': coupons,
+        'coupons': coupons_page,
         'search_query': search_query,
         'status_filter': status_filter,
     }

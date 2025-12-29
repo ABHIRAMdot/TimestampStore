@@ -207,27 +207,49 @@
                     </table>
                 </div>
 
-                <!-- Pagination -->
                 {% if coupons.has_other_pages %}
                 <div class="px-6 py-4 bg-gray-50 border-t">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center justify-between flex-wrap gap-4">
+                
                         <div class="text-sm text-gray-600">
                             Showing page {{ coupons.number }} of {{ coupons.paginator.num_pages }}
                         </div>
-                        <div class="flex gap-2">
+                
+                        <div class="flex items-center gap-2">
+                
+                            <!-- Previous Button -->
                             {% if coupons.has_previous %}
-                                <a href="?page={{ coupons.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if discount_type_filter %}&discount_type={{ discount_type_filter }}{% endif %}" 
-                                   class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Previous</a>
+                                <a href="?page={{ coupons.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if discount_type_filter %}&discount_type={{ discount_type_filter }}{% endif %}"
+                                   class="px-3 py-2 border rounded-lg hover:bg-gray-100">Previous</a>
+                            {% else %}
+                                <span class="px-3 py-2 border rounded-lg text-gray-400 cursor-not-allowed bg-gray-100">Previous</span>
                             {% endif %}
-                            
+                
+                            <!-- Page Numbers -->
+                            {% for page_num in coupons.paginator.page_range %}
+                                {% if page_num == coupons.number %}
+                                    <span class="px-3 py-2 border rounded-lg bg-blue-600 text-white font-semibold">{{ page_num }}</span>
+                                {% else %}
+                                    <a href="?page={{ page_num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if discount_type_filter %}&discount_type={{ discount_type_filter }}{% endif %}"
+                                       class="px-3 py-2 border rounded-lg hover:bg-gray-100">
+                                       {{ page_num }}
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                
+                            <!-- Next Button -->
                             {% if coupons.has_next %}
-                                <a href="?page={{ coupons.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if discount_type_filter %}&discount_type={{ discount_type_filter }}{% endif %}" 
-                                   class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Next</a>
+                                <a href="?page={{ coupons.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if discount_type_filter %}&discount_type={{ discount_type_filter }}{% endif %}"
+                                   class="px-3 py-2 border rounded-lg hover:bg-gray-100">Next</a>
+                            {% else %}
+                                <span class="px-3 py-2 border rounded-lg text-gray-400 cursor-not-allowed bg-gray-100">Next</span>
                             {% endif %}
+                
                         </div>
                     </div>
                 </div>
                 {% endif %}
+                
             
             {% else %}
                 <div class="text-center py-12">

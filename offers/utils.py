@@ -79,11 +79,6 @@ def apply_offer_to_variant(variant):
     3. Calculate discounted price
     4. Return all pricing info
     
-    USAGE EXAMPLE:
-    In view:
-        variant = Product_varients.objects.get(id=123)
-        pricing = apply_offer_to_variant(variant)
-    
     """
 
     product = variant.product

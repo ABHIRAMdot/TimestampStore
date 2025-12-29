@@ -151,13 +151,20 @@ def generate_invoice_pdf(order):
     
     # Totals Table
     totals_data = [
-        ['Subtotal:', f"₹{order.subtotal}"],
-        ['Discount:', f"- ₹{order.discount_amount}"],
+        ['Subtotal(Before Discount):', f"₹{order.subtotal + order.discount_amount + order.coupon_discount}"],
+        ['Offer Discount:', f"- ₹{order.discount_amount}"], # discount from product offers
+    ]
+
+    # Show coupon discount only if used
+    if order.coupon_discount > 0:
+        totals_data.append(['Coupon Discount:', f"- ₹{order.coupon_discount}"])
+
+    totals_data += [
         ['Shipping:', f"₹{order.shipping_charge}"],
         ['', ''],
-        ['Total Amount:', f"₹{order.total_amount}"]
+        ['Grand Total:', f"₹{order.total_amount}"]
     ]
-    
+
     totals_table = Table(totals_data, colWidths=[4.5*inch, 1.5*inch])
     totals_table.setStyle(TableStyle([
         ('ALIGN', (0, 0), (0, -1), 'RIGHT'),

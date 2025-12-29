@@ -99,13 +99,13 @@
                                     
                                     {% if item.status == 'cancelled' %}
                                         <p class="text-sm text-red-600 font-semibold mt-1">
-                                            Cancelled — Refund: ₹{{ item.refund_amount }}
+                                            Cancelled — Refund: ₹{{ item.refund_amount|floatformat:2 }}
                                         </p>
                                     {% endif %}
                                     
                                     {% if item.status == 'returned' %}
                                         <p class="text-sm text-blue-600 font-semibold mt-1">
-                                            Returned — Refund: ₹{{ item.refund_amount }}
+                                            Returned — Refund: ₹{{ item.refund_amount|floatformat:2 }}
                                         </p>
                                     {% endif %}
                                     

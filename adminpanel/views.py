@@ -46,16 +46,13 @@ from django.http import HttpResponse
 def admin_login(request):
     if request.user.is_authenticated:
         if request.user.is_superuser:
-            print("admin login authentication")
             return redirect('admin_dashboard')
         
         else:
             logout(request) #logout non-admin
-            print("logout non admin")
             return render(request,'admin_login.html')
     
     if request.method == 'POST':
-        print("methode is POST")
         email = request.POST.get('email')
         password = request.POST.get('password')
 
@@ -76,7 +73,6 @@ def admin_login(request):
         else:
             messages.error(request,'Invalid email or password.')
             return render(request, 'admin_login.html')   
-    print("Hiiiii")         
     return render(request, 'admin_login.html')
 
 

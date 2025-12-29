@@ -26,6 +26,9 @@ from coupons.utils import validate_and_apply_coupon, record_coupon_usage
 from coupons.models import Coupon
 
 
+import logging
+logger = logging.getLogger('project_logger')
+
 
 @login_required(login_url='login')
 def user_orders_list(request):
@@ -217,7 +220,7 @@ def buy_now(request):
     pricing = apply_offer_to_variant(variant)
 
     
-    #save butnow items into session
+    #save buynow items into session
     request.session['buy_now'] = {
         "product_id":int(product_id),
         "variant_id": int(variant_id),
@@ -240,6 +243,7 @@ def buy_now(request):
 def checkout_view(request):
     """Display checkout page with addresses and order summery"""
 
+    # if user clicked checkout from cart then clear buy_now session
     if request.method == 'POST' and 'from_cart_checkout' in request.POST:
         request.session.pop('buy_now', None)
 
@@ -267,9 +271,8 @@ def checkout_view(request):
                 success, message, discount, coupon  = validate_and_apply_coupon(
                     coupon_code, request.user, cart_total
                 )
-                print(success, message,discount, coupon)
             except Exception as e:
-                print(f"Erorr in {e},  {success},{message},{discount},{ coupon}")
+                logger.error(f"coupon not valid {e}")
 
             if success:
                 request.session['applied_coupon_id'] = coupon.id
@@ -304,7 +307,7 @@ def checkout_view(request):
                 del request.session['cart_total_before_coupon']
 
 
-
+    # re-saving bunow item again when user updates qty or somethng
     if  request.method == 'POST' and request.POST.get('buy_now_product_id'):
         product_id = int(request.POST['buy_now_product_id'])
         variant_id = int(request.POST['buy_now_variant_id'])
@@ -452,13 +455,9 @@ def checkout_view(request):
 
 
     #using wallet amount
-    # use_wallet = request.session.get("use_wallet", False)
-
     use_wallet = False
     wallet_used = Decimal('0.00')
     remaining_amount = total_amount
-
-
 
     wallet, created = Wallet.objects.get_or_create(user=request.user)    
 
@@ -476,7 +475,6 @@ def checkout_view(request):
     total_amount = total_amount.quantize(Decimal('0.01'))
 
     can_pay_with_wallet = wallet.balance >= total_amount
-
 
 
 
@@ -502,7 +500,6 @@ def checkout_view(request):
         'breadcrumbs': breadcrumbs,
 
         'can_pay_with_wallet': can_pay_with_wallet,
-
 
         'mrp_total': mrp_total.quantize(Decimal('0.01')),
 
@@ -577,8 +574,8 @@ def place_order(request):
         total_amount = subtotal - coupon_discount + shipping_charge
 
         #resrict cod above 10,000
-        if not wallet_only and total_amount > Decimal('10000'):
-            messages.error(request, "Cash on Delivery is not available for orders  above ₹10,000. Please pay online or use wallet.")
+        if not wallet_only and total_amount > Decimal('1000'):
+            messages.error(request, "Cash on Delivery is not available for orders  above ₹1,000. Please pay online or use wallet.")
             return redirect('checkout')
 
 
@@ -650,7 +647,7 @@ def place_order(request):
             notes='Order placed via Buy Now' 
         )
 
-        #recorde coupon usage
+        #record coupon usage
         if 'applied_coupon_id' in request.session:
             try:
                 coupon = Coupon.objects.get(id=request.session['applied_coupon_id'])
@@ -669,7 +666,7 @@ def place_order(request):
                 del request.session['coupon_discount']
                 del request.session['cart_total_before_coupon']
             except Exception as e:
-                print(f"Coupon recording erro: {e}")
+                logger.error(f"error in recording coupon usage: {e}")
 
 
         del request.session['buy_now']
@@ -736,8 +733,8 @@ def place_order(request):
     shipping_charge = Decimal('0.00') if subtotal >= 2000 else Decimal('50.00')
     total_amount = subtotal - coupon_discount + shipping_charge
 
-    if not wallet_only and total_amount > Decimal('10000'):
-        messages.error(request, "Cash on Delivery is not available for orders above ₹10,000. Please select pay online or use wallet")
+    if not wallet_only and total_amount > Decimal('1000'):
+        messages.error(request, "Cash on Delivery is not available for orders above ₹1,000. Please select pay online or use wallet")
         return redirect('checkout')
 
     if wallet_only:
@@ -832,7 +829,7 @@ def place_order(request):
             del request.session['coupon_discount']
             del request.session['cart_total_before_coupon']
         except Exception as e:
-            print(f"Coupon recording error: {e}")
+            logger.debug(f"Coupon recording error: {e}")
 
 
     # Clear cart

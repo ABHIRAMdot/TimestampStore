@@ -15,6 +15,9 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 
+import logging
+logger = logging.getLogger('project_logger')
+
 
 # Create your views here.
 def _otp_expiry_minutes():
@@ -177,12 +180,10 @@ def verify_otp(request):
 
                     #check if the user is referred by someone
                     referred_by_code = pending_data.get('referral_code', '').strip()
-                    print(f"{referred_by_code}")
                     if referred_by_code:
                         try:
                             #find the referrer
                             referrer = Account.objects.filter(referral_code=referred_by_code).first()
-                            print(f"{referrer}")
                             if referrer and referrer != user:
                                 user.referred_by = referrer
                                 user.save()
@@ -193,7 +194,8 @@ def verify_otp(request):
 
                         except Exception as e:
                             #Don't fail registration if referral fails
-                            print(f"Referral error : {e}")
+                            logger.error(f"Referral error: {e}")
+
 
 
 
@@ -280,7 +282,6 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     messages.success(request,'Logged out successfully.')
-    print("user logged out")
     return redirect('home')
 
 def forgot_password(request):

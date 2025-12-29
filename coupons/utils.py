@@ -29,7 +29,6 @@ def validate_and_apply_coupon(coupon_code, user, cart_total):
     
     #check min purchase req
     if cart_total < coupon.min_purchase_amount:
-        print("hey")
         return False, f"Minimum Purchase of ₹{coupon.min_purchase_amount} required to use this coupon.", Decimal('0.00'), None
     
 

@@ -301,7 +301,7 @@ def add_product_offer(request):
             description=description
         )
 
-        messages.success(request, 'Product offer "{name}" created successfully.')
+        messages.success(request, f'Product offer "{name}" created successfully.')
         return redirect('product_offer_list')
 
     breadcrumbs = [

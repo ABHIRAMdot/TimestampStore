@@ -145,13 +145,10 @@ def create_razorpay_order(request):
         razorpay_order = razorpay_client.order.create(data)
     except Exception as e:
             logger.error("RAZORPAY ERROR: %s", str(e))
-            print("RAZORPAY ERROR:", str(e))  # will print too
             return JsonResponse({
                 "status": "error",
                 "message": "razorpay_limit_exceeded"
             })
-    print("RESPONSE:", razorpay_order)
-
 
     # Save info in session so verify_payment can create DB Order correctly
     request.session['pending_payment'] = {
@@ -169,11 +166,6 @@ def create_razorpay_order(request):
     }
 
     request.session.modified = True
-
-    # print("DEBUG: address_id from JS =", request.GET.get("address_id"))
-    # print("SESSION selected_address_id =", request.session.get("selected_address_id"))
-    # print("ALL SESSION KEYS NOW:", dict(request.session))
-
 
 
 
@@ -202,7 +194,6 @@ def verify_payment(request):
         logger.debug(f"PAYMENT RESPONSE RAW: {data}")
 
     except json.JSONDecodeError:
-        print("Invalid JSON received in verify_payment.")
         return JsonResponse({"status": "error", "message": "Invalid JSON."}, status=400)
 
     razorpay_order_id = data.get('razorpay_order_id')  #Extracts the values from the data dictionary.   .get("key") returns the value or None if key not present.
