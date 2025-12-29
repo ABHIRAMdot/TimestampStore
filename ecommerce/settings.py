@@ -75,14 +75,12 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG =os.getenv('DEBUG') == 'True'
 
 ALLOWED_HOSTS = [ 
-    "127.0.0.1",
-    "localhost",
-    "transmentally-unresentful-yvette.ngrok-free.dev",
+    os.getenv('ALLOWED_HOSTS')
     ]
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://*.ngrok-free.dev",      # prevent Login/signup POST failing
-]
+# CSRF_TRUSTED_ORIGINS = [
+#     "https://*.ngrok-free.dev",      # prevent Login/signup POST failing
+# ]
 
 
 
