@@ -74,9 +74,8 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG =os.getenv('DEBUG') == 'True'
 
-ALLOWED_HOSTS = [ 
-    os.getenv('ALLOWED_HOSTS')
-    ]
+hosts = os.getenv('ALLOWED_HOSTS', '')
+ALLOWED_HOSTS = hosts.split(',') 
 
 # CSRF_TRUSTED_ORIGINS = [
 #     "https://*.ngrok-free.dev",      # prevent Login/signup POST failing
