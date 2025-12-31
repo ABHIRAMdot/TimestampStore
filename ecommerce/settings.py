@@ -16,7 +16,7 @@ from dotenv import load_dotenv  #install dotenv to use getenv
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-# BASE_DIR = Path(__file__).resolve().parent.parent
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
@@ -77,10 +77,6 @@ DEBUG =os.getenv('DEBUG', 'False') == 'True'
 
 hosts = os.getenv('ALLOWED_HOSTS', '')
 ALLOWED_HOSTS = hosts.split(',') 
-
-# CSRF_TRUSTED_ORIGINS = [
-#     "https://*.ngrok-free.dev",      # prevent Login/signup POST failing
-# ]
 
 
 
