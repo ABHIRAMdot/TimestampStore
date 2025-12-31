@@ -9,56 +9,108 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Account',
+            name="Account",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('password', models.CharField(max_length=128, verbose_name='password')),
-                ('first_name', models.CharField(max_length=50)),
-                ('last_name', models.CharField(max_length=50)),
-                ('email', models.EmailField(max_length=100, unique=True)),
-                ('phone_number', models.CharField(blank=True, max_length=50, null=True)),
-                ('date_joined', models.DateTimeField(auto_now_add=True)),
-                ('last_login', models.DateTimeField(auto_now=True)),
-                ('profile_image', models.ImageField(blank=True, null=True, upload_to='profile_images/')),
-                ('otp', models.CharField(blank=True, max_length=6, null=True)),
-                ('otp_created_at', models.DateTimeField(blank=True, null=True)),
-                ('is_verified', models.BooleanField(default=False)),
-                ('referral_code', models.CharField(blank=True, help_text='Unique referral code for this user', max_length=12, null=True, unique=True)),
-                ('is_admin', models.BooleanField(default=False)),
-                ('is_staff', models.BooleanField(default=False)),
-                ('is_active', models.BooleanField(default=False)),
-                ('is_superadmin', models.BooleanField(default=False)),
-                ('is_superuser', models.BooleanField(default=False)),
-                ('referred_by', models.ForeignKey(blank=True, help_text='User who referred this account.', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='referrals', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("password", models.CharField(max_length=128, verbose_name="password")),
+                ("first_name", models.CharField(max_length=50)),
+                ("last_name", models.CharField(max_length=50)),
+                ("email", models.EmailField(max_length=100, unique=True)),
+                (
+                    "phone_number",
+                    models.CharField(blank=True, max_length=50, null=True),
+                ),
+                ("date_joined", models.DateTimeField(auto_now_add=True)),
+                ("last_login", models.DateTimeField(auto_now=True)),
+                (
+                    "profile_image",
+                    models.ImageField(
+                        blank=True, null=True, upload_to="profile_images/"
+                    ),
+                ),
+                ("otp", models.CharField(blank=True, max_length=6, null=True)),
+                ("otp_created_at", models.DateTimeField(blank=True, null=True)),
+                ("is_verified", models.BooleanField(default=False)),
+                (
+                    "referral_code",
+                    models.CharField(
+                        blank=True,
+                        help_text="Unique referral code for this user",
+                        max_length=12,
+                        null=True,
+                        unique=True,
+                    ),
+                ),
+                ("is_admin", models.BooleanField(default=False)),
+                ("is_staff", models.BooleanField(default=False)),
+                ("is_active", models.BooleanField(default=False)),
+                ("is_superadmin", models.BooleanField(default=False)),
+                ("is_superuser", models.BooleanField(default=False)),
+                (
+                    "referred_by",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="User who referred this account.",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="referrals",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'abstract': False,
+                "abstract": False,
             },
         ),
         migrations.CreateModel(
-            name='Address',
+            name="Address",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('full_name', models.CharField(max_length=100)),
-                ('mobile', models.CharField(max_length=15)),
-                ('second_mobile', models.CharField(blank=True, max_length=15, null=True)),
-                ('street_address', models.CharField(max_length=255)),
-                ('city', models.CharField(max_length=100)),
-                ('state', models.CharField(max_length=100)),
-                ('postal_code', models.CharField(max_length=20)),
-                ('is_default', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='address', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("full_name", models.CharField(max_length=100)),
+                ("mobile", models.CharField(max_length=15)),
+                (
+                    "second_mobile",
+                    models.CharField(blank=True, max_length=15, null=True),
+                ),
+                ("street_address", models.CharField(max_length=255)),
+                ("city", models.CharField(max_length=100)),
+                ("state", models.CharField(max_length=100)),
+                ("postal_code", models.CharField(max_length=20)),
+                ("is_default", models.BooleanField(default=False)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="address",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name_plural': 'Addresses',
-                'ordering': ['-is_default', '-created_at'],
+                "verbose_name_plural": "Addresses",
+                "ordering": ["-is_default", "-created_at"],
             },
         ),
     ]

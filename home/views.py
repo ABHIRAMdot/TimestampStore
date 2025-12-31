@@ -12,91 +12,107 @@ from django.urls import reverse
 from offers.utils import apply_offer_to_variant
 
 
-
-
 # Create your views here.
+
 
 def home_page(request):
     products = (
-        Product.objects.filter(is_listed=True, varients__is_listed=True, varients__stock__gt=0)
-        .annotate(min_price=Min('varients__price')).prefetch_related('varients__images','varients', 'category').distinct()  #to prevent duplicte products
-        .order_by('-created_at')[:4]
+        Product.objects.filter(
+            is_listed=True, varients__is_listed=True, varients__stock__gt=0
+        )
+        .annotate(min_price=Min("varients__price"))
+        .prefetch_related("varients__images", "varients", "category")
+        .distinct()  # to prevent duplicte products
+        .order_by("-created_at")[:4]
     )
 
     # attach min price variant to each product for template access
     for product in products:
-        product.min_variant = product.varients.filter(is_listed=True, price=product.min_price).first()
+        product.min_variant = product.varients.filter(
+            is_listed=True, price=product.min_price
+        ).first()
 
+    # get main categories for navbar dropdown(parent categories only)
+    main_categories = Category.objects.filter(
+        parent__isnull=True, is_listed=True
+    ).order_by("category_name")
 
-    #get main categories for navbar dropdown(parent categories only)
-    main_categories = Category.objects.filter(parent__isnull=True, is_listed=True).order_by('category_name')
-
-    return render(request, 'home/home.html', {'products': products, 'main_categories' : main_categories })
+    return render(
+        request,
+        "home/home.html",
+        {"products": products, "main_categories": main_categories},
+    )
 
 
 def user_product_list(request):
-    """ product listing wiith filter adnsearch """
-    products = Product.objects.filter(is_listed=True, varients__is_listed=True, varients__stock__gte=0).annotate(min_price=Min('varients__price')).prefetch_related('varients__images','varients', 'category').order_by('-created_at')
+    """product listing wiith filter adnsearch"""
+    products = (
+        Product.objects.filter(
+            is_listed=True, varients__is_listed=True, varients__stock__gte=0
+        )
+        .annotate(min_price=Min("varients__price"))
+        .prefetch_related("varients__images", "varients", "category")
+        .order_by("-created_at")
+    )
 
-    main=request.GET.get('main')
+    main = request.GET.get("main")
     if main:
         # filter by parent slug
         products = products.filter(category__parent__slug=main)
 
     # filter- sub category
-    category = request.GET.get('category')
+    category = request.GET.get("category")
     if category:
         products = products.filter(category__slug=category)
 
-
-    search = request.GET.get('search')
+    search = request.GET.get("search")
     if search:
         products = products.filter(product_name__icontains=search)
-    
-    min_price = request.GET.get('min_price')
-    max_price = request.GET.get('max_price')
+
+    min_price = request.GET.get("min_price")
+    max_price = request.GET.get("max_price")
 
     if min_price:
         products = products.filter(min_price__gte=min_price)
     if max_price:
         products = products.filter(min_price__lte=max_price)
-    
-    #remove duplicate product from price filtering
+
+    # remove duplicate product from price filtering
     products = products.distinct()
 
     # sorting
-    sort = request.GET.get('sort')
-    if sort == 'price_low':
-        products = products.order_by('min_price')
-    elif sort == 'price_high':
-        products = products.order_by('-min_price')
-    elif sort == 'name_asc':
-        products = products.order_by('product_name')
-    elif sort == 'name_desc':
-        products = products.order_by('-product_name')
-    elif sort == 'new':
-        products = products.order_by('-created_at')
+    sort = request.GET.get("sort")
+    if sort == "price_low":
+        products = products.order_by("min_price")
+    elif sort == "price_high":
+        products = products.order_by("-min_price")
+    elif sort == "name_asc":
+        products = products.order_by("product_name")
+    elif sort == "name_desc":
+        products = products.order_by("-product_name")
+    elif sort == "new":
+        products = products.order_by("-created_at")
 
+    highest_variant_price = (
+        products.aggregate(Max("min_price"))["min_price__max"] or 10000
+    )
 
-    highest_variant_price = products.aggregate(
-        Max('min_price')
-    )['min_price__max'] or 10000
-
-    #  Round up to nearest 5000 
+    #  Round up to nearest 5000
     rounded_max_price = math.ceil(int(highest_variant_price) / 5000) * 5000
 
     paginator = Paginator(products, 5)
-    page = request.GET.get('page')
+    page = request.GET.get("page")
     products_page = paginator.get_page(page)
 
-
-    #attach min price variant to each product for consistent display
+    # attach min price variant to each product for consistent display
     for product in products_page:
-        product.min_variant = product.varients.filter(is_listed=True, price=product.min_price).first()  #This line creates a temporary attribute not a model filed and not save to db
+        product.min_variant = product.varients.filter(
+            is_listed=True, price=product.min_price
+        ).first()  # This line creates a temporary attribute not a model filed and not save to db
 
         if product.min_variant:
             pricing_pl = apply_offer_to_variant(product.min_variant)
-            product.pricing = pricing_pl  #pass offer details to templates
+            product.pricing = pricing_pl  # pass offer details to templates
         else:
             product.pricing = None
 
@@ -106,35 +122,38 @@ def user_product_list(request):
         {"label": "Home", "url": reverse("home")},
     ]
 
-    return render(request, 'home/user_product_list.html', {
-        'products': products_page,
-        'categories': categories,
-        'request': request,    #Important for retaining filter values
-        'max_price': rounded_max_price,
-        'breadcrumbs': breadcrumbs,
-    })
+    return render(
+        request,
+        "home/user_product_list.html",
+        {
+            "products": products_page,
+            "categories": categories,
+            "request": request,  # Important for retaining filter values
+            "max_price": rounded_max_price,
+            "breadcrumbs": breadcrumbs,
+        },
+    )
 
 
 def user_product_detail(request, slug):
-    """ display product detail page with variants """
+    """display product detail page with variants"""
     try:
         product = Product.objects.get(slug=slug)
     except Product.DoesNotExist:
         # Product completely missing
         return render(request, "errors/product_unavailable.html", status=404)
-    
-    #Block unlisted product even user came erlier
+
+    # Block unlisted product even user came erlier
     if not product.is_listed:
         return render(request, "errors/product_unavailable.html", status=404)
-    
 
     # get only listed varients ordered by price(lowest first)
-    #order variants by price to show cheapest first
-    variants = product.varients.filter(is_listed=True).order_by('price', 'colour')
+    # order variants by price to show cheapest first
+    variants = product.varients.filter(is_listed=True).order_by("price", "colour")
     if not variants.exists():
         messages.error(request, '"This product has no availble varients.')
-        return redirect('user_product_list')
-    
+        return redirect("user_product_list")
+
     selected_variant_id = request.GET.get("variant")
     if selected_variant_id:
         selected_variant = variants.filter(id=selected_variant_id).first()
@@ -145,88 +164,109 @@ def user_product_detail(request, slug):
         # Default to ceapest variant
         selected_variant = variants.first()
 
-    #checking this is an AJAX request, return JASON response
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    # checking this is an AJAX request, return JASON response
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         if not product.is_listed or not variants.exists():
-            return JsonResponse({
-                'available': False,
-                'redirect_url': '/product-unavailable/'
-            })
-        return JsonResponse({
-            'available': True,
-            'stock': selected_variant.stock,
-            'price': float(selected_variant.price)
-        })
-    
-    #get images for the selected variant
-    variant_images = VariantImage.objects.filter(variant=selected_variant, is_listed=True).order_by('-is_primary', 'id')
+            return JsonResponse(
+                {"available": False, "redirect_url": "/product-unavailable/"}
+            )
+        return JsonResponse(
+            {
+                "available": True,
+                "stock": selected_variant.stock,
+                "price": float(selected_variant.price),
+            }
+        )
+
+    # get images for the selected variant
+    variant_images = VariantImage.objects.filter(
+        variant=selected_variant, is_listed=True
+    ).order_by("-is_primary", "id")
 
     if not variant_images:
-        messages.error(request, "This product variant currently has no images available.")
+        messages.error(
+            request, "This product variant currently has no images available."
+        )
 
-    #compute offer based pricing for seleted variant
+    # compute offer based pricing for seleted variant
     selcted_pricing = apply_offer_to_variant(selected_variant)
 
-
-    #related products (same category, exclude current)
+    # related products (same category, exclude current)
     related = (
-        Product.objects.filter(is_listed=True, category=product.category, varients__is_listed=True, varients__stock__gt=0)
-        .exclude(id=product.id).annotate(min_price=Min('varients__price'))
-        .prefetch_related('varients__images', 'varients').distinct()[:8]
+        Product.objects.filter(
+            is_listed=True,
+            category=product.category,
+            varients__is_listed=True,
+            varients__stock__gt=0,
         )
-    #attach min price variant to realated products
+        .exclude(id=product.id)
+        .annotate(min_price=Min("varients__price"))
+        .prefetch_related("varients__images", "varients")
+        .distinct()[:8]
+    )
+    # attach min price variant to realated products
     for related_product in related:
-        related_product.min_variant = related_product.varients.filter(is_listed=True, price=related_product.min_price).first()
+        related_product.min_variant = related_product.varients.filter(
+            is_listed=True, price=related_product.min_price
+        ).first()
 
-    #get main categories for navbar
-    main_categories = Category.objects.filter(parent__isnull=True, is_listed=True).order_by('category_name')
+    # get main categories for navbar
+    main_categories = Category.objects.filter(
+        parent__isnull=True, is_listed=True
+    ).order_by("category_name")
 
-    reviews = Review.objects.filter(product=product).select_related('user').order_by("-created_at")
+    reviews = (
+        Review.objects.filter(product=product)
+        .select_related("user")
+        .order_by("-created_at")
+    )
     rating_dist = product.rating_distribution
-    avg_rating =product.avg_rating
+    avg_rating = product.avg_rating
     review_count = product.review_count
 
-
-
-    #has the logged-in user purchased this product?
+    # has the logged-in user purchased this product?
     user_can_review = False
     ueser_reviewed = False
-    user_review =None
+    user_review = None
 
     if request.user.is_authenticated:
         user_can_review = has_purchased_product(request.user, product=product)
-        ueser_reviewed = Review.objects.filter(user=request.user, product=product).exists()
+        ueser_reviewed = Review.objects.filter(
+            user=request.user, product=product
+        ).exists()
         user_review = Review.objects.filter(user=request.user, product=product).first()
 
     breadcrumbs = [
         {"label": "Home", "url": reverse("home")},
         {"label": "All Products", "url": reverse("user_product_list")},
-        
     ]
 
-    return render(request, 'home/user_product_detail.html', {
-        'product': product,
-        'variants': variants,
-        'selected_variant': selected_variant,
-        'variant_images': variant_images,
-        'related': related,
-        'main_categories' : main_categories,
-        'breadcrumbs': breadcrumbs,
+    return render(
+        request,
+        "home/user_product_detail.html",
+        {
+            "product": product,
+            "variants": variants,
+            "selected_variant": selected_variant,
+            "variant_images": variant_images,
+            "related": related,
+            "main_categories": main_categories,
+            "breadcrumbs": breadcrumbs,
+            "selected_pricing": selcted_pricing,
+            "reviews": reviews,
+            "review_count": review_count,
+            "avg_rating": avg_rating,
+            "rating_dist": rating_dist,
+            "user_can_review": user_can_review,
+            "user_reviewed": ueser_reviewed,
+            "user_review": user_review,
+        },
+    )
 
-        'selected_pricing': selcted_pricing,
-
-        'reviews': reviews,
-        'review_count': review_count,
-        'avg_rating': avg_rating,
-        'rating_dist': rating_dist,
-        'user_can_review': user_can_review,
-        'user_reviewed': ueser_reviewed,
-        'user_review': user_review,
-        
-    }) 
 
 def product_unavailable(request):
     return render(request, "errors/product_unavailable.html", status=410)
 
-def custom_404(request, exception):     # only works in DEBUG = False
-    return render(request, '404.html', status=404)
+
+def custom_404(request, exception):  # only works in DEBUG = False
+    return render(request, "404.html", status=404)

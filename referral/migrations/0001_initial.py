@@ -15,20 +15,61 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name='ReferralReward',
+            name="ReferralReward",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('code', models.CharField(blank=True, max_length=20, null=True, unique=True)),
-                ('reward_amount', models.DecimalField(decimal_places=2, default=500.0, help_text="Amount credited to referrer's wallet (in rupees)", max_digits=10)),
-                ('is_credited', models.BooleanField(default=False, help_text='Has the reward been credited to wallet?')),
-                ('credited_at', models.DateTimeField(blank=True, null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('referred_user', models.ForeignKey(help_text='User who was referred', on_delete=django.db.models.deletion.CASCADE, related_name='referred_by_reward', to=settings.AUTH_USER_MODEL)),
-                ('referrer', models.ForeignKey(help_text=' user who referred someone', on_delete=django.db.models.deletion.CASCADE, related_name='referral_reward_given', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "code",
+                    models.CharField(blank=True, max_length=20, null=True, unique=True),
+                ),
+                (
+                    "reward_amount",
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=500.0,
+                        help_text="Amount credited to referrer's wallet (in rupees)",
+                        max_digits=10,
+                    ),
+                ),
+                (
+                    "is_credited",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Has the reward been credited to wallet?",
+                    ),
+                ),
+                ("credited_at", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "referred_user",
+                    models.ForeignKey(
+                        help_text="User who was referred",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="referred_by_reward",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "referrer",
+                    models.ForeignKey(
+                        help_text=" user who referred someone",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="referral_reward_given",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
-                'unique_together': {('referrer', 'referred_user')},
+                "ordering": ["-created_at"],
+                "unique_together": {("referrer", "referred_user")},
             },
         ),
     ]

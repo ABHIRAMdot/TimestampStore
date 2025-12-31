@@ -12,48 +12,155 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('orders', '0001_initial'),
+        ("orders", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Coupon',
+            name="Coupon",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('code', models.CharField(max_length=20, unique=True)),
-                ('description', models.TextField(blank=True)),
-                ('discount_type', models.CharField(choices=[('fixed', 'Fixed Amount'), ('percentage', 'Percentage')], default='fixed', max_length=20)),
-                ('discount_percentage', models.DecimalField(blank=True, decimal_places=2, help_text='Applicable only when discount_type = percentage', max_digits=5, null=True)),
-                ('discount_amount', models.DecimalField(decimal_places=2, max_digits=10, validators=[django.core.validators.MinValueValidator(Decimal('0.01'))])),
-                ('min_purchase_amount', models.DecimalField(decimal_places=2, default=Decimal('0.00'), max_digits=10, validators=[django.core.validators.MinValueValidator(Decimal('0.00'))])),
-                ('start_date', models.DateField()),
-                ('end_date', models.DateField()),
-                ('usage_limit', models.PositiveIntegerField(blank=True, help_text='Total times this coupon can be used (leave empty for unlimited)', null=True)),
-                ('times_used', models.PositiveIntegerField(default=0, help_text='How many time this coupon has been used')),
-                ('one_time_use', models.BooleanField(default=True, help_text='Each user can use this coupon only once')),
-                ('is_active', models.BooleanField(default=True, help_text='currently active')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("code", models.CharField(max_length=20, unique=True)),
+                ("description", models.TextField(blank=True)),
+                (
+                    "discount_type",
+                    models.CharField(
+                        choices=[
+                            ("fixed", "Fixed Amount"),
+                            ("percentage", "Percentage"),
+                        ],
+                        default="fixed",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "discount_percentage",
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        help_text="Applicable only when discount_type = percentage",
+                        max_digits=5,
+                        null=True,
+                    ),
+                ),
+                (
+                    "discount_amount",
+                    models.DecimalField(
+                        decimal_places=2,
+                        max_digits=10,
+                        validators=[
+                            django.core.validators.MinValueValidator(Decimal("0.01"))
+                        ],
+                    ),
+                ),
+                (
+                    "min_purchase_amount",
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=Decimal("0.00"),
+                        max_digits=10,
+                        validators=[
+                            django.core.validators.MinValueValidator(Decimal("0.00"))
+                        ],
+                    ),
+                ),
+                ("start_date", models.DateField()),
+                ("end_date", models.DateField()),
+                (
+                    "usage_limit",
+                    models.PositiveIntegerField(
+                        blank=True,
+                        help_text="Total times this coupon can be used (leave empty for unlimited)",
+                        null=True,
+                    ),
+                ),
+                (
+                    "times_used",
+                    models.PositiveIntegerField(
+                        default=0, help_text="How many time this coupon has been used"
+                    ),
+                ),
+                (
+                    "one_time_use",
+                    models.BooleanField(
+                        default=True,
+                        help_text="Each user can use this coupon only once",
+                    ),
+                ),
+                (
+                    "is_active",
+                    models.BooleanField(default=True, help_text="currently active"),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='CouponUsage',
+            name="CouponUsage",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('discount_amount', models.DecimalField(decimal_places=2, help_text='Actual discount applied', max_digits=10)),
-                ('cart_total_before_discount', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('used_at', models.DateTimeField(auto_now_add=True)),
-                ('coupon', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='usages', to='coupons.coupon')),
-                ('order', models.ForeignKey(help_text='Which order used this coupon', on_delete=django.db.models.deletion.CASCADE, related_name='coupon_usage', to='orders.order')),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='coupon_usages', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "discount_amount",
+                    models.DecimalField(
+                        decimal_places=2,
+                        help_text="Actual discount applied",
+                        max_digits=10,
+                    ),
+                ),
+                (
+                    "cart_total_before_discount",
+                    models.DecimalField(decimal_places=2, max_digits=10),
+                ),
+                ("used_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "coupon",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="usages",
+                        to="coupons.coupon",
+                    ),
+                ),
+                (
+                    "order",
+                    models.ForeignKey(
+                        help_text="Which order used this coupon",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="coupon_usage",
+                        to="orders.order",
+                    ),
+                ),
+                (
+                    "user",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="coupon_usages",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-used_at'],
-                'unique_together': {('coupon', 'order')},
+                "ordering": ["-used_at"],
+                "unique_together": {("coupon", "order")},
             },
         ),
     ]

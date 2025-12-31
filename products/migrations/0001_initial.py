@@ -9,56 +9,119 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('category', '0001_initial'),
+        ("category", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Product',
+            name="Product",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('product_name', models.CharField(max_length=200, unique=True)),
-                ('slug', models.SlugField(max_length=200, unique=True)),
-                ('base_price', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('description', models.TextField()),
-                ('is_listed', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('category', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='category.category')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("product_name", models.CharField(max_length=200, unique=True)),
+                ("slug", models.SlugField(max_length=200, unique=True)),
+                ("base_price", models.DecimalField(decimal_places=2, max_digits=10)),
+                ("description", models.TextField()),
+                ("is_listed", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "category",
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to="category.category",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-created_at'],
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='Product_varients',
+            name="Product_varients",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('colour', models.CharField(choices=[('Black', 'Black'), ('Blue', 'Blue'), ('Brown', 'Brown'), ('White', 'White'), ('Red', 'Red'), ('Green', 'Green'), ('Yellow', 'Yellow'), ('Gray', 'Gray'), ('Silver', 'Silver'), ('Gold', 'Gold')], max_length=20)),
-                ('price', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('stock', models.IntegerField(default=0)),
-                ('is_listed', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='varients', to='products.product')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "colour",
+                    models.CharField(
+                        choices=[
+                            ("Black", "Black"),
+                            ("Blue", "Blue"),
+                            ("Brown", "Brown"),
+                            ("White", "White"),
+                            ("Red", "Red"),
+                            ("Green", "Green"),
+                            ("Yellow", "Yellow"),
+                            ("Gray", "Gray"),
+                            ("Silver", "Silver"),
+                            ("Gold", "Gold"),
+                        ],
+                        max_length=20,
+                    ),
+                ),
+                ("price", models.DecimalField(decimal_places=2, max_digits=10)),
+                ("stock", models.IntegerField(default=0)),
+                ("is_listed", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                (
+                    "product",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="varients",
+                        to="products.product",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['colour'],
-                'unique_together': {('product', 'colour')},
+                "ordering": ["colour"],
+                "unique_together": {("product", "colour")},
             },
         ),
         migrations.CreateModel(
-            name='VariantImage',
+            name="VariantImage",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('image', models.ImageField(upload_to='photos/variants/%Y/%m/%d/')),
-                ('is_primary', models.BooleanField(default=False)),
-                ('is_listed', models.BooleanField(default=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('variant', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='images', to='products.product_varients')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("image", models.ImageField(upload_to="photos/variants/%Y/%m/%d/")),
+                ("is_primary", models.BooleanField(default=False)),
+                ("is_listed", models.BooleanField(default=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "variant",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="images",
+                        to="products.product_varients",
+                    ),
+                ),
             ],
             options={
-                'ordering': ['-is_primary', 'created_at'],
+                "ordering": ["-is_primary", "created_at"],
             },
         ),
     ]

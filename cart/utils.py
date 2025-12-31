@@ -7,10 +7,7 @@ from offers.utils import get_best_offer_for_product, calculate_discounted_price
 def get_or_create_cart(user):
     """Get or create cart for a user"""
     cart, created = Cart.objects.get_or_create(
-
-        user=user,
-        status='active',
-        defaults={'total': Decimal('0.00')}
+        user=user, status="active", defaults={"total": Decimal("0.00")}
     )
     return cart
 
@@ -22,19 +19,19 @@ def is_product_addable_to_cart(product, variant=None):
     """
     if not product.is_listed:
         return False, "This product is currently unavailable."
-    
+
     if product.category and not product.category.is_listed:
         return False, "This product category is currently unavialable."
-    
-    #check variant if provided
+
+    # check variant if provided
     if variant:
         if not variant.is_listed:
             return False, "This product variant is currently unavailable."
-        
-        #check if variant has stock
+
+        # check if variant has stock
         if variant.stock <= 0:
             return False, "This product is out of stock"
-    
+
     return True, ""
 
 
@@ -48,13 +45,12 @@ def get_discounted_price(product, variant):
     offer_info = get_best_offer_for_product(product)
 
     if not offer_info:
-        return Decimal(str(base_price)).quantize(Decimal('0.01'))
-    
+        return Decimal(str(base_price)).quantize(Decimal("0.01"))
 
-    discount_percentage = offer_info.get('discount_percentage') or Decimal('0')
+    discount_percentage = offer_info.get("discount_percentage") or Decimal("0")
     # use existing calculate_discounted_price to compute final price (keeps rounding consistent)
     final_price = calculate_discounted_price(base_price, discount_percentage)
-    
+
     return final_price
 
 
@@ -63,14 +59,14 @@ def remove_from_wishlist_if_exists(user, product, variant=None):
     try:
         from wishlist.models import WishlistItem, Wishlist
 
-        #check if wishlist exists
+        # check if wishlist exists
         wishlist = Wishlist.objects.filter(user=user).first()
         if not wishlist:
             return False
 
-        filters = {'wishlist':wishlist,'product':product}
+        filters = {"wishlist": wishlist, "product": product}
         if variant:
-            filters['variant'] = variant
+            filters["variant"] = variant
 
         delete_count, _ = WishlistItem.objects.filter(**filters).delete()
         return delete_count > 0
@@ -78,15 +74,15 @@ def remove_from_wishlist_if_exists(user, product, variant=None):
         # Wishlist app might exists or other error
         print(f"Error removing from wishlist: {e}")
         return False
-    
+
 
 def clean_cart_invalid_items(cart):
-    """Remove items from cart that are no longer available 
+    """Remove items from cart that are no longer available
     Returns: List of removed item names
     """
 
     removed_items = []
-    
+
     for item in cart.items.all():
         if not item.is_product_available() or not item.is_in_stock():
             removed_items.append(str(item))
@@ -94,7 +90,7 @@ def clean_cart_invalid_items(cart):
 
     if removed_items:
         cart.calculate_total()
-    
+
     return removed_items
 
 
@@ -108,18 +104,19 @@ def validate_cart_for_checkout(cart):
     if not cart.items.exists():
         errors.append("Your cart is empty.")
         return False, errors
-    
+
     for item in cart.items.all():
-        #check if product/ variant is available
+        # check if product/ variant is available
         if not item.is_product_available():
             errors.append(f"{item.product.product_name} is no longer available.")
 
-        #check stock
+        # check stock
         elif not item.is_in_stock():
             errors.append(f"{item.product.product_name} is out of stock.")
 
-        #Check if quantity exceeds stock
+        # Check if quantity exceeds stock
         elif item.quantity > item.get_available_stock():
             errors.append(
-                f"{item.product.product_name} – Only {item.get_available_stock()} items available, but you have {item.quantity} in cart.")
+                f"{item.product.product_name} – Only {item.get_available_stock()} items available, but you have {item.quantity} in cart."
+            )
     return len(errors) == 0, errors

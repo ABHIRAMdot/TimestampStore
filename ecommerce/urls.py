@@ -14,33 +14,30 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
-from django.urls import path,include
+from django.urls import path, include
 from django.conf.urls.static import static
 from django.conf import settings
 
 urlpatterns = [
-    
-    path('users/',include('accounts.urls')),
-    path('admin/', include('adminpanel.urls')),
-    path('', include('home.urls'),name='home'),
-    path('products/' ,include('products.urls')),
-    path('category/',include('category.urls')),
-    path('cart/', include('cart.urls')),
-    path('wishlist/',include('wishlist.urls')),
-    path('orders/',include('orders.urls')),
-    path('accounts/', include('allauth.urls')),
-    path('offers/', include('offers.urls')),
-    path('reviews/', include('reviews.urls')),
-    path('payments/', include('payments.urls')),
-    path('wallet/', include('wallet.urls')),
-    path('coupons/', include('coupons.urls')),
-
-    path('system-admin/', admin.site.urls),
-
-
+    path("users/", include("accounts.urls")),
+    path("admin/", include("adminpanel.urls")),
+    path("", include("home.urls"), name="home"),
+    path("products/", include("products.urls")),
+    path("category/", include("category.urls")),
+    path("cart/", include("cart.urls")),
+    path("wishlist/", include("wishlist.urls")),
+    path("orders/", include("orders.urls")),
+    path("accounts/", include("allauth.urls")),
+    path("offers/", include("offers.urls")),
+    path("reviews/", include("reviews.urls")),
+    path("payments/", include("payments.urls")),
+    path("wallet/", include("wallet.urls")),
+    path("coupons/", include("coupons.urls")),
+    path("system-admin/", admin.site.urls),
 ]
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-handler404 = 'home.views.custom_404'
+handler404 = "home.views.custom_404"

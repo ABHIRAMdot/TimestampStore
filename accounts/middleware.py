@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.shortcuts import redirect
 from django.contrib.auth import logout
 
+
 class UserStatusCheckMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
@@ -12,7 +13,9 @@ class UserStatusCheckMiddleware:
             user = request.user
 
             # If user is blocked or inactive (force logout)
-            if getattr(user, "is_blocked", False) or not getattr(user, "is_active", True):
+            if getattr(user, "is_blocked", False) or not getattr(
+                user, "is_active", True
+            ):
                 logout(request)
 
                 if getattr(user, "is_blocked", False):

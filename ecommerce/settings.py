@@ -9,175 +9,160 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+
 import os
 from pathlib import Path
-from dotenv import load_dotenv  #install dotenv to use getenv
-
+from dotenv import load_dotenv  # install dotenv to use getenv
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-load_dotenv(os.path.join(BASE_DIR, '.env'))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-
-    'handlers': {
-
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
         # Project logs (debug, info, warnings, errors)
-        'project_file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'project.log'),
+        "project_file": {
+            "level": "DEBUG",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "project.log"),
         },
-
         # Django internal logs
-        'django_file': {
-            'level': 'INFO',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'django.log'),
+        "django_file": {
+            "level": "INFO",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "django.log"),
         },
-
         # ERROR-ONLY LOGS
-        'error_file': {
-            'level': 'ERROR',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'error.log'),
+        "error_file": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": os.path.join(BASE_DIR, "error.log"),
         },
     },
-
-    'loggers': {
-
+    "loggers": {
         # Django framework logger → django.log
-        'django': {
-            'handlers': ['django_file', 'error_file'],
-            'level': 'INFO',
-            'propagate': False,
+        "django": {
+            "handlers": ["django_file", "error_file"],
+            "level": "INFO",
+            "propagate": False,
         },
-
         # Your project logger → project.log + error.log
-        'project_logger': {
-            'handlers': ['project_file', 'error_file'],
-            'level': 'DEBUG',
-            'propagate': False,
+        "project_logger": {
+            "handlers": ["project_file", "error_file"],
+            "level": "DEBUG",
+            "propagate": False,
         },
-    }
+    },
 }
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG =os.getenv('DEBUG', 'False') == 'True'
+DEBUG = os.getenv("DEBUG", "False") == "True"
 
-hosts = os.getenv('ALLOWED_HOSTS', '')
-ALLOWED_HOSTS = hosts.split(',') 
-
+hosts = os.getenv("ALLOWED_HOSTS", "")
+ALLOWED_HOSTS = hosts.split(",")
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'accounts',
-    'category',
-    'adminpanel',
-    'products',
-    'cart',
-    'offers',
-    'home',
-    'wishlist',
-    'orders',
-    'reviews',
-    'payments',
-    'wallet',
-    'referral',
-    'coupons',
-
-    'django.contrib.sites',
-
-    'allauth',
-    'allauth.account',
-    'allauth.socialaccount',
-    'allauth.socialaccount.providers.google',
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "accounts",
+    "category",
+    "adminpanel",
+    "products",
+    "cart",
+    "offers",
+    "home",
+    "wishlist",
+    "orders",
+    "reviews",
+    "payments",
+    "wallet",
+    "referral",
+    "coupons",
+    "django.contrib.sites",
+    "allauth",
+    "allauth.account",
+    "allauth.socialaccount",
+    "allauth.socialaccount.providers.google",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "allauth.account.middleware.AccountMiddleware",
-    'accounts.middleware.UserStatusCheckMiddleware', 
-
+    "accounts.middleware.UserStatusCheckMiddleware",
 ]
 
-ROOT_URLCONF = 'ecommerce.urls'
+ROOT_URLCONF = "ecommerce.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
-                'category.context_processor.menu_links',
-
-                'home.context_processors.navbar_context',
-                'cart.context_processors.cart_count',
-                'wishlist.context_processors.wishlist_count',
-
-                
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+                "category.context_processor.menu_links",
+                "home.context_processors.navbar_context",
+                "cart.context_processors.cart_count",
+                "wishlist.context_processors.wishlist_count",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'ecommerce.wsgi.application'
+WSGI_APPLICATION = "ecommerce.wsgi.application"
 
-AUTH_USER_MODEL = 'accounts.Account'
+AUTH_USER_MODEL = "accounts.Account"
 
 # LOGIN_URL = 'login'                 # login page
 # LOGOUT_REDIRECT_URL = 'login'       # after logout
 
 
-LOGIN_REDIRECT_URL = 'home'                 # Django login redirect
-LOGOUT_REDIRECT_URL = 'login'              # Django logout redirect
+LOGIN_REDIRECT_URL = "home"  # Django login redirect
+LOGOUT_REDIRECT_URL = "login"  # Django logout redirect
 
-ACCOUNT_LOGIN_REDIRECT_URL = 'home'        # Allauth login redirect
-ACCOUNT_LOGOUT_REDIRECT_URL = 'login'      # Allauth logout redirect
+ACCOUNT_LOGIN_REDIRECT_URL = "home"  # Allauth login redirect
+ACCOUNT_LOGOUT_REDIRECT_URL = "login"  # Allauth logout redirect
 
 
-ADMIN_LOGIN_URL = 'admin_login'  #@login_required(login_url=ADMIN_LOGIN_URL)
+ADMIN_LOGIN_URL = "admin_login"  # @login_required(login_url=ADMIN_LOGIN_URL)
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME'),
-        'USER' : os.getenv('DB_USER'),
-        'PASSWORD' : os.getenv('DB_PASSWORD'),
-        'HOST' : os.getenv('DB_HOST'),
-        'PORT' : os.getenv('DB_PORT'),
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": os.getenv("DB_NAME"),
+        "USER": os.getenv("DB_USER"),
+        "PASSWORD": os.getenv("DB_PASSWORD"),
+        "HOST": os.getenv("DB_HOST"),
+        "PORT": os.getenv("DB_PORT"),
     }
 }
 
@@ -187,16 +172,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -204,9 +189,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = 'Asia/Kolkata'
+TIME_ZONE = "Asia/Kolkata"
 
 USE_I18N = True
 
@@ -216,60 +201,57 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = "/static/"
 
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR,'static')  #actual path from folder
-]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]  # actual path from folder
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  #for collectstatic
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")  # for collectstatic
 
 
-MEDIA_URL = '/media/'
-MEDIA_ROOT =os.path.join(BASE_DIR, 'media')
+MEDIA_URL = "/media/"
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 
 
-EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.getenv('EMAIL_HOST')
-EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
-EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.getenv("EMAIL_HOST")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True") == "True"
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-
 
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 AUTHENTICATION_BACKENDS = [
-    'allauth.account.auth_backends.AuthenticationBackend',      # enables allauth login
-    'django.contrib.auth.backends.ModelBackend',               # uses your Account model's USERNAME_FIELD
+    "allauth.account.auth_backends.AuthenticationBackend",  # enables allauth login
+    "django.contrib.auth.backends.ModelBackend",  # uses your Account model's USERNAME_FIELD
 ]
 
 SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'APP': {
-            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
-            'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
-            'key': ''
+    "google": {
+        "APP": {
+            "client_id": os.getenv("GOOGLE_CLIENT_ID"),
+            "secret": os.getenv("GOOGLE_CLIENT_SECRET"),
+            "key": "",
         },
-        'SCOPE': ['profile', 'email'],
-        'AUTH_PARAMS': {'access_type': 'offline'},
-        'VERIFIED_EMAIL': True,  # Trust Google's email verification
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "offline"},
+        "VERIFIED_EMAIL": True,  # Trust Google's email verification
     }
 }
 # OTP_EXPIRY_MINUTES = 10
 
 # Login/Authentication Settings
-ACCOUNT_AUTHENTICATION_METHOD = 'email'      # Only email login, no username
+ACCOUNT_AUTHENTICATION_METHOD = "email"  # Only email login, no username
 ACCOUNT_UNIQUE_EMAIL = True
-ACCOUNT_EMAIL_VERIFICATION = 'none'  # We handle OTP verification manually, not using the default allauth login/signup page 
-ACCOUNT_SESSION_REMEMBER = True    # Keep users logged in
+ACCOUNT_EMAIL_VERIFICATION = "none"  # We handle OTP verification manually, not using the default allauth login/signup page
+ACCOUNT_SESSION_REMEMBER = True  # Keep users logged in
 
-#For allauth to display the username(default) change it to email or fullname
+# For allauth to display the username(default) change it to email or fullname
 # This explicitly tells Allauth:
 # Your user model has no username field.
 # Display the email or full name instead.
@@ -280,7 +262,9 @@ ACCOUNT_USER_DISPLAY = lambda user: user.email  # or user.get_full_name()
 
 # allauth settings
 SOCIALACCOUNT_AUTO_SIGNUP = True  # Allow Google users to auto-signup
-SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'  # Don't require email verification for social accounts
+SOCIALACCOUNT_EMAIL_VERIFICATION = (
+    "none"  # Don't require email verification for social accounts
+)
 SOCIALACCOUNT_LOGIN_ON_GET = True  # Enable auto-login
 SOCIALACCOUNT_QUERY_EMAIL = True
 
@@ -289,8 +273,8 @@ SITE_ID = 1
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http"
 ACCOUNT_DOMAIN = "127.0.0.1:8000"
 
-#razorpay settings
-RAZORPAY_KEY_ID = os.getenv('RAZORPAY_KEY_ID')
-RAZORPAY_KEY_SECRET = os.getenv('RAZORPAY_KEY_SECRET')
+# razorpay settings
+RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
+RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin-allow-popups"

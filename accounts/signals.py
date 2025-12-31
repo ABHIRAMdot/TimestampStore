@@ -6,29 +6,33 @@ from .models import Account
 from django.core.mail import send_mail
 from django.conf import settings
 
+
 @receiver(pre_social_login)
 def link_to_local_user(sender, request, sociallogin, **kwargs):
     """
     When user logs in via Google, link to existing Account if email matches
     """
-    email = sociallogin.account.extra_data.get('email')
+    email = sociallogin.account.extra_data.get("email")
     if email:
         try:
             # Check if user already exists with this email
             existing_user = Account.objects.get(email=email)
-            
+
             # If user exists but hasn't verified OTP yet, don't allow Google login
             if not existing_user.is_active:
-                messages.error(request, "Please verify your email with OTP before logging in.")
-                sociallogin.state['process'] = 'login'
+                messages.error(
+                    request, "Please verify your email with OTP before logging in."
+                )
+                sociallogin.state["process"] = "login"
                 return
-            
+
             # Link the social account to existing user
             if not sociallogin.is_existing:
                 sociallogin.connect(request, existing_user)
-                
+
         except Account.DoesNotExist:
             pass  # New user, will be created
+
 
 @receiver(user_signed_up)
 def set_initial_user_data(sender, request, user, sociallogin=None, **kwargs):

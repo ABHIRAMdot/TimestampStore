@@ -3,6 +3,7 @@ from django.db import models
 
 register = template.Library()
 
+
 @register.filter
 def dict_get(d, key):
     """Get a dictionary value using a dynamic key."""
@@ -11,6 +12,7 @@ def dict_get(d, key):
     except:
         return 0
 
+
 @register.filter
 def div(a, b):
     """Divide two numbers safely."""
@@ -18,6 +20,7 @@ def div(a, b):
         return a / b if b else 0
     except:
         return 0
+
 
 @register.filter
 def mul(a, b):
