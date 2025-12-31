@@ -13,7 +13,7 @@ class Product(models.Model):
     
     category = models.ForeignKey(Category,on_delete=models.SET_NULL,null=True,blank=True)
 
-    # offer = models.ForeignKey(Offer,on_delete=models.SET_NULL, null=True, blank=True,related_name='products')
+ 
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)  
