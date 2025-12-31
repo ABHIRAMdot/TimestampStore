@@ -81,14 +81,17 @@ def add_category(request):
         #     messages.error(request, 'Only MEN and WOMEN can be added as main categories. All others must be subcategories.')
 
         if parent_id == '':
-            messages.error(request, 'You must select a parent category (Men or Women).')
-            return render(request, 'add_category.html', {
-                'main_categories': main_categories,
-                'category_name': category_name,
-                'description': description,
-                'slug': slug,
-                'parent_id': parent_id,
-            })
+            if category_name.lower() not in ['men', 'women']:
+                messages.error(request, 'You must select a parent category (Men or Women).')
+                return render(request, 'add_category.html', {
+                    'main_categories': main_categories,
+                    'category_name': category_name,
+                    'description': description,
+                    'slug': slug,
+                    'parent_id': parent_id,
+                })
+
+            parent_id = None
 
         # auto-generate slug if not provided
         if not slug:
