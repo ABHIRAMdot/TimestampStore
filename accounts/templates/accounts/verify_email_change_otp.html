@@ -63,18 +63,18 @@
                             </label>
                             <div class="flex justify-center gap-2">
                                 <input type="text" maxlength="1" id="otp1" 
-                                       class="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                       class="otp-input w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
                                        autofocus>
                                 <input type="text" maxlength="1" id="otp2" 
-                                       class="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                       class="otp-input w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                                 <input type="text" maxlength="1" id="otp3" 
-                                       class="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                       class="otp-input w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                                 <input type="text" maxlength="1" id="otp4" 
-                                       class="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                       class="otp-input w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                                 <input type="text" maxlength="1" id="otp5" 
-                                       class="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                       class="otp-input w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                                 <input type="text" maxlength="1" id="otp6" 
-                                       class="w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                                       class="otp-input w-14 h-14 text-center text-2xl font-bold border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
                             </div>
                             <!-- Hidden field for form submission -->
                             <input type="hidden" name="otp" id="otpHidden">
@@ -111,7 +111,7 @@
 
     <script>
         // OTP Input Handling
-        const otpInputs = document.querySelectorAll('[id^="otp"]');
+        const otpInputs = document.querySelectorAll('.otp-input');
         const otpHidden = document.getElementById('otpHidden');
         const form = document.getElementById('otpForm');
 
@@ -154,10 +154,6 @@
             const otp = Array.from(otpInputs).map(input => input.value).join('');
             otpHidden.value = otp;
             
-            // Auto-submit when all 6 digits are entered
-            if (otp.length === 6) {
-                form.submit();
-            }
         }
 
         // Timer Countdown

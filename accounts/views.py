@@ -517,7 +517,7 @@ def resend_reset_otp(request):
 
 
 # Profile views
-@login_required
+@login_required(login_url='login')
 @never_cache
 def profile(request):
     """Display user profile with details, addresses, and orders"""
@@ -537,7 +537,7 @@ def profile(request):
     return render(request, "accounts/profile.html", context)
 
 
-@login_required
+@login_required(login_url='login')
 @never_cache
 def edit_profile(request):
     """edit user profile details"""
@@ -558,23 +558,26 @@ def edit_profile(request):
     return render(request, "accounts/edit_profile.html", context)
 
 
-@login_required
+@login_required(login_url='login')
 @never_cache
 def change_password(request):
     """Change user password"""
+
+    has_password = request.user.has_usable_password()
+    
     if request.method == "POST":
-        form = ChangePasswordForm(request.POST)
+        form = ChangePasswordForm(request.POST, require_current_password=has_password)
+
         if form.is_valid():
-            current_password = form.cleaned_data["current_password"]
             new_password = form.cleaned_data["new_password"]
 
-            # check if current password is correct
-            if not request.user.check_password(
-                current_password
-            ):  # this check_password will check the enterd current password and the password already saved is the same
-                messages.error(request, "Current password is incorrect.")
-                return render(request, "accounts/change_password.html", {"form": form})
-
+            if has_password:
+                current_password = form.cleaned_data["current_password"]
+                # check if current password is correct
+                if not request.user.check_password(current_password):  # this check_password will check the enterd current password and the password already saved is the same
+                    messages.error(request, "Current password is incorrect.")
+                    return render(request, "accounts/change_password.html", {"form": form})                
+                
             # set new password
             request.user.set_password(new_password)
             request.user.save()
@@ -598,10 +601,10 @@ def change_password(request):
     else:
         form = ChangePasswordForm()
 
-    return render(request, "accounts/change_password.html", {"form": form})
+    return render(request, "accounts/change_password.html", {"form": form, "has_password": has_password})
 
 
-@login_required
+@login_required(login_url='login')
 @never_cache
 def change_email(request):
     """Request email change - sends OTP to new email"""
@@ -654,7 +657,7 @@ def change_email(request):
     return render(request, "accounts/change_email.html", {"form": form})
 
 
-@login_required
+@login_required(login_url='login')
 @never_cache
 def verify_email_change_otp(request):
     """Verify OTP and change email"""
@@ -673,7 +676,7 @@ def verify_email_change_otp(request):
 
     if is_expired:
         messages.error(request, "OTP has expired. Please try again.")
-        requesZt.session.pop("email_change_data", None)
+        request.session.pop("email_change_data", None)
         return redirect("change_email")
 
     # calculating remaining time
@@ -688,13 +691,20 @@ def verify_email_change_otp(request):
             entered_otp = form.cleaned_data["otp"]
 
             # double check expiry
-            is_expired = is_otp_expired(otp_created_at_str)
+            is_expired, _ = is_otp_expired(otp_created_at_str)
             if is_expired:
                 messages.error(request, "OTP has expired. Please try again.")
                 request.session.pop("emai_change_data", None)
                 return redirect("change_email")
 
-            if entered_otp == stored_otp:
+            if entered_otp.strip() == stored_otp.strip():
+
+                if Account.objects.filter(email=new_email).exists():
+                    messages.error(request, "This email is already in use.")
+                    request.session.pop("email_change_data",None)
+                    return redirect("change_email")
+
+
                 # update email
                 old_email = request.user.email
                 request.user.email = new_email
@@ -738,7 +748,7 @@ def verify_email_change_otp(request):
 # Adress management views
 
 
-@login_required
+@login_required(login_url='login')
 @never_cache
 def address_list(request):
     """Display all user addresses"""
@@ -746,7 +756,7 @@ def address_list(request):
     return render(request, "accounts/address_list.html", {"addresses": addresses})
 
 
-@login_required
+@login_required(login_url='login')
 @never_cache
 def add_address(request):
     """Add new address"""
@@ -774,7 +784,7 @@ def add_address(request):
     return render(request, "accounts/add_address.html", context)
 
 
-@login_required
+@login_required(login_url='login')
 @never_cache
 def edit_address(request, address_id):
     """Edit existing address"""

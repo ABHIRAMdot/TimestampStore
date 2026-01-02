@@ -316,6 +316,7 @@ class ChangePasswordForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={"class": "form-control", "placeholder": "Current Password"}
         ),
+        required=False,
         label="Current Password",
     )
     new_password = forms.CharField(
@@ -331,6 +332,15 @@ class ChangePasswordForm(forms.Form):
         ),
         label="Confirm Password",
     )
+
+    def __init__(self, *args, require_current_password=True, **kwargs):
+        super().__init__(*args, *kwargs)
+
+        if require_current_password:
+            self.fields["current_password"].required = True
+        else:
+            #Google user remove current password field
+            self.fields.pop("current_password")
 
     def clean_new_password(self):
         new_password = self.cleaned_data.get("new_password")
