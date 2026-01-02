@@ -202,6 +202,13 @@ def download_invoice(request, order_id):
         Order.objects.prefetch_related("items"), order_id=order_id, user=request.user
     )
 
+    if order.status != "delivered":
+        messages.error(
+            request,
+            "Invoice will be available only after the order is delivered."
+        )
+        return redirect("user_order_detail", order_id=order.order_id)
+
     return generate_invoice_pdf(order)
 
 
