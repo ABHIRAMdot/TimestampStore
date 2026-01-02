@@ -79,27 +79,27 @@ def generate_invoice_pdf(order):
     estimated_delivery = order.created_at.date() + timedelta(days=7)
 
     # Invoice Details and Customer Info Table
-# ✅ CHANGE: added Order Status and Payment Status
-info_data = [
-    ["Invoice Details", "Customer Details"],
-    [
-        (
-            f"Invoice No: {order.order_id}\n"
-            f"Date: {order.created_at.strftime('%d %B %Y')}\n"
-            f"Order Status: {order.get_status_display()}\n"
-            f"Payment Status: {order.payment_status.capitalize()}\n"
-            f"Payment Method: {order.get_payment_method_display()}\n"
-            f"Estimated Delivery: {estimated_delivery.strftime('%d %B %Y')}"
-        ),
-        (
-            f"{order.full_name}\n"
-            f"{order.street_address}\n"
-            f"{order.city}, {order.state}\n"
-            f"{order.postal_code}\n"
-            f"Phone: {order.mobile}"
-        ),
-    ],
-]
+    # Order Status and Payment Status
+    info_data = [
+        ["Invoice Details", "Customer Details"],
+        [
+            (
+                f"Invoice No: {order.order_id}\n"
+                f"Date: {order.created_at.strftime('%d %B %Y')}\n"
+                f"Order Status: {order.get_status_display()}\n"
+                f"Payment Status: {order.payment_status.capitalize()}\n"
+                f"Payment Method: {order.get_payment_method_display()}\n"
+                f"Estimated Delivery: {estimated_delivery.strftime('%d %B %Y')}"
+            ),
+            (
+                f"{order.full_name}\n"
+                f"{order.street_address}\n"
+                f"{order.city}, {order.state}\n"
+                f"{order.postal_code}\n"
+                f"Phone: {order.mobile}"
+            ),
+        ],
+    ]
 
 
     info_table = Table(info_data, colWidths=[3 * inch, 3 * inch])

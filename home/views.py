@@ -142,6 +142,12 @@ def user_product_detail(request, slug):
     except Product.DoesNotExist:
         # Product completely missing
         return render(request, "errors/product_unavailable.html", status=404)
+    
+    #category availability
+    is_category_available = (
+        product.category is not None and product.category.is_listed
+    )
+
 
     # Block unlisted product even user came erlier
     if not product.is_listed:
@@ -163,6 +169,14 @@ def user_product_detail(request, slug):
     else:
         # Default to ceapest variant
         selected_variant = variants.first()
+
+    # after selected_variant is set
+    is_variant_available = (
+        selected_variant.is_listed and selected_variant.stock > 0
+    )
+
+    is_product_available = product.is_listed and is_category_available and variants.filter(stock__gt=0).exists()
+
 
     # checking this is an AJAX request, return JASON response
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -248,6 +262,11 @@ def user_product_detail(request, slug):
             "product": product,
             "variants": variants,
             "selected_variant": selected_variant,
+
+            "is_variant_available": is_variant_available,
+            "is_product_available": is_product_available,
+            "is_category_available": is_category_available,
+
             "variant_images": variant_images,
             "related": related,
             "main_categories": main_categories,

@@ -267,6 +267,7 @@ def cart_view(request):
         ):
             item.unavailable = True
             item.original_price = item.price
+            item.final_price = item.price
             item.discount_amount = Decimal("0.00")
         else:
             item.unavailable = False
