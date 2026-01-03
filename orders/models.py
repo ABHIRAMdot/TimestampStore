@@ -12,10 +12,10 @@ class Order(models.Model):
 
     # order identification
     order_id = models.CharField(max_length=20, unique=True, editable=False)
-    user = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="orders")
+    user = models.ForeignKey(Account, on_delete=models.PROTECT, related_name="orders")
     # shipping info
     shipping_address = models.ForeignKey(
-        Address, on_delete=models.CASCADE, null=True, related_name="orders"
+        Address, on_delete=models.SET_NULL, null=True, related_name="orders"
     )
     full_name = models.CharField(max_length=100)
     mobile = models.CharField(max_length=15)

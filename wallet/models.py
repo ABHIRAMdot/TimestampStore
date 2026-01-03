@@ -12,8 +12,7 @@ class Wallet(models.Model):
     """One wallet per user, Stores current wallet"""
 
     user = models.OneToOneField(
-        Account, on_delete=models.CASCADE, related_name="wallet"
-    )
+        Account, on_delete=models.PROTECT, related_name="wallet" ) # prevent deleting user if  wallet exists
     balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -34,7 +33,7 @@ class WalletTransaction(models.Model):
     ]
 
     wallet = models.ForeignKey(
-        Wallet, on_delete=models.CASCADE, related_name="transactions"
+        Wallet, on_delete=models.PROTECT, related_name="transactions"
     )
 
     tx_type = models.CharField(max_length=30, choices=TRANSACTION_TYPES)
@@ -46,14 +45,14 @@ class WalletTransaction(models.Model):
     # link to orde/ items
     order = models.ForeignKey(
         Order,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         blank=True,
         null=True,
         related_name="Wallet_transactions",
     )
     order_item = models.ForeignKey(
         OrderItem,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         blank=True,
         null=True,
         related_name="wallet_transactions",
