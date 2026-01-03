@@ -200,15 +200,6 @@ def admin_logout(request):
     return redirect("admin_login")
 
 
-VALID_SALES_STATUSES = [
-    "confirmed",
-    "processing",
-    "shipped",
-    "out_of_delivery",
-    "delivered",
-]
-
-
 def admin_sales_report(request):
     filter_type = request.GET.get("filter", "week")
     start_date = request.GET.get("start_date")
@@ -222,20 +213,38 @@ def admin_sales_report(request):
 
     start, end = get_date_range(filter_type, start_date, end_date)
 
-    orders = Order.objects.filter(
-        status__in=VALID_SALES_STATUSES, created_at__date__range=[start, end]
+    orders = (
+        Order.objects
+        .filter(
+            created_at__date__range=[start, end],
+            items__status__iexact="delivered"  
+        )
+        .distinct()
+        .prefetch_related("items")
     )
+
+
+    
 
     total_discount = Decimal("0.00")
     total_sales = Decimal("0.00")
+    total_orders = 0
 
     for order in orders:
+        delivered_items = order.items.filter(status__iexact="delivered")
+    
+        if not delivered_items.exists():
+            continue
+    
+        total_orders += 1 # count only valid sales
         total_discount += get_order_total_discount(order)
-        total_sales += order.total_amount
+
+        for item in delivered_items:
+            total_sales += item.price * item.quantity
 
     # aggregations
     summary = {
-        "total_orders": orders.count(),
+        "total_orders": total_orders,
         "total_sales": total_sales,
         "total_discount": total_discount,
     }

@@ -361,11 +361,11 @@ def get_out_of_stock_products():
 
 
 def get_order_total_discount(order):
-    """returns total discount for an orer"""
+    """    Returns total discount ONLY for delivered items + coupon discount"""
 
     # product/offer discount
     item_discount = Decimal("0.00")
-    for item in order.items.all():
+    for item in order.items.filter(status__iexact="delivered"):
         item_discount += item.discount_amount * item.quantity
 
     coupon_discount = Decimal("0.00")

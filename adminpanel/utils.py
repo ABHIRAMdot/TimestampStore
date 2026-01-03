@@ -43,35 +43,25 @@ def get_date_range(filter_type, start_date=None, end_date=None):
 
 
 def get_valid_orders(start, end):
-    """Get all orders that cout as sales(not cancelled, not returned)"""
+    """
+    Orders that have AT LEAST ONE delivered item
+    """
 
-    # get valid orders (exclude cancelled, returned,..)
-    valid_statuses = [
-        "confirmed",
-        "processing",
-        "shipped",
-        "out_for_delivery",
-        "delivered",
-    ]
-
-    orders = Order.objects.filter(
-        created_at__date__range=[start, end], status__in=valid_statuses
+    return (
+        Order.objects
+        .filter(
+            created_at__date__range=[start, end],
+            items__status__iexact="delivered"
+        )
+        .distinct()
     )
-
-    return orders
 
 
 # cahrt data
 def get_chart_data(filter_type, start_date=None, end_date=None):
     """Get data for the sales chart"""
 
-    # # # get valid orders (exclude cancelled, returned,..)
-    # valid_statuses = ['confirmed', 'processing', 'shipped', 'out_for_delivery', 'delivered']
 
-    # orders = Order.objects.filter(
-    #     created_at__date__range=[start, end], # only orders in the date range
-    #     status__in=valid_statuses
-    # )
 
     orders = get_valid_orders(start_date, end_date)
 
@@ -87,8 +77,17 @@ def get_chart_data(filter_type, start_date=None, end_date=None):
 
         for order in orders:
             hour = order.created_at.hour  # get hour(0-23)
+
+            delivered_sales = sum(
+                float(item.price * item.quantity)
+                for item in order.items.filter(status__iexact="delivered")
+            )
+
+            if delivered_sales == 0:
+                continue
+
             # Add sales amount for this hour
-            sales[hour] += float(order.total_amount)
+            sales[hour] += delivered_sales
             # count orders for this hour
             order_counts[hour] += 1
 
@@ -101,7 +100,16 @@ def get_chart_data(filter_type, start_date=None, end_date=None):
         # Loop through all orders and group by day name
         for order in orders:
             day_name = order.created_at.strftime("%a")  # 'Mon', 'Tue',..
-            sales_by_day[day_name] += float(order.total_amount)
+
+            delivered_sales = sum(
+                float(item.price * item.quantity)
+                for item in order.items.filter(status__iexact="delivered")
+            )
+
+            if delivered_sales == 0:
+                continue            
+
+            sales_by_day[day_name] += delivered_sales
             orders_by_day[day_name] += 1
 
         sales = []
@@ -126,7 +134,15 @@ def get_chart_data(filter_type, start_date=None, end_date=None):
         for order in orders:
             date_str = order.created_at.strftime("%d")
             if date_str in sales_by_date:
-                sales_by_date[date_str] += float(order.total_amount)
+                delivered_sales = sum(
+                    float(item.price * item.quantity)
+                    for item in order.items.filter(status__iexact="delivered")
+                )
+
+                if delivered_sales == 0:
+                    continue
+
+                sales_by_date[date_str] += delivered_sales
                 orders_by_date[date_str] += 1
 
         sales = []
@@ -156,7 +172,14 @@ def get_chart_data(filter_type, start_date=None, end_date=None):
 
         for order in orders:
             month_name = order.created_at.strftime("%b")  # jan, feb,..
-            sales_by_month[month_name] += float(order.total_amount)
+            delivered_sales = sum(
+                float(item.price * item.quantity)
+                for item in order.items.filter(status__iexact="delivered")
+            )
+
+            if delivered_sales == 0:
+                continue
+            sales_by_month[month_name] += delivered_sales
             order_by_month[month_name] += 1
 
         sales = []
@@ -181,7 +204,14 @@ def get_chart_data(filter_type, start_date=None, end_date=None):
         for order in orders:
             date_str = order.created_at.strftime("%d/%m")
             if date_str in sales_by_date:
-                sales_by_date[date_str] += float(order.total_amount)
+                delivered_sales = sum(
+                    float(item.price * item.quantity)
+                    for item in order.items.filter(status__iexact="delivered")
+                )
+
+                if delivered_sales == 0:
+                    continue
+
                 orders_by_date[date_str] += 1
 
         sales = []
@@ -194,14 +224,20 @@ def get_chart_data(filter_type, start_date=None, end_date=None):
 
 
 def get_statistics(start_date, end_date):
-    """Calculate the total orders,revenue, sales, average"""
+    """Calculate the total orders,revenue, sales, average based only on delivered items"""
 
-    orders = get_valid_orders(start_date, end_date)
+    # orders = get_valid_orders(start_date, end_date)
 
-    results = orders.aggregate(
-        total_orders=Count("id"),
-        total_revenue=Sum("total_amount"),
-        total_products=Sum("items__quantity"),
+    #get delivered order items only
+    items = OrderItem.objects.filter(
+        order__created_at__date__range=[start_date, end_date],
+        status__iexact="delivered",
+    )
+
+    results = items.aggregate(
+        total_orders=Count("order", distinct=True),
+        total_revenue=Sum(F("price") * F("quantity")),
+        total_products=Sum("quantity"),
     )
 
     total_orders = results["total_orders"] or 0
@@ -226,19 +262,10 @@ def get_statistics(start_date, end_date):
 def get_best_products(start_date, end_date, limit=10):
     """Find top 10 products by quantity sold"""
 
-    valid_statuses = [
-        "confirmed",
-        "processing",
-        "shipped",
-        "out_for_delivery",
-        "delivered",
-    ]
-
     # get all order items in date range
     items = OrderItem.objects.filter(
         order__created_at__date__range=[start_date, end_date],
-        order__status__in=valid_statuses,
-        status__in=valid_statuses,
+        status__iexact="delivered",
     )
 
     products = (
@@ -270,19 +297,11 @@ def get_best_products(start_date, end_date, limit=10):
 def get_best_categories(start_date, end_date, limit=10):
     """Find 10 categories by quantity sold"""
 
-    valid_statuses = [
-        "confirmed",
-        "processing",
-        "shipped",
-        "out_for_delivery",
-        "delivered",
-    ]
 
     # get order items with categories
     items = OrderItem.objects.filter(
         order__created_at__date__range=[start_date, end_date],
-        order__status__in=valid_statuses,
-        status__in=valid_statuses,
+        status__iexact="delivered",
         product__category__isnull=False,  # only items with acategory
     )
 
