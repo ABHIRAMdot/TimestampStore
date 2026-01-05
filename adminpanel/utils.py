@@ -63,170 +63,230 @@ def get_chart_data(filter_type, start_date=None, end_date=None):
 
 
 
-    orders = get_valid_orders(start_date, end_date)
+    # orders = get_valid_orders(start_date, end_date)
+
+    items = OrderItem.objects.filter(
+        order__created_at__date__range=[start_date, end_date],
+        status__iexact="delivered"
+        ).select_related("order")
 
     if filter_type == "today":
-        # lists for 24 hours
-        labels = []
+        # # lists for 24 hours
+        # labels = []
+        # sales = [0] * 24
+        # order_counts = [0] * 24
+
+        # # Create labels (00:00, 01:00, ..., 23:00)
+        # for i in range(24):
+        #     labels.append(f"{i:02d}:00")  # adds leading zero(01 not 1)
+
+        # for order in orders:
+        #     hour = order.created_at.hour  # get hour(0-23)
+
+        #     delivered_sales = sum(
+        #         float(item.price * item.quantity)
+        #         for item in order.items.filter(status__iexact="delivered")
+        #     )
+
+        #     if delivered_sales == 0:
+        #         continue
+
+        #     # Add sales amount for this hour
+        #     sales[hour] += delivered_sales
+        #     # count orders for this hour
+        #     order_counts[hour] += 1
+
+
+        labels = [f"{i:02d}:00" for i in range(24)]
         sales = [0] * 24
         order_counts = [0] * 24
 
-        # Create labels (00:00, 01:00, ..., 23:00)
-        for i in range(24):
-            labels.append(f"{i:02d}:00")  # adds leading zero(01 not 1)
+        # Track orders per hour without double counting
+        orders_seen = {hour: set() for hour in range(24)}
 
-        for order in orders:
-            hour = order.created_at.hour  # get hour(0-23)
+        for item in items:
+            hour = item.order.created_at.hour
 
-            delivered_sales = sum(
-                float(item.price * item.quantity)
-                for item in order.items.filter(status__iexact="delivered")
-            )
+            revenue = float(item.price * item.quantity)
+            sales[hour] += revenue
 
-            if delivered_sales == 0:
-                continue
+            orders_seen[hour].add(item.order_id)
 
-            # Add sales amount for this hour
-            sales[hour] += delivered_sales
-            # count orders for this hour
-            order_counts[hour] += 1
+        for hour in range(24):
+            order_counts[hour] = len(orders_seen[hour])
+
 
     elif filter_type == "week":
+        # labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+
+        # sales_by_day = {day: 0 for day in labels}
+        # orders_by_day = {day: 0 for day in labels}
+
+        # # Loop through all orders and group by day name
+        # for order in orders:
+        #     day_name = order.created_at.strftime("%a")  # 'Mon', 'Tue',..
+
+        #     delivered_sales = sum(
+        #         float(item.price * item.quantity)
+        #         for item in order.items.filter(status__iexact="delivered")
+        #     )
+
+        #     if delivered_sales == 0:
+        #         continue            
+
+        #     sales_by_day[day_name] += delivered_sales
+        #     orders_by_day[day_name] += 1
+
+        # sales = []
+        # order_counts = []
+        # for label in labels:
+        #     sales.append(sales_by_day.get(label, 0))
+        #     order_counts.append(orders_by_day.get(label, 0))
+
         labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+        sales_map = {day: 0 for day in labels}
+        orders_map = {day: set() for day in labels}
 
-        sales_by_day = {day: 0 for day in labels}
-        orders_by_day = {day: 0 for day in labels}
+        for item in items:
+            day = item.order.created_at.strftime("%a")
+            sales_map[day] += float(item.price * item.quantity)
+            orders_map[day].add(item.order_id)
 
-        # Loop through all orders and group by day name
-        for order in orders:
-            day_name = order.created_at.strftime("%a")  # 'Mon', 'Tue',..
+        sales = [sales_map[label] for label in labels]
+        order_counts = [len(orders_map[label]) for label in labels]
 
-            delivered_sales = sum(
-                float(item.price * item.quantity)
-                for item in order.items.filter(status__iexact="delivered")
-            )
-
-            if delivered_sales == 0:
-                continue            
-
-            sales_by_day[day_name] += delivered_sales
-            orders_by_day[day_name] += 1
-
-        sales = []
-        order_counts = []
-        for label in labels:
-            sales.append(sales_by_day.get(label, 0))
-            order_counts.append(orders_by_day.get(label, 0))
 
     elif filter_type == "month":
-        # calculate how many days to show
+        # # calculate how many days to show
+        # days_count = (end_date - start_date).days + 1
+
+        # labels = []
+        # for i in range(days_count):
+        #     day = start_date + timedelta(days=i)
+        #     labels.append(day.strftime("%d"))  # '01' , '02',..
+
+        # sales_by_date = {date: 0 for date in labels}
+        # orders_by_date = {date: 0 for date in labels}
+
+        # # count sales and orders
+        # for order in orders:
+        #     date_str = order.created_at.strftime("%d")
+        #     if date_str in sales_by_date:
+        #         delivered_sales = sum(
+        #             float(item.price * item.quantity)
+        #             for item in order.items.filter(status__iexact="delivered")
+        #         )
+
+        #         if delivered_sales == 0:
+        #             continue
+
+        #         sales_by_date[date_str] += delivered_sales
+        #         orders_by_date[date_str] += 1
+
+        # sales = []
+        # order_counts = []
+        # for label in labels:
+        #     sales.append(sales_by_date.get(label, 0))
+        #     order_counts.append(orders_by_date.get(label, 0))
+
+
         days_count = (end_date - start_date).days + 1
+        labels = [(start_date + timedelta(days=i)).strftime("%d") for i in range(days_count)]
 
-        labels = []
-        for i in range(days_count):
-            day = start_date + timedelta(days=i)
-            labels.append(day.strftime("%d"))  # '01' , '02',..
+        sales_map = {label: 0 for label in labels}
+        orders_map = {label: set() for label in labels}
 
-        sales_by_date = {date: 0 for date in labels}
-        orders_by_date = {date: 0 for date in labels}
+        for item in items:
+            day = item.order.created_at.strftime("%d")
+            sales_map[day] += float(item.price * item.quantity)
+            orders_map[day].add(item.order_id)
 
-        # count sales and orders
-        for order in orders:
-            date_str = order.created_at.strftime("%d")
-            if date_str in sales_by_date:
-                delivered_sales = sum(
-                    float(item.price * item.quantity)
-                    for item in order.items.filter(status__iexact="delivered")
-                )
+        sales = [sales_map[label] for label in labels]
+        order_counts = [len(orders_map[label]) for label in labels]
 
-                if delivered_sales == 0:
-                    continue
-
-                sales_by_date[date_str] += delivered_sales
-                orders_by_date[date_str] += 1
-
-        sales = []
-        order_counts = []
-        for label in labels:
-            sales.append(sales_by_date.get(label, 0))
-            order_counts.append(orders_by_date.get(label, 0))
 
     elif filter_type == "year":
-        labels = [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-        ]
+        # labels = [
+        #     "Jan",
+        #     "Feb",
+        #     "Mar",
+        #     "Apr",
+        #     "May",
+        #     "Jun",
+        #     "Jul",
+        #     "Aug",
+        #     "Sep",
+        #     "Oct",
+        #     "Nov",
+        #     "Dec",
+        # ]
 
-        sales_by_month = {month: 0 for month in labels}
-        order_by_month = {month: 0 for month in labels}
+        # sales_by_month = {month: 0 for month in labels}
+        # order_by_month = {month: 0 for month in labels}
 
-        for order in orders:
-            month_name = order.created_at.strftime("%b")  # jan, feb,..
-            delivered_sales = sum(
-                float(item.price * item.quantity)
-                for item in order.items.filter(status__iexact="delivered")
-            )
+        # for order in orders:
+        #     month_name = order.created_at.strftime("%b")  # jan, feb,..
+        #     delivered_sales = sum(
+        #         float(item.price * item.quantity)
+        #         for item in order.items.filter(status__iexact="delivered")
+        #     )
 
-            if delivered_sales == 0:
-                continue
-            sales_by_month[month_name] += delivered_sales
-            order_by_month[month_name] += 1
+        #     if delivered_sales == 0:
+        #         continue
+        #     sales_by_month[month_name] += delivered_sales
+        #     order_by_month[month_name] += 1
 
-        sales = []
-        order_counts = []
-        for label in labels:
-            sales.append(sales_by_month.get(label, 0))
-            order_counts.append(order_by_month.get(label, 0))
+        # sales = []
+        # order_counts = []
+        # for label in labels:
+        #     sales.append(sales_by_month.get(label, 0))
+        #     order_counts.append(order_by_month.get(label, 0))
+
+
+        labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+        sales_map = {label: 0 for label in labels}
+        orders_map = {label: set() for label in labels}
+
+        for item in items:
+            month = item.order.created_at.strftime("%b")
+            sales_map[month] += float(item.price * item.quantity)
+            orders_map[month].add(item.order_id)
+
+        sales = [sales_map[label] for label in labels]
+        order_counts = [len(orders_map[label]) for label in labels]
+
+
+
 
     else:
 
         # custom date
         days_count = (end_date - start_date).days + 1
+        labels = [(start_date + timedelta(days=i)).strftime("%d/%m") for i in range(days_count)]
 
-        labels = []
-        for i in range(days_count):
-            day = start_date + timedelta(days=i)
-            labels.append(day.strftime("%d/%m"))  #'22/12' , '23/12', ..
+        sales_map = {label: 0 for label in labels}
+        orders_map = {label: set() for label in labels}
 
-        sales_by_date = {date: 0 for date in labels}
-        orders_by_date = {date: 0 for date in labels}
+        for item in items:
+            day = item.order.created_at.strftime("%d/%m")
+            sales_map[day] += float(item.price * item.quantity)
+            orders_map[day].add(item.order_id)
 
-        for order in orders:
-            date_str = order.created_at.strftime("%d/%m")
-            if date_str in sales_by_date:
-                delivered_sales = sum(
-                    float(item.price * item.quantity)
-                    for item in order.items.filter(status__iexact="delivered")
-                )
+        sales = [sales_map[label] for label in labels]
+        order_counts = [len(orders_map[label]) for label in labels]
 
-                if delivered_sales == 0:
-                    continue
-
-                orders_by_date[date_str] += 1
-
-        sales = []
-        order_counts = []
-        for label in labels:
-            sales.append(sales_by_date.get(label, 0))
-            order_counts.append(orders_by_date.get(label, 0))
-
-    return {"labels": labels, "sales": sales, "orders": order_counts}
+    return {
+        "labels": labels,
+        "sales": sales,
+        "orders": order_counts,
+    }
 
 
 def get_statistics(start_date, end_date):
     """Calculate the total orders,revenue, sales, average based only on delivered items"""
 
-    # orders = get_valid_orders(start_date, end_date)
 
     #get delivered order items only
     items = OrderItem.objects.filter(
